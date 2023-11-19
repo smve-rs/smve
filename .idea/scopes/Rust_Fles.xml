@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Rust Fles" pattern="file[rusty_craft]:*.rs" />
+</component>
