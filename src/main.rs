@@ -1,4 +1,7 @@
+use crate::core::ecs::Ecs;
 use bevy_ecs::prelude::*;
+
+mod core;
 
 #[derive(Component)]
 struct Name {
@@ -13,16 +16,13 @@ fn print_name(mut query: Query<&mut Name>) {
 }
 
 fn main() {
-    let mut world = World::new();
+    let mut ecs = Ecs::new();
 
-    world.spawn(Name {
+    ecs.world.spawn(Name {
         name: "Hello World".into(),
     });
 
-    let mut schedule = Schedule::default();
+    ecs.schedule.add_systems(print_name);
 
-    schedule.add_systems(print_name);
-
-    schedule.run(&mut world);
-    schedule.run(&mut world);
+    ecs.run();
 }
