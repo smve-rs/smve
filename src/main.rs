@@ -15,11 +15,7 @@ fn print_name(mut query: Query<&mut Name>) {
 fn main() {
     let mut world = World::new();
 
-    world.spawn(
-                        Name 
-        
-        {
-                        
+    world.spawn(Name {
         name: "Hello World".into(),
     });
 
