@@ -26,3 +26,16 @@ fn main() {
 
     ecs.run();
 }
+
+// Ideal main function:
+// fn main() {
+//     let mut ecs = Ecs::new();
+//
+//     let scene = Scene::deserialize("example.rcscene");
+//
+//     ecs.load_scene(&scene);
+//
+//     loop {
+//         ecs.run();
+//     }
+// }
