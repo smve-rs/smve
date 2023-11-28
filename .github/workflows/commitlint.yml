@@ -10,7 +10,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
       - name: Print versions
         run: |
           git --version
