@@ -3,7 +3,7 @@ updates:
     - package-ecosystem: github-actions
       directory: /
       schedule:
-        interval: weekly
+        interval: daily
     - package-ecosystem: cargo
       directory: /
       schedule:
@@ -11,4 +11,4 @@ updates:
     - package-ecosystem: cargo
       directory: /crates/file_bundle_cli
       schedule:
-        interval: weekly
+        interval: daily
