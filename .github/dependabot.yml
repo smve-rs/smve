@@ -4,10 +4,12 @@ updates:
       directory: /
       schedule:
         interval: daily
+      commit-message:
+        prefix: "ci"
     - package-ecosystem: cargo
       directory: /
       schedule:
-        interval: weekly
+        interval: daily
     - package-ecosystem: cargo
       directory: /crates/file_bundle_cli
       schedule:
