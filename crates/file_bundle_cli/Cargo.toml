@@ -7,4 +7,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.10", features = ["derive"] }
+console = "0.15.7"
+indicatif = "0.17.7"
 lib_file_bundle = { path="../lib_file_bundle" }
