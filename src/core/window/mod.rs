@@ -47,7 +47,7 @@ fn runner(mut app: App) {
     info!("Entered event loop");
 
     let mut should_update = true;
-    event_loop.run(move |event, elwt| {
+    event_loop.run(move |event, window_target| {
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -55,7 +55,7 @@ fn runner(mut app: App) {
             } => {
                 info!("Window closed, exiting...");
                 should_update = false;
-                elwt.exit();
+                window_target.exit();
             },
             Event::AboutToWait => {
                 if should_update {
