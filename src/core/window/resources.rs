@@ -16,13 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod core;
+use bevy_ecs::system::Resource;
 
-use bevy_app::prelude::*;
-use crate::core::window::WindowPlugin;
-
-fn main() {
-    App::new()
-        .add_plugins(WindowPlugin)
-        .run();
-}
+#[derive(Resource)]
+pub struct Window(pub winit::window::Window);
