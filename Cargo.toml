@@ -6,5 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_ecs = { version = "0.12.1", features = ["multi-threaded", "default"]}
+bevy_app = "0.12.1"
+bevy_ecs = { version = "0.12.1", features = ["multi-threaded"] }
 
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

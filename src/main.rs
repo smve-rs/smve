@@ -16,44 +16,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::core::ecs::Ecs;
-use bevy_ecs::prelude::*;
+use bevy_app::prelude::*;
 
-mod core;
-
-#[derive(Component)]
-struct Name {
-    name: String,
+fn print() {
+    println!("Hi");
 }
 
-fn print_name(mut query: Query<&mut Name>) {
-    for mut name in &mut query {
-        println!("{}", name.name);
-        name.name = "Hello".into();
+fn runner(mut app: App) {
+    loop {
+        app.update();
     }
 }
 
 fn main() {
-    let mut ecs = Ecs::new();
-
-    ecs.world.spawn(Name {
-        name: "Hello World".into(),
-    });
-
-    ecs.schedule.add_systems(print_name);
-
-    ecs.run();
+    App::new()
+        .set_runner(runner)
+        .add_systems(Update, print)
+        .run();
 }
-
-// Ideal main function:
-// fn main() {
-//     let mut ecs = Ecs::new();
-//
-//     let scene = Scene::deserialize("example.rcscene");
-//
-//     ecs.load_scene(&scene);
-//
-//     loop {
-//         ecs.run();
-//     }
-// }
