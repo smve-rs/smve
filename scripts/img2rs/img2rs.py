@@ -35,7 +35,7 @@ def main():
         f.write('#[allow(dead_code)]\n')
         f.write(f'{pub} const IMAGE_MODE: &str = "{img.mode}";\n\n')
         f.write('#[allow(dead_code)]\n')
-        f.write(f'{pub} const IMAGE_DATA: &[u8; {len(rgba_list)}] = include_bytes!("{os.path.basename(args.output)}.{img.mode.lower()}");')
+        f.write(f'{pub} const IMAGE_DATA: &[u8; {len(rgba_list)}] = include_bytes!("{os.path.basename(args.output)}.{img.mode.lower()}");\n')
     with alive_bar(len(rgba_list), 
                    title=f"Writing to {args.output}.{img.mode.lower()}...",
                    scale="IEC",
