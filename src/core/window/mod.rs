@@ -19,12 +19,13 @@
 
 mod resources;
 
+mod icon;
+
 use bevy_app::{App, Plugin};
-use env_logger::Env;
 use log::info;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{EventLoop};
-use winit::window::{WindowBuilder};
+use winit::window::{Icon, WindowBuilder};
 use crate::core::window::resources::Window;
 
 pub struct WindowPlugin;
@@ -36,11 +37,12 @@ impl Plugin for WindowPlugin {
 }
 
 fn runner(mut app: App) {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
     info!("Opening window...");
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_title("RustyCraft")
+        .with_window_icon(Some(Icon::from_rgba(icon::IMAGE_DATA.to_vec(), icon::IMAGE_WIDTH as u32, icon::IMAGE_HEIGHT as u32).expect("Bad Icon")))
+        .build(&event_loop).unwrap();
 
     app.insert_resource(Window(window));
 
