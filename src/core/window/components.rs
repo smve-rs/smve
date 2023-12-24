@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use bevy_ecs::prelude::Component;
 use crate::core::window::icon;
+use bevy_ecs::prelude::Component;
 
 #[derive(Component)]
 pub struct PrimaryWindow;
@@ -29,7 +29,7 @@ pub struct Window {
     pub title: String,
     pub icon_width: u32,
     pub icon_height: u32,
-    pub icon_data: Option<Vec<u8>>
+    pub icon_data: Option<Vec<u8>>,
 }
 
 impl Default for Window {

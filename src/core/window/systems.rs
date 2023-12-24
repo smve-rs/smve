@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use bevy_app::AppExit;
 use crate::core::window::components::{PrimaryWindow, Window};
+use crate::core::window::events::CloseRequestedEvent;
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
+use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
-use crate::core::window::events::CloseRequestedEvent;
 
 pub fn u_primary_window_check(
     mut commands: Commands,
@@ -49,11 +49,14 @@ pub fn u_primary_window_check(
 pub fn u_close_windows(
     mut commands: Commands,
     mut close_requested_event: EventReader<CloseRequestedEvent>,
-    mut winit_windows: NonSendMut<WinitWindows>
+    mut winit_windows: NonSendMut<WinitWindows>,
 ) {
     for event in close_requested_event.read() {
         winit_windows.windows.remove(&event.window_id);
-        let entity = winit_windows.window_to_entity.remove(&event.window_id).unwrap();
+        let entity = winit_windows
+            .window_to_entity
+            .remove(&event.window_id)
+            .unwrap();
         commands.entity(entity).despawn();
         winit_windows.window_to_entity.remove(&event.window_id);
         winit_windows.entity_to_window.remove(&entity);
@@ -62,7 +65,7 @@ pub fn u_close_windows(
 
 pub fn pu_exit_on_primary_closed(
     mut app_exit_event: EventWriter<AppExit>,
-    windows: Query<(), (With<Window>, With<PrimaryWindow>)>
+    windows: Query<(), (With<Window>, With<PrimaryWindow>)>,
 ) {
     if windows.is_empty() {
         info!("Primary window closed, exiting");
@@ -72,7 +75,7 @@ pub fn pu_exit_on_primary_closed(
 
 pub fn pu_exit_on_all_closed(
     mut app_exit_event: EventWriter<AppExit>,
-    windows: Query<(), With<Window>>
+    windows: Query<(), With<Window>>,
 ) {
     if windows.is_empty() {
         info!("All windows closed, exiting");

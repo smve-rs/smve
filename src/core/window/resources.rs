@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::core::window::components::Window;
 use bevy_ecs::prelude::{Entity, Resource};
 use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use winit::dpi::LogicalSize;
 use winit::window::{Icon, WindowBuilder};
-use crate::core::window::components::Window;
 
 #[derive(Resource, Default)]
 pub struct PrimaryWindowCount(pub u32);

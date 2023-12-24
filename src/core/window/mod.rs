@@ -19,33 +19,35 @@
 pub mod resources;
 
 pub mod components;
+pub mod events;
 pub mod icon;
 pub mod systems;
-pub mod events;
 
-use bevy_app::{AppExit, PluginsState};
 use crate::core::window::components::{PrimaryWindow, Window};
+use crate::core::window::events::CloseRequestedEvent;
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
-use crate::core::window::systems::{pu_exit_on_all_closed, pu_exit_on_primary_closed, u_close_windows, u_primary_window_check};
+use crate::core::window::systems::{
+    pu_exit_on_all_closed, pu_exit_on_primary_closed, u_close_windows, u_primary_window_check,
+};
 use bevy_app::prelude::*;
+use bevy_app::{AppExit, PluginsState};
 use bevy_ecs::event::ManualEventReader;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use log::{error, info};
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
-use crate::core::window::events::CloseRequestedEvent;
 
 pub struct WindowPlugin {
     pub primary_window: Option<Window>,
-    pub exit_condition: ExitCondition
+    pub exit_condition: ExitCondition,
 }
 
 impl Default for WindowPlugin {
     fn default() -> Self {
         WindowPlugin {
             primary_window: Some(Window::default()),
-            exit_condition: ExitCondition::default()
+            exit_condition: ExitCondition::default(),
         }
     }
 }
@@ -55,7 +57,9 @@ impl Plugin for WindowPlugin {
         app.add_event::<CloseRequestedEvent>();
 
         if let Some(primary_window) = &self.primary_window {
-            app.world.spawn(primary_window.clone()).insert(PrimaryWindow);
+            app.world
+                .spawn(primary_window.clone())
+                .insert(PrimaryWindow);
         }
 
         match self.exit_condition {
@@ -104,23 +108,21 @@ fn runner(mut app: App) {
         }
 
         match event {
-            Event::NewEvents(start_cause) => {
-                match start_cause {
-                    StartCause::Init => {
-                        let (query, winit_windows) = create_windows_system_state.get_mut(&mut app.world);
-                        create_windows(query, winit_windows, window_target);
-                        create_windows_system_state.apply(&mut app.world);
-                    }
-                    _ => {}
+            Event::NewEvents(start_cause) => match start_cause {
+                StartCause::Init => {
+                    let (query, winit_windows) =
+                        create_windows_system_state.get_mut(&mut app.world);
+                    create_windows(query, winit_windows, window_target);
+                    create_windows_system_state.apply(&mut app.world);
                 }
-            }
+                _ => {}
+            },
             Event::WindowEvent {
-                window_id, event: WindowEvent::CloseRequested,
+                window_id,
+                event: WindowEvent::CloseRequested,
             } => {
                 // Close window
-                app.world.send_event(CloseRequestedEvent {
-                    window_id
-                })
+                app.world.send_event(CloseRequestedEvent { window_id })
             }
             Event::AboutToWait => {
                 if app.plugins_state() == PluginsState::Cleaned {
@@ -167,7 +169,7 @@ fn create_windows(
 pub enum ExitCondition {
     OnPrimaryClosed,
     OnAllClosed,
-    DontExit
+    DontExit,
 }
 
 impl Default for ExitCondition {
