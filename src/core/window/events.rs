@@ -16,14 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod core;
+use bevy_ecs::prelude::*;
 
-use crate::core::window::WindowPlugin;
-use bevy_app::prelude::*;
-use env_logger::Env;
-
-fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    App::new().add_plugins(WindowPlugin::default()).run();
+#[derive(Event)]
+pub struct CloseRequestedEvent {
+    pub window_id: winit::window::WindowId
 }

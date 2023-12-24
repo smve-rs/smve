@@ -16,14 +16,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod core;
+use bevy_ecs::prelude::Component;
+use crate::core::window::icon;
 
-use crate::core::window::WindowPlugin;
-use bevy_app::prelude::*;
-use env_logger::Env;
+#[derive(Component)]
+pub struct PrimaryWindow;
 
-fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+#[derive(Component, Clone)]
+pub struct Window {
+    pub width: u32,
+    pub height: u32,
+    pub title: String,
+    pub icon_width: u32,
+    pub icon_height: u32,
+    pub icon_data: Option<Vec<u8>>
+}
 
-    App::new().add_plugins(WindowPlugin::default()).run();
+impl Default for Window {
+    fn default() -> Self {
+        Window {
+            width: 800,
+            height: 600,
+            title: "RustyCraft".to_string(),
+            icon_width: icon::IMAGE_WIDTH as u32,
+            icon_height: icon::IMAGE_HEIGHT as u32,
+            icon_data: Some(icon::IMAGE_DATA.to_vec()),
+        }
+    }
 }
