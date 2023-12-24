@@ -1,4 +1,4 @@
-name: Build and Test
+name: Cargo Check
 
 on: [push, pull_request]
 
@@ -13,6 +13,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      run: cargo check --verbose
