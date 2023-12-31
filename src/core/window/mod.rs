@@ -99,10 +99,14 @@ fn runner(mut app: App) {
 
     let mut app_exit_event_reader = ManualEventReader::<AppExit>::default();
 
+    // ! Temporary fix of extra AboutToWait events on windows
+    let mut exited = false;
+
     let event_handler = move |event: Event<()>, window_target: &EventLoopWindowTarget<()>| {
         if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
             if app_exit_event_reader.read(app_exit_events).last().is_some() {
                 window_target.exit();
+                exited = true;
                 return;
             }
         }
@@ -125,12 +129,13 @@ fn runner(mut app: App) {
                 app.world.send_event(CloseRequestedEvent { window_id })
             }
             Event::AboutToWait => {
-                if app.plugins_state() == PluginsState::Cleaned {
+                if app.plugins_state() == PluginsState::Cleaned && !exited{
                     app.update();
 
                     if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
                         if app_exit_event_reader.read(app_exit_events).last().is_some() {
                             window_target.exit();
+                            exited = true;
                             return;
                         }
                     }
