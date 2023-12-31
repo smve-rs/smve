@@ -129,7 +129,7 @@ fn runner(mut app: App) {
                 app.world.send_event(CloseRequestedEvent { window_id })
             }
             Event::AboutToWait => {
-                if app.plugins_state() == PluginsState::Cleaned && !exited{
+                if app.plugins_state() == PluginsState::Cleaned && !exited {
                     app.update();
 
                     if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
