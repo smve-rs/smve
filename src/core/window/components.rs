@@ -1,5 +1,5 @@
 /*
- * RustyCraft: a voxel engine written in Rust
+ * Ruxel: a voxel engine written in Rust
  * Copyright (C)  2023  SunnyMonster
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@ impl Default for Window {
         Window {
             width: 800,
             height: 600,
-            title: "RustyCraft".to_string(),
+            title: "Ruxel".to_string(),
             icon_width: icon::IMAGE_WIDTH as u32,
             icon_height: icon::IMAGE_HEIGHT as u32,
             icon_data: Some(icon::IMAGE_DATA.to_vec()),

@@ -1538,7 +1538,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty_craft"
+name = "ruxel"
 version = "0.1.0"
 dependencies = [
  "bevy_app",

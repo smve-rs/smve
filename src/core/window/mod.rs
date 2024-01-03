@@ -1,5 +1,5 @@
 /*
- * RustyCraft: a voxel engine written in Rust
+ * Ruxel: a voxel engine written in Rust
  * Copyright (C)  2023  SunnyMonster
  *
  * This program is free software: you can redistribute it and/or modify

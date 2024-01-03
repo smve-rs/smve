@@ -1,9 +1,11 @@
-# RustyCraft
+# Ruxel
 
 A voxel engine written in rust.
 
-## Plans
+## What does the name mean?
+"Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a **voxel** engine written in **rust**.
 
+## Plans
 ***This project is still in its infancy so there are very little features.***
 
 The core engine will be an executable. You will be able to extend the engine with "mods" (they stand for modules, not
@@ -21,4 +23,4 @@ Modules hopefully also will be able to be written in normal Rust and compiled in
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/smgfx/rusty_craft/blob/master/CONTRIBUTING.md) for contributing guides.
+See [CONTRIBUTING.md](https://github.com/smgfx/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
