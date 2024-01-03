@@ -1,8 +1,5 @@
 <component name="CopyrightManager">
   <settings>
-    <module2copyright>
-      <element module="Rust Fles" copyright="Ruxel GPL" />
-    </module2copyright>
     <LanguageOptions name="__TEMPLATE__">
       <option name="box" value="true" />
     </LanguageOptions>
