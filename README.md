@@ -26,15 +26,15 @@ Modules hopefully also will be able to be written in normal Rust and compiled in
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/smgfx/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
+See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
 
 ## License
 
 Unless specifically stated, all code in this repository is dual-licensed under either
 
-* MIT License ([LICENSE-MIT](https://github.com/smgfx/ruxel/blob/master/LICENSE-MIT)
+* MIT License ([LICENSE-MIT](https://github.com/ItsSunnyMonster/ruxel/blob/master/LICENSE-MIT)
   or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-* Apache License ([LICENSE-APACHE](https://github.com/smgfx/ruxel/blob/master/LICENSE-APACHE)
+* Apache License ([LICENSE-APACHE](https://github.com/ItsSunnyMonster/ruxel/blob/master/LICENSE-APACHE)
   or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
 
 at your option. This means you can select the license you prefer.
