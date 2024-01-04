@@ -3,7 +3,7 @@
 A voxel engine written in rust.
 
 [![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/ItsSunnyMonster/ruxel#license)
-[![CI](https://github.com/ItsSunnyMonster/ruxel/actions/workflows/checks.yml/badge.svg)](https://github.com/ItsSunnyMonster/ruxel/actions)
+[![CI](https://github.com/ItsSunnyMonster/ruxel/actions/workflows/ci.yml/badge.svg)](https://github.com/ItsSunnyMonster/ruxel/actions)
 
 ## What does the name mean?
 
