@@ -6,35 +6,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["windows", "macos", "ubuntu"]
-        configuration: ["debug", "release"]
-    runs-on: ${{ matrix.os }}-latest
-    steps:
-    - name: Install LLD on Windows
-      if: matrix.os == 'windows'
-      run: |
-        cargo install -f cargo-binutils
-        rustup component add llvm-tools-preview
-    - name: Install LLD on macOS
-      if: matrix.os == 'macos'
-      run: brew install llvm
-    - name: Install LLD on Ubuntu
-      if: matrix.os == 'ubuntu'
-      run: sudo apt-get install lld
-    - uses: actions/checkout@v4
-    - name: Cargo build
-      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
-    - name: Upload binary
-      uses: actions/upload-artifact@v4.0.0
-      with:
-        name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
-        path: target/${{ matrix.configuration }}/ruxel
-
-
   commitlint:
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +33,37 @@ jobs:
         if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
+  build:
+    needs: commitlint
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows", "macos", "ubuntu"]
+        configuration: ["debug", "release"]
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+    - name: Install LLD on Windows
+      if: matrix.os == 'windows'
+      run: |
+        cargo install -f cargo-binutils
+        rustup component add llvm-tools-preview
+    - name: Install LLD on macOS
+      if: matrix.os == 'macos'
+      run: brew install llvm
+    - name: Install LLD on Ubuntu
+      if: matrix.os == 'ubuntu'
+      run: sudo apt-get install lld
+    - uses: actions/checkout@v4
+    - name: Cargo build
+      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
+    - name: Upload binary
+      uses: actions/upload-artifact@v4.0.0
+      with:
+        name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
+        path: target/${{ matrix.configuration }}/ruxel
+
   format:
+    needs: commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
