@@ -13,6 +13,17 @@ jobs:
         configuration: ["debug", "release"]
     runs-on: ${{ matrix.os }}-latest
     steps:
+    - name: Install LLD on Windows
+      if: matrix.os == 'windows'
+      run: |
+        cargo install -f cargo-binutils
+        rustup component add llvm-tools-preview
+    - name: Install LLD on macOS
+      if: matrix.os == 'macos'
+      run: brew install llvm
+    - name: Install LLD on Ubuntu
+      if: matrix.os == 'ubuntu'
+      run: sudo apt-get install lld
     - uses: actions/checkout@v4
     - name: Cargo check debug
       run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
