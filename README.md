@@ -2,6 +2,9 @@
 
 A voxel engine written in rust.
 
+[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/ItsSunnyMonster/ruxel#license)
+[![CI](https://github.com/ItsSunnyMonster/ruxel/actions/workflows/checks.yml/badge.svg)](https://github.com/ItsSunnyMonster/ruxel/actions)
+
 ## What does the name mean?
 
 "Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a
