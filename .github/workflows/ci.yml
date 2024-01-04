@@ -6,12 +6,22 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        os: ["windows", "macos", "ubuntu"]
+        configuration: ["debug", "release"]
+    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Cargo check
-      run: cargo check --verbose
+    - name: Cargo check debug
+      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
+    - name: Upload binary
+      uses: actions/upload-artifact@v4.0.0
+      with:
+        name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
+        path: target/${{ matrix.configuration }}/ruxel
+
 
   commitlint:
     runs-on: ubuntu-latest
