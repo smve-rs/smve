@@ -34,7 +34,7 @@ jobs:
         run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
       - name: README IF FAILED
-        if: failed()
+        if: failure()
         run: echo 'Your commit message(s) does not conform to convention. See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits) for more information.'
 
   clippy:
@@ -56,7 +56,7 @@ jobs:
           components: clippy
       - run: cargo clippy -- -Dwarnings
       - name: README IF FAILED
-        if: failed()
+        if: failure()
         run: echo 'Please fix clippy's suggestions with `cargo clippy --fix`'
 
   build:
@@ -97,7 +97,7 @@ jobs:
         name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
         path: target/${{ matrix.configuration }}/ruxel${{ matrix.os == 'windows' && '.exe' || '' }}
     - name: README IF FAILED
-      if: failed()
+      if: failure()
       run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
 
   format:
@@ -175,5 +175,5 @@ jobs:
           VALIDATE_MARKDOWN: true
 
       - name: README IF FAILED
-        if: failed()
+        if: failure()
         run: echo 'Please fix the formatting errors in markdown files as suggested.'
