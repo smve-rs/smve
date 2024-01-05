@@ -33,8 +33,13 @@ jobs:
         if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cargo clippy -- -Dwarnings
+
   build:
-    needs: commitlint
+    needs: [commitlint, clippy]
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +68,7 @@ jobs:
         path: target/${{ matrix.configuration }}/ruxel${{ matrix.os == 'windows' && '.exe' || '' }}
 
   format:
-    needs: commitlint
+    needs: [commitlint, clippy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
