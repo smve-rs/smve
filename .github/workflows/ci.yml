@@ -53,7 +53,7 @@ jobs:
       - run: cargo clippy -- -Dwarnings
 
   build:
-    needs: [commitlint, clippy]
+    needs: [commitlint, clippy, miri]
     strategy:
       fail-fast: false
       matrix:
@@ -139,3 +139,28 @@ jobs:
         run: |
           echo 'To fix toml fmt, please run `taplo fmt`'
           echo 'Or if you use VSCode, use the Even Better Toml extension'
+
+
+  miri:
+    needs: commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: miri
+      - name: Test with Miri
+        run: cargo miri test
+        env:
+          # -Zrandomize-layout makes sure we dont rely on the layout of anything that might change
+          RUSTFLAGS: -Zrandomize-layout
