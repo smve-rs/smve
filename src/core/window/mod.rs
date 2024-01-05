@@ -153,14 +153,12 @@ fn create_windows(
 }
 
 #[allow(dead_code)]
+#[derive(Default)]
 pub enum ExitCondition {
     OnPrimaryClosed,
+    #[default]
     OnAllClosed,
     DontExit,
 }
 
-impl Default for ExitCondition {
-    fn default() -> Self {
-        ExitCondition::OnAllClosed
-    }
-}
+

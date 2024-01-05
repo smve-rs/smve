@@ -44,7 +44,7 @@ impl WinitWindows {
                     .expect("Bad Icon"),
             ));
         }
-        let winit_window = window_builder.build(&event_loop).unwrap();
+        let winit_window = window_builder.build(event_loop).unwrap();
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);
         self.windows.insert(winit_window.id(), winit_window);
