@@ -35,7 +35,7 @@ jobs:
 
       - name: README IF FAILED
         if: failure()
-        run: echo 'Your commit message(s) does not conform to convention. See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits) for more information.'
+        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits for more information.'
 
   clippy:
     needs: commitlint
