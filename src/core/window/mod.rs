@@ -94,15 +94,11 @@ fn runner(mut app: App) {
         }
 
         match event {
-            Event::NewEvents(start_cause) => match start_cause {
-                StartCause::Init => {
-                    let (query, winit_windows) =
-                        create_windows_system_state.get_mut(&mut app.world);
-                    create_windows(query, winit_windows, window_target);
-                    create_windows_system_state.apply(&mut app.world);
-                }
-                _ => {}
-            },
+            Event::NewEvents(StartCause::Init) => {
+                let (query, winit_windows) = create_windows_system_state.get_mut(&mut app.world);
+                create_windows(query, winit_windows, window_target);
+                create_windows_system_state.apply(&mut app.world);
+            }
             Event::WindowEvent {
                 window_id,
                 event: WindowEvent::CloseRequested,
@@ -160,5 +156,3 @@ pub enum ExitCondition {
     OnAllClosed,
     DontExit,
 }
-
-
