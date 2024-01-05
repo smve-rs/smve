@@ -74,6 +74,8 @@ jobs:
   format:
     needs: [commitlint, clippy]
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
