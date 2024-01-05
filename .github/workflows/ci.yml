@@ -74,8 +74,6 @@ jobs:
   format:
     needs: [commitlint, clippy]
     runs-on: ubuntu-latest
-    # I literally cannot figure out which permission is needed to allow requesting changes in pull requests
-    permissions: write-all
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
@@ -93,7 +91,4 @@ jobs:
             Automated commit from Github Actions
       - name: Rust format on pull request
         if: github.event_name == 'pull_request'
-        uses: mbrobbel/rustfmt-check@master
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
+        run: cargo fmt --all -- --check
