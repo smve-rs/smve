@@ -74,8 +74,8 @@ jobs:
   format:
     needs: [commitlint, clippy]
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
+    # I literally cannot figure out which permission is needed to allow requesting changes in pull requests
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
