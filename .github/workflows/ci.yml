@@ -34,6 +34,7 @@ jobs:
         run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   clippy:
+    needs: commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +91,7 @@ jobs:
         path: target/${{ matrix.configuration }}/ruxel${{ matrix.os == 'windows' && '.exe' || '' }}
 
   format:
-    needs: [commitlint, clippy]
+    needs: commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -119,3 +120,22 @@ jobs:
       - name: Rust format on pull request
         if: github.event_name == 'pull_request'
         run: cargo fmt --all -- --check
+
+  toml:
+    needs: commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install taplo
+        run: |
+          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-full-linux-x86_64.gz \
+          | gzip -d - \
+          | install -m 755 /dev/stdin /usr/local/bin/taplo
+      - name: Run Taplo
+        id: taplo
+        run: taplo fmt --check --diff
+      - name: Taplo info
+        if: failure()
+        run: |
+          echo 'To fix toml fmt, please run `taplo fmt`'
+          echo 'Or if you use VSCode, use the Even Better Toml extension'
