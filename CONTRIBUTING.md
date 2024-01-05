@@ -6,3 +6,5 @@ This project follows the [conventional commits](https://www.conventionalcommits.
 To help you with this, make sure you run `npm install` after you checkout the repo. It will fail if your commit message does not comply to the standard.
 
 You can also commit by doing `git add` and then `npm run commit` to get a CLI interface to specify the different parts to the commit.
+
+aSDGJASLKFWEQFHKQWEJKFQWERKFHJDASKGHALDKSFASKLDGASKFJSDKHGSJF
