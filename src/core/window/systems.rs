@@ -5,6 +5,8 @@ use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
 
+/// System to make sure there is ever one primary window
+/// It will remove the primary window component from any duplicates found
 pub fn u_primary_window_check(
     mut commands: Commands,
     mut query: Query<(Entity, Option<&Window>), Added<PrimaryWindow>>,
@@ -28,6 +30,7 @@ pub fn u_primary_window_check(
     }
 }
 
+/// This closes and despawns a window when a close requested event is emitted
 pub fn u_close_windows(
     mut commands: Commands,
     mut close_requested_event: EventReader<CloseRequestedEvent>,
@@ -45,6 +48,7 @@ pub fn u_close_windows(
     }
 }
 
+/// Exits the app when the primary window is closed
 pub fn pu_exit_on_primary_closed(
     mut app_exit_event: EventWriter<AppExit>,
     windows: Query<(), (With<Window>, With<PrimaryWindow>)>,
@@ -55,6 +59,7 @@ pub fn pu_exit_on_primary_closed(
     }
 }
 
+/// Exits the app when all windows are closed
 pub fn pu_exit_on_all_closed(
     mut app_exit_event: EventWriter<AppExit>,
     windows: Query<(), With<Window>>,

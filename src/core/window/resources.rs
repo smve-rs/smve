@@ -6,9 +6,12 @@ use std::marker::PhantomData;
 use winit::dpi::LogicalSize;
 use winit::window::{Icon, WindowBuilder};
 
+/// Resource to keep track of the number of primary windows
+/// Used in a system to make sure there is only ever one primary window
 #[derive(Resource, Default)]
 pub struct PrimaryWindowCount(pub u32);
 
+/// Contains a map from the entity to the window and vice versa
 pub struct WinitWindows {
     pub windows: HashMap<winit::window::WindowId, winit::window::Window>,
     pub entity_to_window: HashMap<Entity, winit::window::WindowId>,
@@ -28,6 +31,7 @@ impl Default for WinitWindows {
 }
 
 impl WinitWindows {
+    /// Only called from a system to open any windows based on their Window component
     pub fn create_window(
         &mut self,
         event_loop: &winit::event_loop::EventLoopWindowTarget<()>,
