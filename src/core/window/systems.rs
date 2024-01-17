@@ -37,9 +37,7 @@ pub fn u_despawn_windows(
     winit_windows: NonSendMut<WinitWindows>,
 ) {
     for event in close_requested_event.read() {
-        let entity = winit_windows
-            .window_to_entity
-            [&event.window_id];
+        let entity = winit_windows.window_to_entity[&event.window_id];
         commands.entity(entity).despawn();
     }
 }
@@ -47,7 +45,7 @@ pub fn u_despawn_windows(
 /// This despawns
 pub fn u_close_windows(
     mut removed_windows: RemovedComponents<Window>,
-    mut winit_windows: NonSendMut<WinitWindows>
+    mut winit_windows: NonSendMut<WinitWindows>,
 ) {
     for entity in removed_windows.read() {
         winit_windows.destroy_window(entity);
