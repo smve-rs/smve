@@ -8,9 +8,7 @@ pub mod systems;
 use crate::core::window::components::{PrimaryWindow, Window};
 use crate::core::window::events::CloseRequestedEvent;
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
-use crate::core::window::systems::{
-    pu_exit_on_all_closed, pu_exit_on_primary_closed, u_close_windows, u_primary_window_check,
-};
+use crate::core::window::systems::{pu_exit_on_all_closed, pu_exit_on_primary_closed, u_despawn_windows, u_close_windows, u_primary_window_check};
 use bevy_app::prelude::*;
 use bevy_app::{AppExit, PluginsState};
 use bevy_ecs::event::ManualEventReader;
@@ -75,6 +73,7 @@ impl Plugin for WindowPlugin {
         // Add systems
         app.add_systems(Update, u_primary_window_check);
         app.add_systems(Update, u_close_windows);
+        app.add_systems(Update, u_despawn_windows);
 
         // Set event loop runner
         app.set_runner(runner);

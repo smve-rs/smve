@@ -53,4 +53,13 @@ impl WinitWindows {
         self.window_to_entity.insert(winit_window.id(), entity);
         self.windows.insert(winit_window.id(), winit_window);
     }
+
+    pub fn destroy_window(
+        &mut self,
+        entity: Entity
+    ) {
+        let window = self.entity_to_window.remove(&entity).unwrap();
+        self.window_to_entity.remove(&window);
+        self.windows.remove(&window);
+    }
 }
