@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -80,7 +80,7 @@ jobs:
       if: matrix.os == 'ubuntu'
       run: sudo apt-get install lld
     - uses: actions/checkout@v4
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/bin/
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
