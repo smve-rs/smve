@@ -134,7 +134,7 @@ fn runner(mut app: App) {
                 event: WindowEvent::CloseRequested,
             } => {
                 // Close window
-                app.world.send_event(CloseRequestedEvent { window_id })
+                app.world.send_event(CloseRequestedEvent { window_id });
             }
             // This is where the frame happens
             Event::AboutToWait => {
