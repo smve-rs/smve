@@ -5,6 +5,8 @@ use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
 
+/// System to make sure there is ever one primary window
+/// It will remove the primary window component from any duplicates found
 pub fn u_primary_window_check(
     mut commands: Commands,
     mut query: Query<(Entity, Option<&Window>), Added<PrimaryWindow>>,
@@ -28,23 +30,29 @@ pub fn u_primary_window_check(
     }
 }
 
-pub fn u_close_windows(
+/// This despawns an entity with a `Window` component when a close requested event is emitted
+pub fn u_despawn_windows(
     mut commands: Commands,
     mut close_requested_event: EventReader<CloseRequestedEvent>,
-    mut winit_windows: NonSendMut<WinitWindows>,
+    winit_windows: NonSendMut<WinitWindows>,
 ) {
     for event in close_requested_event.read() {
-        winit_windows.windows.remove(&event.window_id);
-        let entity = winit_windows
-            .window_to_entity
-            .remove(&event.window_id)
-            .unwrap();
+        let entity = winit_windows.window_to_entity[&event.window_id];
         commands.entity(entity).despawn();
-        winit_windows.window_to_entity.remove(&event.window_id);
-        winit_windows.entity_to_window.remove(&entity);
     }
 }
 
+/// This despawns
+pub fn u_close_windows(
+    mut removed_windows: RemovedComponents<Window>,
+    mut winit_windows: NonSendMut<WinitWindows>,
+) {
+    for entity in removed_windows.read() {
+        winit_windows.destroy_window(entity);
+    }
+}
+
+/// Exits the app when the primary window is closed
 pub fn pu_exit_on_primary_closed(
     mut app_exit_event: EventWriter<AppExit>,
     windows: Query<(), (With<Window>, With<PrimaryWindow>)>,
@@ -55,6 +63,7 @@ pub fn pu_exit_on_primary_closed(
     }
 }
 
+/// Exits the app when all windows are closed
 pub fn pu_exit_on_all_closed(
     mut app_exit_event: EventWriter<AppExit>,
     windows: Query<(), With<Window>>,

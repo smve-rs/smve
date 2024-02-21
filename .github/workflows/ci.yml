@@ -33,14 +33,31 @@ jobs:
         if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
+      - name: README IF FAILED
+        if: failure()
+        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits for more information.'
+
   clippy:
+    needs: commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
       - run: cargo clippy -- -Dwarnings
+      - name: README IF FAILED
+        if: failure()
+        run: echo 'Please fix clippy's suggestions with `cargo clippy --fix`'
 
   build:
     needs: [commitlint, clippy]
@@ -63,21 +80,40 @@ jobs:
       if: matrix.os == 'ubuntu'
       run: sudo apt-get install lld
     - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
     - name: Cargo build
       run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
     - name: Upload binary
-      uses: actions/upload-artifact@v4.0.0
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
         path: target/${{ matrix.configuration }}/ruxel${{ matrix.os == 'windows' && '.exe' || '' }}
+    - name: README IF FAILED
+      if: failure()
+      run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
 
   format:
-    needs: [commitlint, clippy]
+    needs: commitlint
     runs-on: ubuntu-latest
-    # I literally cannot figure out which permission is needed to allow requesting changes in pull requests
-    permissions: write-all
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -93,7 +129,51 @@ jobs:
             Automated commit from Github Actions
       - name: Rust format on pull request
         if: github.event_name == 'pull_request'
-        uses: mbrobbel/rustfmt-check@master
+        run: cargo fmt --all -- --check
+
+  toml:
+    needs: commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install taplo
+        run: |
+          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-full-linux-x86_64.gz \
+          | gzip -d - \
+          | install -m 755 /dev/stdin /usr/local/bin/taplo
+      - name: Run Taplo
+        id: taplo
+        run: taplo fmt --check --diff
+      - name: Taplo info
+        if: failure()
+        run: |
+          echo 'To fix toml fmt, please run `taplo fmt`'
+          echo 'Or if you use VSCode, use the Even Better Toml extension'
+
+  markdown-lint:
+    needs: commitlint
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+      # To report GitHub Actions status checks
+      statuses: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
+          # super-linter needs the full git history to get the
+          # list of files that changed across commits
+          fetch-depth: 0
+
+      - name: Super-linter
+        uses: super-linter/super-linter/slim@v6.0.0  # x-release-please-version
+        env:
+          MULTI_STATUS: false
+          VALIDATE_MARKDOWN: true
+
+      - name: README IF FAILED
+        if: failure()
+        run: echo 'Please fix the formatting errors in markdown files as suggested.'
