@@ -1,9 +1,9 @@
 use crate::core::graphics::resources::GraphicsState;
-use bevy_app::{App, Plugin, Update};
 use crate::core::graphics::systems::{u_create_surface, u_destroy_surface, u_resize};
+use bevy_app::{App, Plugin, Update};
 
-pub mod resources;
 mod gpu_selection_utils;
+pub mod resources;
 mod systems;
 
 pub struct GraphicsPlugin;

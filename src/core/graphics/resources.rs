@@ -1,9 +1,11 @@
+use crate::core::graphics::gpu_selection_utils::{
+    eliminate_gpu_on_unsupported_feats, select_gpu_on_backend, select_gpu_on_type,
+};
 use crate::core::window::components::Window;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use wgpu::{Backends, PresentMode};
-use crate::core::graphics::gpu_selection_utils::{eliminate_gpu_on_unsupported_feats, select_gpu_on_backend, select_gpu_on_type};
 
 pub struct GraphicsState<'window> {
     // Global Objects
@@ -19,28 +21,31 @@ pub struct GraphicsState<'window> {
 }
 
 impl<'window> GraphicsState<'window> {
-    pub async fn new() -> Self{
+    pub async fn new() -> Self {
         let instance = wgpu::Instance::default();
-        
+
         let mut adapters = instance.enumerate_adapters(Backends::all());
         assert!(!adapters.is_empty(), "No GPU!");
-        
+
         adapters = eliminate_gpu_on_unsupported_feats(adapters);
         adapters = select_gpu_on_type(adapters);
         adapters = select_gpu_on_backend(adapters);
-        
+
         // Simply choose the first one
         let adapter = adapters.remove(0);
 
-        let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                label: None
-            },
-            None,
-        ).await.unwrap();
-        
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::default(),
+                    label: None,
+                },
+                None,
+            )
+            .await
+            .unwrap();
+
         Self {
             instance,
             device,
@@ -63,7 +68,8 @@ impl<'window> GraphicsState<'window> {
         let surface_format = surface_caps
             .formats
             .iter()
-            .copied().find(|f| f.is_srgb())
+            .copied()
+            .find(|f| f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,

@@ -19,7 +19,7 @@ pub struct Window {
     /// A flat vector of RGBA data of the icon
     /// `None` if there is no icon
     pub icon_data: Option<Vec<u8>>,
-    pub vsync: bool
+    pub vsync: bool,
 }
 
 impl Default for Window {
@@ -31,7 +31,7 @@ impl Default for Window {
             icon_width: icon::IMAGE_WIDTH as u32,
             icon_height: icon::IMAGE_HEIGHT as u32,
             icon_data: Some(icon::IMAGE_DATA.to_vec()),
-            vsync: true
+            vsync: true,
         }
     }
 }
