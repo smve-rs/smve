@@ -6,3 +6,14 @@ use bevy_ecs::prelude::*;
 pub struct CloseRequestedEvent {
     pub window_id: winit::window::WindowId,
 }
+
+#[derive(Event)]
+pub struct WindowResizedEvent {
+    pub window_id: winit::window::WindowId,
+    pub new_inner_size: winit::dpi::PhysicalSize<u32>,
+}
+
+#[derive(Event)]
+pub struct WindowCreatedEvent {
+    pub window_id: winit::window::WindowId,
+}

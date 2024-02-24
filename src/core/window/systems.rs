@@ -43,7 +43,7 @@ pub fn u_despawn_windows(
 }
 
 /// This despawns
-pub fn u_close_windows(
+pub fn pu_close_windows(
     mut removed_windows: RemovedComponents<Window>,
     mut winit_windows: NonSendMut<WinitWindows>,
 ) {

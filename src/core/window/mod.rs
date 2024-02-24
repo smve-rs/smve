@@ -6,10 +6,10 @@ pub mod icon;
 pub mod systems;
 
 use crate::core::window::components::{PrimaryWindow, Window};
-use crate::core::window::events::CloseRequestedEvent;
+use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
 use crate::core::window::systems::{
-    pu_exit_on_all_closed, pu_exit_on_primary_closed, u_close_windows, u_despawn_windows,
+    pu_close_windows, pu_exit_on_all_closed, pu_exit_on_primary_closed, u_despawn_windows,
     u_primary_window_check,
 };
 use bevy_app::prelude::*;
@@ -20,6 +20,8 @@ use bevy_ecs::system::SystemState;
 use log::{error, info};
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
+
+use super::graphics::GraphicsPlugin;
 
 /// The plugin which adds a window and associated systems to the app.
 ///
@@ -49,6 +51,8 @@ impl Plugin for WindowPlugin {
     fn build(&self, app: &mut App) {
         // Register events
         app.add_event::<CloseRequestedEvent>();
+        app.add_event::<WindowCreatedEvent>();
+        app.add_event::<WindowResizedEvent>();
 
         // If a primary window is specified, spawn the entity with the window
         if let Some(primary_window) = &self.primary_window {
@@ -75,8 +79,10 @@ impl Plugin for WindowPlugin {
 
         // Add systems
         app.add_systems(Update, u_primary_window_check);
-        app.add_systems(Update, u_close_windows);
+        app.add_systems(PostUpdate, pu_close_windows);
         app.add_systems(Update, u_despawn_windows);
+
+        app.add_plugins(GraphicsPlugin);
 
         // Set event loop runner
         app.set_runner(runner);
@@ -102,6 +108,7 @@ fn runner(mut app: App) {
     let mut create_windows_system_state: SystemState<(
         Query<(Entity, &Window), Added<Window>>,
         NonSendMut<WinitWindows>,
+        EventWriter<WindowCreatedEvent>,
     )> = SystemState::from_world(&mut app.world);
 
     // Event reader to read any app exit events
@@ -111,6 +118,12 @@ fn runner(mut app: App) {
     let mut exited = false;
 
     let event_handler = move |event: Event<()>, window_target: &EventLoopWindowTarget<()>| {
+        // Do bevy plugin thing again
+        if app.plugins_state() == PluginsState::Ready {
+            app.finish();
+            app.cleanup();
+        }
+
         // Close the event loop if there is any app exit events
         if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
             if app_exit_event_reader.read(app_exit_events).last().is_some() {
@@ -124,17 +137,25 @@ fn runner(mut app: App) {
             // Start of the event loop
             Event::NewEvents(StartCause::Init) => {
                 // Create any new windows
-                let (query, winit_windows) = create_windows_system_state.get_mut(&mut app.world);
-                create_windows(query, winit_windows, window_target);
+                let (query, winit_windows, window_created_event) =
+                    create_windows_system_state.get_mut(&mut app.world);
+                create_windows(query, winit_windows, window_created_event, window_target);
                 create_windows_system_state.apply(&mut app.world);
             }
-            // Send a close requested event so systems can drop the Window and despawn windows
-            Event::WindowEvent {
-                window_id,
-                event: WindowEvent::CloseRequested,
-            } => {
-                // Close window
-                app.world.send_event(CloseRequestedEvent { window_id });
+            Event::WindowEvent { window_id, event } => {
+                match event {
+                    WindowEvent::CloseRequested => {
+                        // Send a close requested event so systems can drop the Window and despawn windows
+                        app.world.send_event(CloseRequestedEvent { window_id });
+                    }
+                    WindowEvent::Resized(size) => {
+                        app.world.send_event(WindowResizedEvent {
+                            window_id,
+                            new_inner_size: size,
+                        });
+                    }
+                    _ => {}
+                }
             }
             // This is where the frame happens
             Event::AboutToWait => {
@@ -151,16 +172,15 @@ fn runner(mut app: App) {
                             return;
                         }
                     }
-
-                    // TODO: shouldn't we do the same plugin functions as at the top?
                 }
             }
             _ => {}
         };
 
         // Create any new windows that were added
-        let (query, winit_windows) = create_windows_system_state.get_mut(&mut app.world);
-        create_windows(query, winit_windows, window_target);
+        let (query, winit_windows, window_created_event) =
+            create_windows_system_state.get_mut(&mut app.world);
+        create_windows(query, winit_windows, window_created_event, window_target);
         create_windows_system_state.apply(&mut app.world);
     };
 
@@ -178,6 +198,7 @@ fn runner(mut app: App) {
 fn create_windows(
     query: Query<(Entity, &Window), Added<Window>>,
     mut winit_windows: NonSendMut<WinitWindows>,
+    mut window_created_event: EventWriter<WindowCreatedEvent>,
     event_loop: &EventLoopWindowTarget<()>,
 ) {
     for (entity, window) in query.iter() {
@@ -186,7 +207,10 @@ fn create_windows(
             continue;
         }
 
-        winit_windows.create_window(event_loop, entity, window);
+        let winit_window = winit_windows.create_window(event_loop, entity, window);
+        window_created_event.send(WindowCreatedEvent {
+            window_id: winit_window.id(),
+        });
     }
 }
 
