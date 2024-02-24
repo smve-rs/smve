@@ -52,7 +52,7 @@ impl<'window> GraphicsState<'window> {
             queue,
             adapter,
             surface_states: HashMap::new(),
-            _not_send_sync: Default::default(),
+            _not_send_sync: PhantomData,
         }
     }
 
