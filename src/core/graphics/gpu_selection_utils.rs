@@ -87,25 +87,25 @@ where
 
     // Add the GPUs from the top score into a results vector
     let mut results = vec![];
-    
+
     // Keep track of changed indices
     let mut changed_indices: HashMap<usize, usize> = HashMap::new();
-    
+
     for pair in sorted.iter() {
         // If the score is different from the top, stop iterating
         if pair.1 != sorted.first().unwrap().1 {
             break;
         }
-        
+
         // The removed index is either `pair.0` or the new index stored in `changed_indices`
         let removed_index = if changed_indices.contains_key(&pair.0) {
             changed_indices[&pair.0]
         } else {
             pair.0
         };
-        
+
         results.push(adapters.swap_remove(removed_index));
-        
+
         // Explanation: since swap_remove removes the adapter at `pair.0` and puts the last element in its place,
         // We can simply say that the last element of the adapters vector is now found at the removed index.
         changed_indices.insert(adapters.len(), removed_index);
