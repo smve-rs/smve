@@ -2,10 +2,10 @@ use crate::core::graphics::gpu_selection_utils::{
     eliminate_gpu_on_unsupported_feats, select_gpu_on_backend, select_gpu_on_type,
 };
 use crate::core::window::components::Window;
+use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use log::info;
 use wgpu::{Backends, PresentMode};
 
 pub struct GraphicsState<'window> {
@@ -34,7 +34,7 @@ impl<'window> GraphicsState<'window> {
 
         // Simply choose the first one
         let adapter = adapters.remove(0);
-        
+
         info!("Selected Adapter: {:?}", adapter.get_info());
 
         let (device, queue) = adapter
