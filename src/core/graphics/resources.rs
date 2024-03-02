@@ -59,7 +59,7 @@ impl<'window> GraphicsState<'window> {
         }
     }
 
-    pub async fn create_surface(
+    pub fn create_surface(
         &mut self,
         window: Arc<winit::window::Window>,
         window_component: &Window,

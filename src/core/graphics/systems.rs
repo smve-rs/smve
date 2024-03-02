@@ -18,7 +18,7 @@ pub fn u_create_surface(
         let window_component = query
             .get(window_entity)
             .unwrap_or_else(|_| panic!("No Window component found on entity {:?}!", window_entity));
-        pollster::block_on(graphics_state.create_surface(window, window_component));
+        graphics_state.create_surface(window, window_component);
         info!("Surface created for window on {:?}", window_entity);
     }
 }
