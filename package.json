@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "@commitlint/cli": "^19.0.3",
-    "@commitlint/config-conventional": "^18.4.2",
+    "@commitlint/config-conventional": "^19.0.3",
     "@commitlint/prompt-cli": "^19.0.3",
     "husky": "^9.0.11"
   },
