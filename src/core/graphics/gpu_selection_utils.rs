@@ -22,8 +22,9 @@ fn get_backend_score(adapter: &Adapter) -> u8 {
         Backend::BrowserWebGpu => 0,
         Backend::Metal => 0,
         Backend::Gl => 1,
-        Backend::Vulkan => 2,
-        Backend::Dx12 => 3,
+        // Temporary fix for Dx12 backend crashing
+        Backend::Vulkan => 3,
+        Backend::Dx12 => 2,
     }
 
     #[cfg(target_os = "macos")]

@@ -6,7 +6,7 @@ use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use wgpu::{Backends, PresentMode};
+use wgpu::{Backends, InstanceDescriptor, PresentMode};
 
 pub struct GraphicsState<'window> {
     // Global Objects
@@ -23,7 +23,10 @@ pub struct GraphicsState<'window> {
 
 impl<'window> GraphicsState<'window> {
     pub async fn new() -> Self {
-        let instance = wgpu::Instance::default();
+        let instance = wgpu::Instance::new(InstanceDescriptor {
+            backends: Backends::PRIMARY,
+            ..Default::default()
+        });
 
         let mut adapters = instance.enumerate_adapters(Backends::all());
         assert!(!adapters.is_empty(), "No GPU!");
