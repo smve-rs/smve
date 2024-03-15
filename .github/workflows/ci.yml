@@ -197,7 +197,7 @@ jobs:
           echo 'To fix toml fmt, please run `taplo fmt`'
           echo 'Or if you use VSCode, use the Even Better Toml extension'
 
-  markdown-lint_skip_check:
+  markdown_lint_skip_check:
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -207,9 +207,9 @@ jobs:
         with:
           paths: '["**.md"]'
 
-  markdown-lint:
-    needs: [markdown-lint_skip_check, commitlint]
-    if: needs.markdown-lint_skip_check.outputs.should_skip != 'true'
+  markdown_lint:
+    needs: [markdown_lint_skip_check, commitlint]
+    if: needs.markdown_lint_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
     permissions:
@@ -235,3 +235,30 @@ jobs:
       - name: README IF FAILED
         if: failure()
         run: echo 'Please fix the formatting errors in markdown files as suggested.'
+
+  yaml_lint_skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["**.yml"]'
+
+  yaml_lint:
+    needs: [yaml_lint_skip_check, commitlint]
+    if: needs.yaml_lint_skip_check.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: action/checkout@v4
+
+      - name: YAML Lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          strict: true
+
+      - name: README IF FAILED
+        if: failure()
+        run: echo 'Please fix the YAML formatting errors as suggested.'
