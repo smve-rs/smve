@@ -6,7 +6,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  pre_commitlint:
+  skip_check:
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -18,8 +18,8 @@ jobs:
           skip_after_successful_duplicate: 'true'
 
   commitlint:
-    needs: pre_commitlint
-    if: needs.pre_commitlint.outputs.should_skip != 'true'
+    needs: skip_check
+    if: needs.skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,8 +50,20 @@ jobs:
         if: failure()
         run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits for more information.'
 
+  clippy_skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["**/Cargo.lock", "**/Cargo.toml", "src/**.rs"]'
+
+
   clippy:
-    needs: commitlint
+    needs: [clippy_skip_check, commitlint]
+    if: needs.clippy_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -113,8 +125,19 @@ jobs:
       if: failure()
       run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
 
+  format_skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["src/**.rs"]'
+
   format:
-    needs: commitlint
+    needs: [format_skip_check, commitlint]
+    if: needs.format_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,8 +167,19 @@ jobs:
         if: github.event_name == 'pull_request'
         run: cargo fmt --all -- --check
 
+  toml_skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["**.toml"]'
+
   toml:
-    needs: commitlint
+    needs: [toml_skip_check, commitlint]
+    if: needs.toml_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -163,8 +197,19 @@ jobs:
           echo 'To fix toml fmt, please run `taplo fmt`'
           echo 'Or if you use VSCode, use the Even Better Toml extension'
 
+  markdown-lint_skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["**.md"]'
+
   markdown-lint:
-    needs: commitlint
+    needs: [markdown-lint_skip_check, commitlint]
+    if: needs.markdown-lint_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
     permissions:
