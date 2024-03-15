@@ -51,6 +51,7 @@ jobs:
         run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits for more information.'
 
   clippy_skip_check:
+    needs: commitlint
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -62,7 +63,7 @@ jobs:
 
 
   clippy:
-    needs: [clippy_skip_check, commitlint]
+    needs: clippy_skip_check
     if: needs.clippy_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +86,7 @@ jobs:
         run: echo 'Please fix clippy's suggestions with `cargo clippy --fix`'
 
   build:
-    needs: [commitlint, clippy]
+    needs: clippy
     strategy:
       fail-fast: false
       matrix:
@@ -126,6 +127,7 @@ jobs:
       run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
 
   format_skip_check:
+    needs: commitlint
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -136,7 +138,7 @@ jobs:
           paths: '["src/**.rs"]'
 
   format:
-    needs: [format_skip_check, commitlint]
+    needs: format_skip_check
     if: needs.format_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
@@ -168,6 +170,7 @@ jobs:
         run: cargo fmt --all -- --check
 
   toml_skip_check:
+    needs: commitlint
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -178,7 +181,7 @@ jobs:
           paths: '["**.toml"]'
 
   toml:
-    needs: [toml_skip_check, commitlint]
+    needs: toml_skip_check
     if: needs.toml_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
@@ -198,6 +201,7 @@ jobs:
           echo 'Or if you use VSCode, use the Even Better Toml extension'
 
   markdown_lint_skip_check:
+    needs: commitlint
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -208,7 +212,7 @@ jobs:
           paths: '["**.md"]'
 
   markdown_lint:
-    needs: [markdown_lint_skip_check, commitlint]
+    needs: markdown_lint_skip_check
     if: needs.markdown_lint_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -237,6 +241,7 @@ jobs:
         run: echo 'Please fix the formatting errors in markdown files as suggested.'
 
   yaml_lint_skip_check:
+    needs: commitlint
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -247,7 +252,7 @@ jobs:
           paths: '["**.yml"]'
 
   yaml_lint:
-    needs: [yaml_lint_skip_check, commitlint]
+    needs: yaml_lint_skip_check
     if: needs.yaml_lint_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
