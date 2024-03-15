@@ -23,10 +23,7 @@ pub struct GraphicsState<'window> {
 
 impl<'window> GraphicsState<'window> {
     pub async fn new() -> Self {
-        let instance = wgpu::Instance::new(InstanceDescriptor {
-            backends: Backends::PRIMARY,
-            ..Default::default()
-        });
+        let instance = wgpu::Instance::default();
 
         let mut adapters = instance.enumerate_adapters(Backends::all());
         assert!(!adapters.is_empty(), "No GPU!");
@@ -38,7 +35,21 @@ impl<'window> GraphicsState<'window> {
         // Simply choose the first one
         let adapter = adapters.remove(0);
 
-        info!("Selected Adapter: {:?}", adapter.get_info());
+        info!("Selected Backend: {:?}", adapter.get_info().backend);
+
+        // Recreate the instance based on the backend chosen (fix DX12 problem on windows)
+        let instance = wgpu::Instance::new(InstanceDescriptor {
+            backends: adapter.get_info().backend.into(),
+            ..Default::default()
+        });
+
+        let mut adapters = instance.enumerate_adapters(Backends::all());
+
+        adapters = eliminate_gpu_on_unsupported_feats(adapters);
+        adapters = select_gpu_on_type(adapters);
+
+        // Simply choose the first one
+        let adapter = adapters.remove(0);
 
         let (device, queue) = adapter
             .request_device(
