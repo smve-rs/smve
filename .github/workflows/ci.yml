@@ -59,7 +59,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
         with:
-          paths: '["**/Cargo.lock", "**/Cargo.toml", "src/**.rs"]'
+          paths: '["**/Cargo.lock", "**/Cargo.toml", "src/**/*.rs"]'
 
 
   clippy:
@@ -135,7 +135,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
         with:
-          paths: '["src/**.rs"]'
+          paths: '["src/**/*.rs"]'
 
   format:
     needs: format_skip_check
