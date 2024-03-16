@@ -2,8 +2,8 @@
 
 A voxel engine written in rust.
 
-[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/ItsSunnyMonster/ruxel#license)
-[![CI](https://github.com/ItsSunnyMonster/ruxel/actions/workflows/ci.yml/badge.svg)](https://github.com/ItsSunnyMonster/ruxel/actions)
+[![License](https://img.shields.io/badge/license-MIT%2FApache-89b4fa.svg?style=for-the-badge&labelColor=313244&logo=googleforms&logoColor=cdd6f4)](https://github.com/ItsSunnyMonster/ruxel#license)
+[![CI](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/f281831fdcd9df82cc6e848274577c6e010afa41/ruxel_ci.json)](https://github.com/ItsSunnyMonster/ruxel/actions)
 
 ## What does the name mean?
 

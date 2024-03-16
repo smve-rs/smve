@@ -23,7 +23,9 @@ jobs:
           filename: ruxel_ci.json
           label: CI on master
           message: Failing
-          color: red
+          logoColor: cdd6f4
+          labelColor: 313244
+          color: f38ba8
           namedLogo: github
           style: for-the-badge
 
@@ -36,6 +38,8 @@ jobs:
           filename: ruxel_ci.json
           label: CI on master
           message: Passing
-          color: green
+          logoColor: cdd6f4
+          labelColor: 313244
+          color: a6e3a1
           namedLogo: github
           style: for-the-badge
