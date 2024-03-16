@@ -18,7 +18,7 @@ jobs:
         if: ${{ github.event.workflow_run.conclusion == 'failure' }}
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
-          auth: ${{ secrets.CI_GIST_SECRET }}
+          auth: ${{ secrets.CI_GIST_TOKEN }}
           gistID: a488eb0391a5fc6a2918d13184cd0a26
           filename: ruxel_ci.json
           label: CI on master
@@ -31,7 +31,7 @@ jobs:
         if: ${{ github.event.workflow_run.conclusion == 'success' }}
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
-          auth: ${{ secrets.CI_GIST_SECRET }}
+          auth: ${{ secrets.CI_GIST_TOKEN }}
           gistID: a488eb0391a5fc6a2918d13184cd0a26
           filename: ruxel_ci.json
           label: CI on master
