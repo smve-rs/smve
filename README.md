@@ -7,20 +7,21 @@
 
 ***
 
-[![Stars](https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&logo=starship&logoColor=cdd6f4&labelColor=313244&color=f9e2af
-)](https://github.com/ItsSunnyMonster/ruxel/stargazers)
-[![License](https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&labelColor=313244&logo=googleforms&logoColor=cdd6f4)](https://github.com/ItsSunnyMonster/ruxel#license)
-[![CI](https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_ci.svg)](https://github.com/ItsSunnyMonster/ruxel/actions)
-[![Issues](https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&logo=gitbook&logoColor=cdd6f4&labelColor=313244&color=f5c2e7)](https://github.com/ItsSunnyMonster/ruxel/issues)
-[![PRs](https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&logo=git&logoColor=cdd6f4&labelColor=313244&color=fab387&label=PRs
-)](https://github.com/ItsSunnyMonster/ruxel/pulls)
+<p align="center">
+  <a href="https://github.com/ItsSunnyMonster/ruxel/stargazers"><img src="https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
+  <a href="https://github.com/ItsSunnyMonster/ruxel#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
+  <a href="https://github.com/ItsSunnyMonster/ruxel/actions"><img src="https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_ci.svg" alt="CI"></a>
+  <a href="https://github.com/ItsSunnyMonster/ruxel/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
+  <a href="https://github.com/ItsSunnyMonster/ruxel/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
+</p>
 
-## What does the name mean?
+
+### What does the name mean?
 
 "Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a
 **voxel** engine written in **rust**.
 
-## Plans
+### Plans
 
 ***This project is still in its infancy so there are very little features.***
 
@@ -37,11 +38,11 @@ rewrite the menu screen.
 
 Modules hopefully also will be able to be written in normal Rust and compiled into a library.
 
-## Contributing
+### Contributing
 
 See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
 
-## License
+### License
 
 Unless specifically stated, all code in this repository is dual-licensed under either
 
@@ -52,7 +53,7 @@ Unless specifically stated, all code in this repository is dual-licensed under e
 
 at your option. This means you can select the license you prefer.
 
-### Your contributions
+#### Your contributions
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as
 defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
