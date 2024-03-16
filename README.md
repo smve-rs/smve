@@ -16,12 +16,12 @@
 </p>
 
 
-### What does the name mean?
+### ➜ What does the name mean?
 
 "Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a
 **voxel** engine written in **rust**.
 
-### Plans
+### ➜ Plans
 
 ***This project is still in its infancy so there are very little features.***
 
@@ -38,11 +38,11 @@ rewrite the menu screen.
 
 Modules hopefully also will be able to be written in normal Rust and compiled into a library.
 
-### Contributing
+### ➜ Contributing
 
 See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
 
-### License
+### ➜ License
 
 Unless specifically stated, all code in this repository is dual-licensed under either
 
@@ -53,7 +53,7 @@ Unless specifically stated, all code in this repository is dual-licensed under e
 
 at your option. This means you can select the license you prefer.
 
-#### Your contributions
+#### ➜ Your contributions
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as
 defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
