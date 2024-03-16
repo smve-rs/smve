@@ -20,7 +20,7 @@ pub fn get_best_gpu(mut adapters: Vec<Adapter>) -> Adapter {
 
     // Log scores
     for (i, score) in adapter_scores.iter() {
-        info!("GPU: {}; Score: {}", adapters[*i].get_info().name, score);
+        info!("GPU: {} with {:?}; Score: {}", adapters[*i].get_info().name, adapters[*i].get_info().backend, score);
     }
 
     // Choose the one with the highest score
