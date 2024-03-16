@@ -50,6 +50,8 @@ impl<'window> GraphicsState<'window> {
 
         // Simply choose the first one
         let adapter = adapters.remove(0);
+        
+        info!("Selected Adapter: {:?}", adapter.get_info());
 
         let (device, queue) = adapter
             .request_device(
