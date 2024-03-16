@@ -8,14 +8,16 @@ const BACKEND_SCORE_WEIGHT: i8 = 1;
 pub type Score = i8;
 pub type Index = usize;
 
-pub fn get_best_gpu(mut adapters:  Vec<Adapter>) -> Adapter {
-    let mut adapter_scores: Vec<(Index, Score)> = adapters.iter().enumerate()
+pub fn get_best_gpu(mut adapters: Vec<Adapter>) -> Adapter {
+    let mut adapter_scores: Vec<(Index, Score)> = adapters
+        .iter()
+        .enumerate()
         .map(|(i, adapter)| (i, get_gpu_score(adapter)))
         .collect();
 
     // Sort adapters based on score
     adapter_scores.sort_by(|a, b| b.1.cmp(&a.1));
-    
+
     // Log scores
     for (i, score) in adapter_scores.iter() {
         info!("GPU: {}; Score: {}", adapters[*i].get_info().name, score);
@@ -26,7 +28,9 @@ pub fn get_best_gpu(mut adapters:  Vec<Adapter>) -> Adapter {
 }
 
 pub fn get_gpu_score(adapter: &Adapter) -> Score {
-    get_feature_score(adapter) * FEATURE_SCORE_WEIGHT + get_type_score(adapter) * TYPE_SCORE_WEIGHT + get_backend_score(adapter) * BACKEND_SCORE_WEIGHT
+    get_feature_score(adapter) * FEATURE_SCORE_WEIGHT
+        + get_type_score(adapter) * TYPE_SCORE_WEIGHT
+        + get_backend_score(adapter) * BACKEND_SCORE_WEIGHT
 }
 
 fn get_feature_score(_adapter: &Adapter) -> Score {

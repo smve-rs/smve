@@ -29,7 +29,7 @@ impl<'window> GraphicsState<'window> {
         assert!(!adapters.is_empty(), "No GPU!");
 
         let adapter = get_best_gpu(adapters);
-        
+
         info!("Selected Backend: {:?}", adapter.get_info().backend);
 
         // Recreate the instance based on the backend chosen (fix DX12 problem on windows)
