@@ -1,0 +1,41 @@
+name: Report CI Status
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - master
+
+jobs:
+  report:
+    name: Report CI Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: On Failed
+        if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.CI_GIST_SECRET }}
+          gistID: a488eb0391a5fc6a2918d13184cd0a26
+          filename: ruxel_ci.json
+          label: CI on master
+          message: Failing
+          color: red
+          namedLogo: github
+          style: for-the-badge
+
+      - name: On Success
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.CI_GIST_SECRET }}
+          gistID: a488eb0391a5fc6a2918d13184cd0a26
+          filename: ruxel_ci.json
+          label: CI on master
+          message: Passing
+          color: green
+          namedLogo: github
+          style: for-the-badge
