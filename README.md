@@ -1,6 +1,11 @@
-# Ruxel
+<h1 style="text-align: center; line-height: 1">
+  <img src="icon.png" style="width: 3em"><br>
+  Ruxel
+</h1>
 
-A voxel engine written in rust.
+<p style="text-align: center">A voxel engine written in rust.</p>
+
+***
 
 [![Stars](https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&logo=starship&logoColor=cdd6f4&labelColor=313244&color=f9e2af
 )](https://github.com/ItsSunnyMonster/ruxel/stargazers)
