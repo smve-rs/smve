@@ -27,6 +27,8 @@ jobs:
           fetch-depth: 0
       - name: Install NodeJS
         uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
       - name: Install commitlint
         run: |
           npm install conventional-changelog-conventionalcommits
@@ -76,7 +78,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-clippy-
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -94,6 +97,16 @@ jobs:
         configuration: ["debug", "release"]
     runs-on: ${{ matrix.os }}-latest
     steps:
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
+        restore-keys: ${{ runner.os }}-build-
     - name: Install LLD on Windows
       if: matrix.os == 'windows'
       run: |
@@ -106,15 +119,6 @@ jobs:
       if: matrix.os == 'ubuntu'
       run: sudo apt-get install lld
     - uses: actions/checkout@v4
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
     - name: Cargo build
       run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
     - name: Upload binary
@@ -151,7 +155,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-format-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-format-
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
