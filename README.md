@@ -2,8 +2,13 @@
 
 A voxel engine written in rust.
 
-[![License](https://img.shields.io/badge/license-MIT%2FApache-89b4fa.svg?style=for-the-badge&labelColor=313244&logo=googleforms&logoColor=cdd6f4)](https://github.com/ItsSunnyMonster/ruxel#license)
+[![Stars](https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&logo=starship&logoColor=cdd6f4&labelColor=313244&color=f9e2af
+)](https://github.com/ItsSunnyMonster/ruxel/stargazers)
+[![License](https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&labelColor=313244&logo=googleforms&logoColor=cdd6f4)](https://github.com/ItsSunnyMonster/ruxel#license)
 [![CI](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_ci.json)](https://github.com/ItsSunnyMonster/ruxel/actions)
+[![Issues](https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&logo=gitbooks&logoColor=cdd6f4&labelColor=313244&color=f5c2e7)](https://github.com/ItsSunnyMonster/ruxel/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&logo=gitbooks&logoColor=cdd6f4&labelColor=313244&color=fab387
+)](https://github.com/ItsSunnyMonster/ruxel/pulls)
 
 ## What does the name mean?
 
