@@ -1,9 +1,9 @@
-<h1 style="text-align: center; line-height: 1">
+<h3 align="center" style="line-height: 1">
   <img src="icon.png" style="width: 3em"><br>
   Ruxel
-</h1>
+</h3>
 
-<p style="text-align: center">A voxel engine written in rust.</p>
+<p align="center">A voxel engine written in rust.</p>
 
 ***
 
