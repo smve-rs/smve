@@ -1,19 +1,39 @@
-use std::collections::HashMap;
+use log::info;
 use wgpu::{Adapter, Backend, DeviceType};
 
-pub fn eliminate_gpu_on_unsupported_feats(adapters: Vec<Adapter>) -> Vec<Adapter> {
-    adapters
+const FEATURE_SCORE_WEIGHT: i8 = 3;
+const TYPE_SCORE_WEIGHT: i8 = 2;
+const BACKEND_SCORE_WEIGHT: i8 = 1;
+
+pub type Score = i8;
+pub type Index = usize;
+
+pub fn get_best_gpu(mut adapters:  Vec<Adapter>) -> Adapter {
+    let mut adapter_scores: Vec<(Index, Score)> = adapters.iter().enumerate()
+        .map(|(i, adapter)| (i, get_gpu_score(adapter)))
+        .collect();
+
+    // Sort adapters based on score
+    adapter_scores.sort_by(|a, b| b.1.cmp(&a.1));
+    
+    // Log scores
+    for (i, score) in adapter_scores.iter() {
+        info!("GPU: {}; Score: {}", adapters[*i].get_info().name, score);
+    }
+
+    // Choose the one with the highest score
+    adapters.remove(adapter_scores[0].0)
 }
 
-pub fn select_gpu_on_type(mut adapters: Vec<Adapter>) -> Vec<Adapter> {
-    get_highest_scored_adapters(&mut adapters, get_type_score)
+pub fn get_gpu_score(adapter: &Adapter) -> Score {
+    get_feature_score(adapter) * FEATURE_SCORE_WEIGHT + get_type_score(adapter) * TYPE_SCORE_WEIGHT + get_backend_score(adapter) * BACKEND_SCORE_WEIGHT
 }
 
-pub fn select_gpu_on_backend(mut adapters: Vec<Adapter>) -> Vec<Adapter> {
-    get_highest_scored_adapters(&mut adapters, get_backend_score)
+fn get_feature_score(_adapter: &Adapter) -> Score {
+    0
 }
 
-fn get_backend_score(adapter: &Adapter) -> u8 {
+fn get_backend_score(adapter: &Adapter) -> Score {
     let backend = adapter.get_info().backend;
 
     #[cfg(target_os = "windows")]
@@ -47,7 +67,7 @@ fn get_backend_score(adapter: &Adapter) -> u8 {
     }
 }
 
-fn get_type_score(adapter: &Adapter) -> u8 {
+fn get_type_score(adapter: &Adapter) -> Score {
     match adapter.get_info().device_type {
         DeviceType::Other => 0,
         DeviceType::Cpu => 1,
@@ -56,60 +76,4 @@ fn get_type_score(adapter: &Adapter) -> u8 {
         DeviceType::VirtualGpu => 2,
         DeviceType::DiscreteGpu => 3,
     }
-}
-
-fn sort_scores(map: HashMap<usize, u8>) -> Vec<(usize, u8)> {
-    let mut key_value_pairs: Vec<_> = map.into_iter().collect();
-    key_value_pairs.sort_by(|a, b| b.1.cmp(&a.1));
-    key_value_pairs
-}
-
-fn get_sorted_gpu_scores<F>(adapters: &[Adapter], score_function: F) -> Vec<(usize, u8)>
-where
-    F: Fn(&Adapter) -> u8,
-{
-    // Keep track of the scores based on the index of the adapter in the vector
-    let mut gpu_scores: HashMap<usize, u8> = HashMap::new();
-
-    // Give adapters scores based on their scores
-    for (i, adapter) in adapters.iter().enumerate() {
-        gpu_scores.insert(i, score_function(adapter));
-    }
-
-    sort_scores(gpu_scores)
-}
-
-fn get_highest_scored_adapters<F>(adapters: &mut Vec<Adapter>, score_function: F) -> Vec<Adapter>
-where
-    F: Fn(&Adapter) -> u8,
-{
-    let sorted = get_sorted_gpu_scores(adapters, score_function);
-
-    // Add the GPUs from the top score into a results vector
-    let mut results = vec![];
-
-    // Keep track of changed indices
-    let mut changed_indices: HashMap<usize, usize> = HashMap::new();
-
-    for pair in sorted.iter() {
-        // If the score is different from the top, stop iterating
-        if pair.1 != sorted.first().unwrap().1 {
-            break;
-        }
-
-        // The removed index is either `pair.0` or the new index stored in `changed_indices`
-        let removed_index = if changed_indices.contains_key(&pair.0) {
-            changed_indices[&pair.0]
-        } else {
-            pair.0
-        };
-
-        results.push(adapters.swap_remove(removed_index));
-
-        // Explanation: since swap_remove removes the adapter at `pair.0` and puts the last element in its place,
-        // We can simply say that the last element of the adapters vector is now found at the removed index.
-        changed_indices.insert(adapters.len(), removed_index);
-    }
-
-    results
 }
