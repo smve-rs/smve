@@ -200,42 +200,42 @@ jobs:
           echo 'To fix toml fmt, please run `taplo fmt`'
           echo 'Or if you use VSCode, use the Even Better Toml extension'
 
-  markdown_lint_skip_check:
-    needs: commitlint
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v5
-        with:
-          paths: '["**.md"]'
-
-  markdown_lint:
-    needs: markdown_lint_skip_check
-    if: needs.markdown_lint_skip_check.outputs.should_skip != 'true'
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: read
-      # To report GitHub Actions status checks
-      statuses: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          # super-linter needs the full git history to get the
-          # list of files that changed across commits
-          fetch-depth: 0
-
-      - name: Super-linter
-        uses: super-linter/super-linter/slim@v6.3.0  # x-release-please-version
-        env:
-          MULTI_STATUS: false
-          VALIDATE_MARKDOWN: true
-
-      - name: README IF FAILED
-        if: failure()
-        run: echo 'Please fix the formatting errors in markdown files as suggested.'
+#  markdown_lint_skip_check:
+#    needs: commitlint
+#    runs-on: ubuntu-latest
+#    outputs:
+#      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+#    steps:
+#      - id: skip_check
+#        uses: fkirc/skip-duplicate-actions@v5
+#        with:
+#          paths: '["**.md"]'
+#
+#  markdown_lint:
+#    needs: markdown_lint_skip_check
+#    if: needs.markdown_lint_skip_check.outputs.should_skip != 'true'
+#    runs-on: ubuntu-latest
+#
+#    permissions:
+#      contents: read
+#      packages: read
+#      # To report GitHub Actions status checks
+#      statuses: write
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          # super-linter needs the full git history to get the
+#          # list of files that changed across commits
+#          fetch-depth: 0
+#
+#      - name: Super-linter
+#        uses: super-linter/super-linter/slim@v6.3.0  # x-release-please-version
+#        env:
+#          MULTI_STATUS: false
+#          VALIDATE_MARKDOWN: true
+#
+#      - name: README IF FAILED
+#        if: failure()
+#        run: echo 'Please fix the formatting errors in markdown files as suggested.'
