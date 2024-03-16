@@ -21,7 +21,7 @@ jobs:
           auth: ${{ secrets.CI_GIST_TOKEN }}
           gistID: a488eb0391a5fc6a2918d13184cd0a26
           filename: ruxel_ci.json
-          label: CI on master
+          label: CI
           message: Failing
           logoColor: cdd6f4
           labelColor: 313244
