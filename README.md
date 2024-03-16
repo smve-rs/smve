@@ -1,5 +1,7 @@
+#
+
 <h3 align="center" style="line-height: 1">
-  <img src="icon.png" style="width: 3em"><br>
+  <img alt="Logo" src="icon.png" style="width: 3em"><br>
   Ruxel
 </h3>
 
