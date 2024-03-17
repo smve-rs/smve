@@ -1,4 +1,4 @@
-use crate::core::graphics::gpu_selection_utils::get_best_gpu;
+use crate::core::graphics::adapter_selection_utils::get_best_adapter;
 use crate::core::window::components::Window;
 use log::info;
 use std::collections::HashMap;
@@ -24,11 +24,11 @@ impl<'window> GraphicsState<'window> {
         // Create instance with all backends
         let instance = wgpu::Instance::default();
 
-        // Find the best GPU
+        // Get the backend of the best adapter
         let adapters = instance.enumerate_adapters(Backends::all());
-        assert!(!adapters.is_empty(), "No GPU!");
+        assert!(!adapters.is_empty(), "No adapters found!");
 
-        let adapter = get_best_gpu(adapters);
+        let adapter = get_best_adapter(adapters);
 
         info!("Selected Backend: {:?}", adapter.get_info().backend);
 
@@ -38,10 +38,10 @@ impl<'window> GraphicsState<'window> {
             ..Default::default()
         });
 
-        // Find the best GPU again
+        // Find the best adapter again
         let adapters = instance.enumerate_adapters(Backends::all());
 
-        let adapter = get_best_gpu(adapters);
+        let adapter = get_best_adapter(adapters);
 
         info!("Selected Adapter: {:?}", adapter.get_info());
 

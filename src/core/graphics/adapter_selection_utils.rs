@@ -8,13 +8,13 @@ const BACKEND_SCORE_WEIGHT: i8 = 1;
 pub type Score = i8;
 pub type Index = usize;
 
-pub fn get_best_gpu(adapters: Vec<Adapter>) -> Adapter {
-    let mut adapters = filter_unwanted_gpus(adapters);
+pub fn get_best_adapter(adapters: Vec<Adapter>) -> Adapter {
+    let mut adapters = filter_unwanted_adapters(adapters);
 
     let mut adapter_scores: Vec<(Index, Score)> = adapters
         .iter()
         .enumerate()
-        .map(|(i, adapter)| (i, get_gpu_score(adapter)))
+        .map(|(i, adapter)| (i, get_adapter_score(adapter)))
         .collect();
 
     // Sort adapters based on score
@@ -23,7 +23,7 @@ pub fn get_best_gpu(adapters: Vec<Adapter>) -> Adapter {
     // Log scores
     for (i, score) in adapter_scores.iter() {
         info!(
-            "GPU: {} with {:?}; Score: {}",
+            "Adapter: {} with {:?}; Score: {}",
             adapters[*i].get_info().name,
             adapters[*i].get_info().backend,
             score
@@ -34,13 +34,13 @@ pub fn get_best_gpu(adapters: Vec<Adapter>) -> Adapter {
     adapters.remove(adapter_scores[0].0)
 }
 
-pub fn get_gpu_score(adapter: &Adapter) -> Score {
+pub fn get_adapter_score(adapter: &Adapter) -> Score {
     get_feature_score(adapter) * FEATURE_SCORE_WEIGHT
         + get_type_score(adapter) * TYPE_SCORE_WEIGHT
         + get_backend_score(adapter) * BACKEND_SCORE_WEIGHT
 }
 
-fn filter_unwanted_gpus(adapters: Vec<Adapter>) -> Vec<Adapter> {
+fn filter_unwanted_adapters(adapters: Vec<Adapter>) -> Vec<Adapter> {
     adapters
         .into_iter()
         .filter(|adapter| {
