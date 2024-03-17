@@ -10,7 +10,7 @@ pub type Index = usize;
 
 pub fn get_best_gpu(adapters: Vec<Adapter>) -> Adapter {
     let mut adapters = filter_unwanted_gpus(adapters);
-    
+
     let mut adapter_scores: Vec<(Index, Score)> = adapters
         .iter()
         .enumerate()
@@ -41,10 +41,13 @@ pub fn get_gpu_score(adapter: &Adapter) -> Score {
 }
 
 fn filter_unwanted_gpus(adapters: Vec<Adapter>) -> Vec<Adapter> {
-    adapters.into_iter().filter(|adapter| {
-        // Remove any CPU adapters
-        adapter.get_info().device_type != DeviceType::Cpu
-    }).collect()
+    adapters
+        .into_iter()
+        .filter(|adapter| {
+            // Remove any CPU adapters
+            adapter.get_info().device_type != DeviceType::Cpu
+        })
+        .collect()
 }
 
 fn get_feature_score(_adapter: &Adapter) -> Score {
