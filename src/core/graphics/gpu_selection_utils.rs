@@ -79,7 +79,7 @@ fn get_backend_score(adapter: &Adapter) -> Score {
 fn get_type_score(adapter: &Adapter) -> Score {
     match adapter.get_info().device_type {
         DeviceType::Other => 1,
-        DeviceType::Cpu => -128, // Get rid of CPU renderers
+        DeviceType::Cpu => -16, // Get rid of CPU renderers
         // Integrated GPUs are ranked the same as Virtual GPUs
         DeviceType::IntegratedGpu => 2,
         DeviceType::VirtualGpu => 2,
