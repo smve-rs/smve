@@ -8,7 +8,9 @@ const BACKEND_SCORE_WEIGHT: i8 = 1;
 pub type Score = i8;
 pub type Index = usize;
 
-pub fn get_best_gpu(mut adapters: Vec<Adapter>) -> Adapter {
+pub fn get_best_gpu(adapters: Vec<Adapter>) -> Adapter {
+    let mut adapters = filter_unwanted_gpus(adapters);
+    
     let mut adapter_scores: Vec<(Index, Score)> = adapters
         .iter()
         .enumerate()
@@ -36,6 +38,13 @@ pub fn get_gpu_score(adapter: &Adapter) -> Score {
     get_feature_score(adapter) * FEATURE_SCORE_WEIGHT
         + get_type_score(adapter) * TYPE_SCORE_WEIGHT
         + get_backend_score(adapter) * BACKEND_SCORE_WEIGHT
+}
+
+fn filter_unwanted_gpus(adapters: Vec<Adapter>) -> Vec<Adapter> {
+    adapters.into_iter().filter(|adapter| {
+        // Remove any CPU adapters
+        adapter.get_info().device_type != DeviceType::Cpu
+    }).collect()
 }
 
 fn get_feature_score(_adapter: &Adapter) -> Score {
@@ -79,7 +88,7 @@ fn get_backend_score(adapter: &Adapter) -> Score {
 fn get_type_score(adapter: &Adapter) -> Score {
     match adapter.get_info().device_type {
         DeviceType::Other => 1,
-        DeviceType::Cpu => -16, // Get rid of CPU renderers
+        DeviceType::Cpu => -16, // CPU renderers wouldn't go through anyway so this value is arbitrary
         // Integrated GPUs are ranked the same as Virtual GPUs
         DeviceType::IntegratedGpu => 2,
         DeviceType::VirtualGpu => 2,
