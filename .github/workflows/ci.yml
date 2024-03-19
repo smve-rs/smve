@@ -86,7 +86,7 @@ jobs:
       - run: cargo clippy -- -Dwarnings
       - name: README IF FAILED
         if: failure()
-        run: echo 'Please fix clippy's suggestions with `cargo clippy --fix`'
+        run: echo "Please fix clippy's suggestions with cargo clippy --fix"
 
   build:
     needs: clippy
@@ -202,7 +202,7 @@ jobs:
       - name: Taplo info
         if: failure()
         run: |
-          echo 'To fix toml fmt, please run `taplo fmt`'
+          echo 'To fix toml fmt, please run taplo fmt'
           echo 'Or if you use VSCode, use the Even Better Toml extension'
 
 #  markdown_lint_skip_check:
