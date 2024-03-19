@@ -121,6 +121,7 @@ pub struct SurfaceState<'window> {
 }
 
 impl SurfaceState<'_> {
+    #[allow(dead_code)]
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, device: &wgpu::Device) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
