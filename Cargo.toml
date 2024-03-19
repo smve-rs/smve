@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bevy_app = "0.13.0"
-bevy_ecs = { version = "0.13.0", features = ["multi-threaded"] }
+bevy_ecs = { version = "0.13.1", features = ["multi-threaded"] }
 env_logger = "0.11.3"
 log = "0.4.21"
 pollster = "0.3.0"
