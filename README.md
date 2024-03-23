@@ -17,7 +17,6 @@
   <a href="https://github.com/ItsSunnyMonster/ruxel/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
 </p>
 
-
 ### ➜ What does the name mean?
 
 "Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a
@@ -29,10 +28,11 @@
 
 The core engine will be an executable. You will be able to extend the engine with "mods" (they stand for modules, not
 modifications as in Minecraft). Mods will be written in a scripting language like lua or rhai (haven't decided yet) and
-they will subscribe to engine events such as `on_initialise` or `on_register_block` and they can call engine functions.
+they will subscribe to engine events such as `on_initialise` or `on_register_block` and they can call engine functions
+and interact with the ECS.
 
-You can provide resources that a module uses (such as textures, audio, etc.) with asset packs which is in a custom-made
-file format. It is a file that packages a directory of files into one file without compression.
+You can provide resources that a module uses (such as textures, audio, etc.) with asset packs which are .zip files with
+a specific directory structure.
 
 The engine will provide default modules and asset packs for a minimal infinitely generating sandbox world and a menu
 screen. You can select and enable mods and asset packs from the menu screen, and mods can also modify or completely
