@@ -16,7 +16,7 @@ pub fn u_create_surface(
         let window = winit_windows
             .windows
             .get(&event.window_id)
-            .expect(format!("Window {:?} not found!", event.window_id).as_str());
+            .unwrap_or_else(|| panic!("Window {:?} not found!", event.window_id));
         let window_entity = winit_windows.window_to_entity[&event.window_id];
         let (window_component, raw_window_handle) = query
             .get(window_entity)
