@@ -141,7 +141,13 @@ fn runner(mut app: App) {
                 // Create any new windows
                 let (commands, query, winit_windows, window_created_event) =
                     create_windows_system_state.get_mut(&mut app.world);
-                create_windows(commands, query, winit_windows, window_created_event, window_target);
+                create_windows(
+                    commands,
+                    query,
+                    winit_windows,
+                    window_created_event,
+                    window_target,
+                );
                 create_windows_system_state.apply(&mut app.world);
             }
             Event::WindowEvent { window_id, event } => {
@@ -182,7 +188,13 @@ fn runner(mut app: App) {
         // Create any new windows that were added
         let (commands, query, winit_windows, window_created_event) =
             create_windows_system_state.get_mut(&mut app.world);
-        create_windows(commands, query, winit_windows, window_created_event, window_target);
+        create_windows(
+            commands,
+            query,
+            winit_windows,
+            window_created_event,
+            window_target,
+        );
         create_windows_system_state.apply(&mut app.world);
     };
 
@@ -215,8 +227,7 @@ fn create_windows(
         commands.entity(entity).insert(RawHandleWrapper {
             display_handle: winit_window.display_handle().unwrap().as_raw(),
             window_handle: winit_window.window_handle().unwrap().as_raw(),
-        }
-        );
+        });
 
         window_created_event.send(WindowCreatedEvent {
             window_id: winit_window.id(),

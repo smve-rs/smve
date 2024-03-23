@@ -1,6 +1,9 @@
 use crate::core::window::icon;
 use bevy_ecs::prelude::Component;
-use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle};
+use raw_window_handle::{
+    DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
+    RawWindowHandle, WindowHandle,
+};
 
 /// A marker for the primary window.
 /// There should be only one primary window at any one time.
@@ -40,7 +43,7 @@ impl Default for Window {
 #[derive(Clone, Component)]
 pub struct RawHandleWrapper {
     pub display_handle: RawDisplayHandle,
-    pub window_handle: RawWindowHandle
+    pub window_handle: RawWindowHandle,
 }
 
 // SAFETY:
