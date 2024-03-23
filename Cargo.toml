@@ -13,6 +13,7 @@ log = "0.4.21"
 pollster = "0.3.0"
 wgpu = "0.19.3"
 winit = "0.29.15"
+raw-window-handle = "0.6.0"
 
 [profile.dev]
 opt-level = 1

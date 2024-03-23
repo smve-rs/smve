@@ -5,7 +5,7 @@ pub mod events;
 pub mod icon;
 pub mod systems;
 
-use crate::core::window::components::{PrimaryWindow, Window};
+use crate::core::window::components::{PrimaryWindow, RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
 use crate::core::window::systems::{
@@ -18,6 +18,7 @@ use bevy_ecs::event::ManualEventReader;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use log::{error, info};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
 
@@ -106,6 +107,7 @@ fn runner(mut app: App) {
     // System state of added window component
     // We will use this in the event loop to create any new windows that were added
     let mut create_windows_system_state: SystemState<(
+        Commands,
         Query<(Entity, &Window), Added<Window>>,
         NonSendMut<WinitWindows>,
         EventWriter<WindowCreatedEvent>,
@@ -137,9 +139,9 @@ fn runner(mut app: App) {
             // Start of the event loop
             Event::NewEvents(StartCause::Init) => {
                 // Create any new windows
-                let (query, winit_windows, window_created_event) =
+                let (commands, query, winit_windows, window_created_event) =
                     create_windows_system_state.get_mut(&mut app.world);
-                create_windows(query, winit_windows, window_created_event, window_target);
+                create_windows(commands, query, winit_windows, window_created_event, window_target);
                 create_windows_system_state.apply(&mut app.world);
             }
             Event::WindowEvent { window_id, event } => {
@@ -178,9 +180,9 @@ fn runner(mut app: App) {
         };
 
         // Create any new windows that were added
-        let (query, winit_windows, window_created_event) =
+        let (commands, query, winit_windows, window_created_event) =
             create_windows_system_state.get_mut(&mut app.world);
-        create_windows(query, winit_windows, window_created_event, window_target);
+        create_windows(commands, query, winit_windows, window_created_event, window_target);
         create_windows_system_state.apply(&mut app.world);
     };
 
@@ -196,6 +198,7 @@ fn runner(mut app: App) {
 
 /// Function called to create any winit windows after a new Window component is spawned
 fn create_windows(
+    mut commands: Commands,
     query: Query<(Entity, &Window), Added<Window>>,
     mut winit_windows: NonSendMut<WinitWindows>,
     mut window_created_event: EventWriter<WindowCreatedEvent>,
@@ -208,6 +211,13 @@ fn create_windows(
         }
 
         let winit_window = winit_windows.create_window(event_loop, entity, window);
+
+        commands.entity(entity).insert(RawHandleWrapper {
+            display_handle: winit_window.display_handle().unwrap().as_raw(),
+            window_handle: winit_window.window_handle().unwrap().as_raw(),
+        }
+        );
+
         window_created_event.send(WindowCreatedEvent {
             window_id: winit_window.id(),
         });

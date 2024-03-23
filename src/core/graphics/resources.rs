@@ -1,9 +1,8 @@
 use crate::core::graphics::adapter_selection_utils::get_best_adapter;
-use crate::core::window::components::Window;
+use crate::core::window::components::{RawHandleWrapper, Window};
 use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::sync::Arc;
 use wgpu::{Backends, InstanceDescriptor, PresentMode};
 
 pub struct GraphicsState<'window> {
@@ -70,10 +69,12 @@ impl<'window> GraphicsState<'window> {
 
     pub fn create_surface(
         &mut self,
-        window: Arc<winit::window::Window>,
+        window: &winit::window::Window,
         window_component: &Window,
+        raw_handle_wrapper: &RawHandleWrapper,
     ) {
-        let surface = self.instance.create_surface(window.clone()).unwrap();
+        let handle = unsafe { raw_handle_wrapper.get_handle() };
+        let surface = self.instance.create_surface(handle).unwrap();
 
         let surface_caps = surface.get_capabilities(&self.adapter);
         // Gets the first surface format that is sRGB, otherwise use the first surface format returned

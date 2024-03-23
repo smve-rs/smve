@@ -4,7 +4,6 @@ use log::{info, warn};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::sync::Arc;
 use winit::dpi::LogicalSize;
 use winit::window::{Icon, WindowBuilder};
 
@@ -15,7 +14,7 @@ pub struct PrimaryWindowCount(pub u32);
 
 /// Contains a map from the entity to the window and vice versa
 pub struct WinitWindows {
-    pub windows: HashMap<winit::window::WindowId, Arc<winit::window::Window>>,
+    pub windows: HashMap<winit::window::WindowId, winit::window::Window>,
     pub entity_to_window: HashMap<Entity, winit::window::WindowId>,
     pub window_to_entity: HashMap<winit::window::WindowId, Entity>,
     _not_send_sync: PhantomData<*const ()>,
@@ -59,7 +58,7 @@ impl WinitWindows {
                 warn!("I'm not sure what happened but a Window with the same ID already exists");
                 &*e.into_mut()
             }
-            Entry::Vacant(e) => &*e.insert(Arc::from(winit_window)),
+            Entry::Vacant(e) => &*e.insert(winit_window),
         }
     }
 
