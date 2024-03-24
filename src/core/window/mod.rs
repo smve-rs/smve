@@ -1,9 +1,11 @@
+//! Windowing code for the engine.
+
 pub mod resources;
 
 pub mod components;
 pub mod events;
-pub mod icon;
-pub mod systems;
+mod icon;
+mod systems;
 
 use crate::core::window::components::{PrimaryWindow, RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
@@ -30,12 +32,12 @@ use super::graphics::GraphicsPlugin;
 /// See following fields for how to exit the loop.
 pub struct WindowPlugin {
     /// The primary window to create at the start of the program
-    /// Can be `None` if no primary window is desired
+    /// Can be [`None`] if no primary window is desired
     /// Set primary window parameters here
     pub primary_window: Option<Window>,
     /// The condition at which the event loop will exit.
     ///
-    /// See `ExitCondition` for more information.
+    /// See [`ExitCondition`] for more information.
     pub exit_condition: ExitCondition,
 }
 
@@ -90,6 +92,9 @@ impl Plugin for WindowPlugin {
     }
 }
 
+/// The custom runner for the app which runs on the winit event loop.
+/// 
+/// Handles window creation, window events and the main game loop.
 fn runner(mut app: App) {
     // Bevy stuff that I don't understand
     // Apparently if plugin loading is ready, we need to call finish and cleanup
@@ -208,7 +213,20 @@ fn runner(mut app: App) {
     }
 }
 
-/// Function called to create any winit windows after a new Window component is spawned
+/// Creates windows for entities with the [`Window`] component added.
+/// 
+/// Helper function called from the runner to create windows with the [`WinitWindows`] resource.
+/// 
+/// # Arguments
+/// * `commands` - Bevy commands
+/// * `query` - Query for entities with the [`Window`] component added
+/// * `winit_windows` - The [`WinitWindows`] resource
+/// * `window_created_event` - The event writer for [`WindowCreatedEvent`] events
+/// * `event_loop` - The event loop window target for creating windows
+/// 
+/// # Notes
+/// This function is called in the event loop to create any new windows that were added.
+/// It is also called at the start of the event loop to create any windows that were added before the event loop started.
 fn create_windows(
     mut commands: Commands,
     query: Query<(Entity, &Window), Added<Window>>,
@@ -221,7 +239,7 @@ fn create_windows(
         if winit_windows.entity_to_window.contains_key(&entity) {
             continue;
         }
-
+        
         let winit_window = winit_windows.create_window(event_loop, entity, window);
 
         commands.entity(entity).insert(RawHandleWrapper {
@@ -236,6 +254,8 @@ fn create_windows(
 }
 
 /// The condition at which the event loop will quit
+/// 
+/// Used in the [`WindowPlugin`] to determine the exit behaviour of the event loop.
 #[allow(dead_code)]
 #[derive(Default)]
 pub enum ExitCondition {

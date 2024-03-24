@@ -1,3 +1,5 @@
+//! Bevy systems for the graphics module.
+
 use crate::core::graphics::resources::GraphicsState;
 use crate::core::window::components::{RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent};
@@ -6,6 +8,10 @@ use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{NonSend, NonSendMut, Query};
 use log::info;
 
+/// Creates a surface for each window created.
+/// 
+/// Runs on `Update` when a [`WindowCreatedEvent`] is received,
+/// use the [`GraphicsState`] to create a surface for the window, passing in the window and raw handle.
 pub fn u_create_surface(
     mut window_created_event: EventReader<WindowCreatedEvent>,
     winit_windows: NonSend<WinitWindows>,
@@ -26,6 +32,10 @@ pub fn u_create_surface(
     }
 }
 
+/// Destroys a surface for each window that has a close requested event.
+/// 
+/// Runs on `Update` when a [`CloseRequestedEvent`] is received,
+/// use the [`GraphicsState`] to destroy the surface for the window.
 pub fn u_destroy_surface(
     mut close_requested_event: EventReader<CloseRequestedEvent>,
     mut graphics_state: NonSendMut<GraphicsState>,

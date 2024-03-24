@@ -1,3 +1,5 @@
+//! Bevy resources for the windowing module.
+
 use crate::core::window::components::Window;
 use bevy_ecs::prelude::{Entity, Resource};
 use log::{info, warn};
@@ -12,11 +14,17 @@ use winit::window::{Icon, WindowBuilder};
 #[derive(Resource, Default)]
 pub struct PrimaryWindowCount(pub u32);
 
-/// Contains a map from the entity to the window and vice versa
+/// Resource used to keep track of all the windows
+/// 
+/// This creates an association between the entity and the winit window associated with it
 pub struct WinitWindows {
+    /// Maps from ID (which can be cloned, moved, etc.) to the winit window (which this resource exclusively owns)
     pub windows: HashMap<winit::window::WindowId, winit::window::Window>,
+    /// Maps from entity to window ID
     pub entity_to_window: HashMap<Entity, winit::window::WindowId>,
+    /// Maps from window ID to entity
     pub window_to_entity: HashMap<winit::window::WindowId, Entity>,
+    // Many winit functions are not Send or Sync, so this resource is not Send or Sync
     _not_send_sync: PhantomData<*const ()>,
 }
 
@@ -32,7 +40,7 @@ impl Default for WinitWindows {
 }
 
 impl WinitWindows {
-    /// Only called from a system to open any windows based on their Window component
+    /// Creates a winit window, configures it and associates it with an entity.
     pub fn create_window(
         &mut self,
         event_loop: &winit::event_loop::EventLoopWindowTarget<()>,
@@ -62,6 +70,7 @@ impl WinitWindows {
         }
     }
 
+    /// Destroys a window and removes it from the resource.
     pub fn destroy_window(&mut self, entity: Entity) {
         let window = self.entity_to_window.remove(&entity).unwrap();
         self.window_to_entity.remove(&window);
