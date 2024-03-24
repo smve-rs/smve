@@ -13,7 +13,7 @@ use raw_window_handle::{
 pub struct PrimaryWindow;
 
 /// Component description of the window
-/// 
+///
 /// This contains various parameters of the window.
 #[derive(Component, Clone)]
 pub struct Window {
@@ -49,7 +49,7 @@ impl Default for Window {
 }
 
 /// A wrapper for the raw handle of the window
-/// 
+///
 /// [`create_surface`](wgpu::Instance::create_surface) requires ownership to an object that implements [`HasWindowHandle`] and [`HasDisplayHandle`].
 /// The winit [`Window`](winit::window::Window) is owned by [`WinitWindows`](crate::core::window::WinitWindows) and cannot be cloned.
 /// This wrapper allows the raw handle to be cloned and passed to the [`create_surface`](wgpu::Instance::create_surface) function.
@@ -69,9 +69,9 @@ unsafe impl Sync for RawHandleWrapper {}
 
 impl RawHandleWrapper {
     /// Gets a thread-locked version of the raw handle wrapper
-    /// 
+    ///
     /// This exists because the functions in [`HasDisplayHandle`] and [`HasWindowHandle`] are safe.
-    /// 
+    ///
     /// # Safety
     /// This function should be called in a correct context (some platforms do not support doing windowing operations on different threads).
     pub unsafe fn get_handle(&self) -> ThreadLockedRawHandleWrapper {
@@ -80,7 +80,7 @@ impl RawHandleWrapper {
 }
 
 /// A thread-locked version of the raw handle wrapper
-/// 
+///
 /// This is a wrapper around the raw handle wrapper and can ONLY be constructed by calling [`RawHandleWrapper::get_handle`].
 /// This ensures that the raw handle wrapper is only used in a correct context.
 pub struct ThreadLockedRawHandleWrapper(RawHandleWrapper);

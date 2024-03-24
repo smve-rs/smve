@@ -9,7 +9,7 @@ use bevy_ecs::system::{NonSend, NonSendMut, Query};
 use log::info;
 
 /// Creates a surface for each window created.
-/// 
+///
 /// Runs on `Update` when a [`WindowCreatedEvent`] is received,
 /// use the [`GraphicsState`] to create a surface for the window, passing in the window and raw handle.
 pub fn u_create_surface(
@@ -33,7 +33,7 @@ pub fn u_create_surface(
 }
 
 /// Destroys a surface for each window that has a close requested event.
-/// 
+///
 /// Runs on `Update` when a [`CloseRequestedEvent`] is received,
 /// use the [`GraphicsState`] to destroy the surface for the window.
 pub fn u_destroy_surface(

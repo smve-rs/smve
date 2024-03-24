@@ -15,7 +15,7 @@ use winit::window::{Icon, WindowBuilder};
 pub struct PrimaryWindowCount(pub u32);
 
 /// Resource used to keep track of all the windows
-/// 
+///
 /// This creates an association between the entity and the winit window associated with it
 pub struct WinitWindows {
     /// Maps from ID (which can be cloned, moved, etc.) to the winit window (which this resource exclusively owns)

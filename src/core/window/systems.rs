@@ -45,7 +45,7 @@ pub fn u_despawn_windows(
 }
 
 /// System to close the winit window when a Window entity is despawned
-/// 
+///
 /// Called on PostUpdate (after [`u_despawn_windows`]) when a Window entity is despawned.
 pub fn pu_close_windows(
     mut removed_windows: RemovedComponents<Window>,
@@ -57,7 +57,7 @@ pub fn pu_close_windows(
 }
 
 /// Exits the app when the primary window is closed
-/// 
+///
 /// Called on PostUpdate when the primary window is closed.
 /// Emits an [`AppExit`] event when the primary window is closed.
 pub fn pu_exit_on_primary_closed(
@@ -71,7 +71,7 @@ pub fn pu_exit_on_primary_closed(
 }
 
 /// Exits the app when all windows are closed
-/// 
+///
 /// Called on PostUpdate when all windows are closed.
 /// Emits an [`AppExit`] event when all windows are closed.
 pub fn pu_exit_on_all_closed(

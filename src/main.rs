@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-
 #![doc(html_favicon_url = "https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel/images/icon.png")]
 #![doc(html_logo_url = "https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel/images/icon.png")]
 
@@ -8,7 +7,7 @@
 //!     <source media="(prefers-color-scheme: light)" srcset="https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel/images/title_logo_light.svg">
 //!     <img alt="Ruxel" width="200" src="https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel/images/title_logo_dark.svg">
 //! </picture>
-//! 
+//!
 //! A voxel engine written in Rust.
 
 pub mod core;

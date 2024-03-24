@@ -1,5 +1,5 @@
 //! Bevy resources for the graphics module.
-//! 
+//!
 //! This module contains the resources used by the graphics module such as the [`GraphicsState`] struct.
 
 use crate::core::graphics::adapter_selection_utils::get_best_adapter;
@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use wgpu::{Backends, InstanceDescriptor, PresentMode};
 
 /// Contains the global and per-window objects needed for rendering.
-/// 
+///
 /// # Notes
 /// This owns the wgpu instance, device, queue, adapter and all the surfaces.
 pub struct GraphicsState<'window> {
@@ -26,15 +26,14 @@ pub struct GraphicsState<'window> {
     // Per-Window Objects
     /// Contains a mapping from the window id to the surface state.
     pub surface_states: HashMap<winit::window::WindowId, SurfaceState<'window>>,
-
     //_not_send_sync: PhantomData<*const ()>,
 }
 
 impl<'window> GraphicsState<'window> {
     /// Asynchronously creates a new instance of the graphics state.
-    /// 
+    ///
     /// Initializes the instance, selects the best adapter, creates the device and queue and creates an empty surface state map.
-    /// 
+    ///
     /// # Returns
     /// An instance of [`GraphicsState`] containing the created instances and an empty surface state map.
     pub async fn new() -> Self {
@@ -84,11 +83,11 @@ impl<'window> GraphicsState<'window> {
             //_not_send_sync: PhantomData,
         }
     }
-    
+
     /// Creates a new surface for a window.
-    /// 
+    ///
     /// This function creates a new surface for the window and configures it with the given parameters specified in the [`Window`] component.
-    /// 
+    ///
     /// # Arguments
     /// * `window` - The winit window to create the surface for.
     /// * `window_component` - The corresponding window component of the window.
@@ -137,7 +136,7 @@ impl<'window> GraphicsState<'window> {
     }
 
     /// Destroys the surface for a window.
-    /// 
+    ///
     /// # Arguments
     /// * `window_id` - The id of the window to destroy the surface for.
     pub fn destroy_surface(&mut self, window_id: winit::window::WindowId) {
@@ -146,7 +145,7 @@ impl<'window> GraphicsState<'window> {
 }
 
 /// Contains various values associated with a surface.
-/// 
+///
 /// This will be stored in the [`GraphicsState`] struct for each window with a surface.
 pub struct SurfaceState<'window> {
     /// The wgpu surface.
@@ -160,11 +159,11 @@ pub struct SurfaceState<'window> {
 impl SurfaceState<'_> {
     #[allow(dead_code)]
     /// Resizes the surface to the new size.
-    /// 
+    ///
     /// # Arguments
     /// * `new_size` - The new size to resize the surface to.
     /// * `device` - The wgpu device to configure the surface with.
-    /// 
+    ///
     /// # Notes
     /// Use this when the window is resized, moved between monitors or when the DPI changes.
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, device: &wgpu::Device) {
