@@ -2,9 +2,9 @@
 
 <h3 align="center" style="line-height: 1">
   <picture>
-     <source media="(prefers-color-scheme: dark)" srcset="https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel@master/images/title_logo_dark.svg">
-     <source media="(prefers-color-scheme: light)" srcset="https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel@master/images/title_logo_light.svg">
-     <img alt="Ruxel" width="200" src="https://cdn.jsdelivr.net/gh/ItsSunnyMonster/ruxel@master/images/title_logo_light.svg">
+     <source media="(prefers-color-scheme: dark)" srcset="./images/title_logo_dark.svg">
+     <source media="(prefers-color-scheme: light)" srcset="./images/title_logo_light.svg">
+     <img alt="Ruxel" width="200" src="./images/title_logo_light.svg">
  </picture>
 </h3>
 
