@@ -1,8 +1,11 @@
 ***
 
 <h3 align="center" style="line-height: 1">
-  <img alt="Logo" src="images/icon.png" style="width: 3em"><br>
-  Ruxel
+  <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ItsSunnyMonster/ruxel/ce9443f0c7acb4d0d29ab7cb91eae3225f1853a9/images/Title%20Logo%20Dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ItsSunnyMonster/ruxel/ce9443f0c7acb4d0d29ab7cb91eae3225f1853a9/images/Title%20Logo%20Light.svg">
+      <img alt="Ruxel" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+    </picture>
 </h3>
 
 <p align="center">A voxel engine written in rust.</p>
