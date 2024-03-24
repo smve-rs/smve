@@ -1504,7 +1504,7 @@ dependencies = [
 
 [[package]]
 name = "ruxel"
-version = "0.1.0"
+version = "0.1.0-indev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
