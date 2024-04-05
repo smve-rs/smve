@@ -2,7 +2,7 @@
 
 use crate::core::graphics::resources::GraphicsState;
 use crate::core::window::components::{RawHandleWrapper, Window};
-use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent};
+use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::WinitWindows;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{NonSend, NonSendMut, Query};
@@ -29,6 +29,19 @@ pub fn u_create_surface(
             .unwrap_or_else(|_| panic!("No Window component found on entity {:?}!", window_entity));
         graphics_state.create_surface(window, window_component, raw_window_handle);
         info!("Surface created for window on {:?}", window_entity);
+    }
+}
+
+pub fn u_resize(
+    mut window_resized_event: EventReader<WindowResizedEvent>,
+    mut graphics_state: NonSendMut<GraphicsState>,
+) {
+    for event in window_resized_event.read() {
+        let graphics_state = &mut *graphics_state;
+        let surface_state = graphics_state.surface_states.get_mut(&event.window_id);
+        if let Some(surface_state) = surface_state {
+            surface_state.resize(event.new_inner_size, &graphics_state.device);
+        }
     }
 }
 
