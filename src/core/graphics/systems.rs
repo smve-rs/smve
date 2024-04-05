@@ -32,6 +32,9 @@ pub fn u_create_surface(
     }
 }
 
+/// Resizes the surface for each window that has a resized event.
+/// 
+/// Runs on `Update` when a [`WindowResizedEvent`] is received,
 pub fn u_resize(
     mut window_resized_event: EventReader<WindowResizedEvent>,
     mut graphics_state: NonSendMut<GraphicsState>,
