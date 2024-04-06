@@ -32,7 +32,7 @@ pub fn main() {
 ///
 /// If the `log-to-file` feature is enabled, logs (level DEBUG) will be written to a file.
 /// Otherwise, logs (level INFO) will be written to the console with `env_logger`.
-/// 
+///
 /// # Panics
 /// - If the log directory cannot be initialized
 /// - If the logger cannot be initialized
@@ -42,7 +42,7 @@ fn init_logger() {
         if #[cfg(feature="log-to-file")] {
             let date = chrono::Utc::now();
             let log_file = date.format("logs/ruxel_log_%Y-%m-%d_%H-%M-%S-%f.log").to_string();
-            
+
             initialize_log_directory().unwrap_or_else(|e| {
                 panic!("Failed to initialize log directory: {}", e);
             });
