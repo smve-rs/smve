@@ -19,6 +19,7 @@
 " alt="CI"></a>
   <a href="https://github.com/ItsSunnyMonster/ruxel/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
   <a href="https://github.com/ItsSunnyMonster/ruxel/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
+  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FItsSunnyMonster%2Fa488eb0391a5fc6a2918d13184cd0a26%2Fraw%2Fruxel_loc.json" alt="Line of Code">
 </p>
 
 ### ➜ What does the name mean?
