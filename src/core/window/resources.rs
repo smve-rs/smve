@@ -59,9 +59,11 @@ impl WinitWindows {
                     .map_err(WindowError::IconError)?,
             ));
         }
-        
-        let winit_window = window_builder.build(event_loop).map_err(WindowError::WindowCreationError)?;
-        
+
+        let winit_window = window_builder
+            .build(event_loop)
+            .map_err(WindowError::WindowCreationError)?;
+
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);
 
@@ -101,7 +103,11 @@ impl Debug for WindowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             WindowError::WindowEntityError(entity) => {
-                write!(f, "Entity {:?} does not have a window associated with it", entity)
+                write!(
+                    f,
+                    "Entity {:?} does not have a window associated with it",
+                    entity
+                )
             }
             WindowError::IconError(bad_icon) => {
                 write!(f, "Failed to load icon: {:?}", bad_icon)
@@ -117,7 +123,11 @@ impl Display for WindowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             WindowError::WindowEntityError(entity) => {
-                write!(f, "Entity {:?} does not have a window associated with it", entity)
+                write!(
+                    f,
+                    "Entity {:?} does not have a window associated with it",
+                    entity
+                )
             }
             WindowError::IconError(bad_icon) => {
                 write!(f, "Failed to load icon: {bad_icon}")
@@ -132,15 +142,9 @@ impl Display for WindowError {
 impl Error for WindowError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            WindowError::WindowEntityError(_) => {
-                None
-            }
-            WindowError::IconError(bad_icon) => {
-                Some(bad_icon)
-            }
-            WindowError::WindowCreationError(os_error) => {
-                Some(os_error)
-            }
+            WindowError::WindowEntityError(_) => None,
+            WindowError::IconError(bad_icon) => Some(bad_icon),
+            WindowError::WindowCreationError(os_error) => Some(os_error),
         }
     }
 }

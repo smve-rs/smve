@@ -230,7 +230,7 @@ fn runner(mut app: App) {
 /// # Notes
 /// This function is called in the event loop to create any new windows that were added.
 /// It is also called at the start of the event loop to create any windows that were added before the event loop started.
-/// 
+///
 /// # Panics
 /// - If the winit window creation fails
 /// - If the display handle cannot be retrieved
@@ -248,15 +248,23 @@ fn create_windows(
             continue;
         }
 
-        let winit_window = winit_windows.create_window(event_loop, entity, window).unwrap_or_else(|err| {
-            panic!("Failed to create window for entity {:?}: {err}", entity);
-        });
-        
+        let winit_window = winit_windows
+            .create_window(event_loop, entity, window)
+            .unwrap_or_else(|err| {
+                panic!("Failed to create window for entity {:?}: {err}", entity);
+            });
+
         let display_handle = winit_window.display_handle().unwrap_or_else(|err| {
-            panic!("Failed to get display handle for window {:?}: {err}", winit_window.id());
+            panic!(
+                "Failed to get display handle for window {:?}: {err}",
+                winit_window.id()
+            );
         });
         let window_handle = winit_window.window_handle().unwrap_or_else(|err| {
-            panic!("Failed to get window handle for window {:?}: {err}", winit_window.id());
+            panic!(
+                "Failed to get window handle for window {:?}: {err}",
+                winit_window.id()
+            );
         });
 
         commands.entity(entity).insert(RawHandleWrapper {

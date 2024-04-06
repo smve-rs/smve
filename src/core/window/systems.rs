@@ -21,9 +21,9 @@ pub fn u_primary_window_check(
             commands.entity(entity).remove::<PrimaryWindow>();
             continue;
         }
-        
+
         let window = window.expect("Window component should exist");
-        
+
         primary_window_count.0 += 1;
         if primary_window_count.0 > 1 {
             warn!(
@@ -58,7 +58,9 @@ pub fn pu_close_windows(
     mut winit_windows: NonSendMut<WinitWindows>,
 ) {
     for entity in removed_windows.read() {
-        winit_windows.destroy_window(entity).expect("Entity should have a winit-window");
+        winit_windows
+            .destroy_window(entity)
+            .expect("Entity should have a winit-window");
     }
 }
 

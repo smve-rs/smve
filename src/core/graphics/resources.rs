@@ -71,7 +71,8 @@ impl<'window> GraphicsState<'window> {
                 },
                 None,
             )
-            .await.unwrap_or_else(|err| {
+            .await
+            .unwrap_or_else(|err| {
                 panic!("Failed to create device: {err}");
             });
 
@@ -93,7 +94,7 @@ impl<'window> GraphicsState<'window> {
     /// * `window` - The winit window to create the surface for.
     /// * `window_component` - The corresponding window component of the window.
     /// * `raw_handle_wrapper` - The raw handle wrapper component containing the raw handle of the window.
-    /// 
+    ///
     /// # Returns
     /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
     pub fn create_surface(
@@ -137,7 +138,7 @@ impl<'window> GraphicsState<'window> {
                 size: window.inner_size(),
             },
         );
-        
+
         Ok(())
     }
 
