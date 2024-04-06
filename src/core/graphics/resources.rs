@@ -6,7 +6,7 @@ use crate::core::graphics::adapter_selection_utils::get_best_adapter;
 use crate::core::window::components::{RawHandleWrapper, Window};
 use log::info;
 use std::collections::HashMap;
-use wgpu::{Backends, InstanceDescriptor, PresentMode};
+use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
 
 /// Contains the global and per-window objects needed for rendering.
 ///
@@ -71,8 +71,9 @@ impl<'window> GraphicsState<'window> {
                 },
                 None,
             )
-            .await
-            .unwrap();
+            .await.unwrap_or_else(|err| {
+                panic!("Failed to create device: {err}");
+            });
 
         Self {
             instance,
@@ -92,14 +93,17 @@ impl<'window> GraphicsState<'window> {
     /// * `window` - The winit window to create the surface for.
     /// * `window_component` - The corresponding window component of the window.
     /// * `raw_handle_wrapper` - The raw handle wrapper component containing the raw handle of the window.
+    /// 
+    /// # Returns
+    /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
     pub fn create_surface(
         &mut self,
         window: &winit::window::Window,
         window_component: &Window,
         raw_handle_wrapper: &RawHandleWrapper,
-    ) {
+    ) -> Result<(), CreateSurfaceError> {
         let handle = unsafe { raw_handle_wrapper.get_handle() };
-        let surface = self.instance.create_surface(handle).unwrap();
+        let surface = self.instance.create_surface(handle)?;
 
         let surface_caps = surface.get_capabilities(&self.adapter);
         // Gets the first surface format that is sRGB, otherwise use the first surface format returned
@@ -133,6 +137,8 @@ impl<'window> GraphicsState<'window> {
                 size: window.inner_size(),
             },
         );
+        
+        Ok(())
     }
 
     /// Destroys the surface for a window.

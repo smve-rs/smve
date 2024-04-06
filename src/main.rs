@@ -22,5 +22,7 @@ use env_logger::Env;
 pub fn main() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
+    log_panics::init();
+
     App::new().add_plugins(WindowPlugin::default()).run();
 }

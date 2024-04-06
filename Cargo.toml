@@ -21,6 +21,7 @@ pollster = "0.3.0"
 wgpu = "0.19.3"
 winit = "0.29.15"
 raw-window-handle = "0.6.0"
+log-panics = { version = "2", features = ["with-backtrace"]}
 
 [profile.dev]
 opt-level = 1

@@ -27,7 +27,11 @@ pub fn u_create_surface(
         let (window_component, raw_window_handle) = query
             .get(window_entity)
             .unwrap_or_else(|_| panic!("No Window component found on entity {:?}!", window_entity));
-        graphics_state.create_surface(window, window_component, raw_window_handle);
+        
+        graphics_state.create_surface(window, window_component, raw_window_handle).unwrap_or_else(|err| {
+            panic!("Failed to create surface for window on {:?} with error {err}", window_entity)
+        });
+        
         info!("Surface created for window on {:?}", window_entity);
     }
 }

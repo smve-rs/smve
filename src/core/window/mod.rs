@@ -76,7 +76,10 @@ impl Plugin for WindowPlugin {
         }
 
         // Insert resources
-        app.insert_non_send_resource(EventLoop::new().unwrap()); // Event loop created here
+        let event_loop = EventLoop::new().unwrap_or_else(|err| {
+            panic!("Failed to create event loop with error: {err}");
+        });
+        app.insert_non_send_resource(event_loop);
         app.insert_non_send_resource(WinitWindows::default());
         app.insert_resource(PrimaryWindowCount::default());
 
@@ -107,7 +110,7 @@ fn runner(mut app: App) {
     let event_loop = app
         .world
         .remove_non_send_resource::<EventLoop<()>>()
-        .unwrap();
+        .expect("Event loop should be added before runner is called");
 
     // System state of added window component
     // We will use this in the event loop to create any new windows that were added
@@ -227,6 +230,11 @@ fn runner(mut app: App) {
 /// # Notes
 /// This function is called in the event loop to create any new windows that were added.
 /// It is also called at the start of the event loop to create any windows that were added before the event loop started.
+/// 
+/// # Panics
+/// - If the winit window creation fails
+/// - If the display handle cannot be retrieved
+/// - If the window handle cannot be retrieved
 fn create_windows(
     mut commands: Commands,
     query: Query<(Entity, &Window), Added<Window>>,
@@ -240,11 +248,20 @@ fn create_windows(
             continue;
         }
 
-        let winit_window = winit_windows.create_window(event_loop, entity, window);
+        let winit_window = winit_windows.create_window(event_loop, entity, window).unwrap_or_else(|err| {
+            panic!("Failed to create window for entity {:?}: {err}", entity);
+        });
+        
+        let display_handle = winit_window.display_handle().unwrap_or_else(|err| {
+            panic!("Failed to get display handle for window {:?}: {err}", winit_window.id());
+        });
+        let window_handle = winit_window.window_handle().unwrap_or_else(|err| {
+            panic!("Failed to get window handle for window {:?}: {err}", winit_window.id());
+        });
 
         commands.entity(entity).insert(RawHandleWrapper {
-            display_handle: winit_window.display_handle().unwrap().as_raw(),
-            window_handle: winit_window.window_handle().unwrap().as_raw(),
+            display_handle: display_handle.as_raw(),
+            window_handle: window_handle.as_raw(),
         });
 
         window_created_event.send(WindowCreatedEvent {

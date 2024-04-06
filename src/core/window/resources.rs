@@ -5,9 +5,11 @@ use bevy_ecs::prelude::{Entity, Resource};
 use log::{info, warn};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use winit::dpi::LogicalSize;
-use winit::window::{Icon, WindowBuilder};
+use winit::window::{BadIcon, Icon, WindowBuilder};
 
 /// Resource to keep track of the number of primary windows
 /// Used in a system to make sure there is only ever one primary window
@@ -46,7 +48,7 @@ impl WinitWindows {
         event_loop: &winit::event_loop::EventLoopWindowTarget<()>,
         entity: Entity,
         window: &Window,
-    ) -> &winit::window::Window {
+    ) -> Result<&winit::window::Window, WindowError> {
         info!("Opening window {} on {:?}", window.title, entity);
         let mut window_builder = WindowBuilder::new()
             .with_inner_size(LogicalSize::new(window.width, window.height))
@@ -54,26 +56,91 @@ impl WinitWindows {
         if let Some(icon_data) = window.icon_data.clone() {
             window_builder = window_builder.with_window_icon(Some(
                 Icon::from_rgba(icon_data, window.icon_width, window.icon_height)
-                    .expect("Bad Icon"),
+                    .map_err(WindowError::IconError)?,
             ));
         }
-        let winit_window = window_builder.build(event_loop).unwrap();
+        
+        let winit_window = window_builder.build(event_loop).map_err(WindowError::WindowCreationError)?;
+        
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);
 
         match self.windows.entry(winit_window.id()) {
             Entry::Occupied(e) => {
                 warn!("I'm not sure what happened but a Window with the same ID already exists");
-                &*e.into_mut()
+                Ok(e.into_mut())
             }
-            Entry::Vacant(e) => &*e.insert(winit_window),
+            Entry::Vacant(e) => Ok(e.insert(winit_window)),
         }
     }
 
     /// Destroys a window and removes it from the resource.
-    pub fn destroy_window(&mut self, entity: Entity) {
-        let window = self.entity_to_window.remove(&entity).unwrap();
-        self.window_to_entity.remove(&window);
-        self.windows.remove(&window);
+    pub fn destroy_window(&mut self, entity: Entity) -> Result<(), WindowError> {
+        let window = self.entity_to_window.remove(&entity);
+        if let Some(window) = window {
+            self.windows.remove(&window);
+            self.window_to_entity.remove(&window);
+            Ok(())
+        } else {
+            Err(WindowError::WindowEntityError(entity))
+        }
+    }
+}
+
+/// Handling various errors related to windowing
+pub enum WindowError {
+    /// Error when an entity does not have a window associated with it
+    WindowEntityError(Entity),
+    /// Error on failure to load an icon
+    IconError(BadIcon),
+    /// Error on failure to create a window
+    WindowCreationError(winit::error::OsError),
+}
+
+impl Debug for WindowError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WindowError::WindowEntityError(entity) => {
+                write!(f, "Entity {:?} does not have a window associated with it", entity)
+            }
+            WindowError::IconError(bad_icon) => {
+                write!(f, "Failed to load icon: {:?}", bad_icon)
+            }
+            WindowError::WindowCreationError(os_error) => {
+                write!(f, "Failed to create window: {:?}", os_error)
+            }
+        }
+    }
+}
+
+impl Display for WindowError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WindowError::WindowEntityError(entity) => {
+                write!(f, "Entity {:?} does not have a window associated with it", entity)
+            }
+            WindowError::IconError(bad_icon) => {
+                write!(f, "Failed to load icon: {bad_icon}")
+            }
+            WindowError::WindowCreationError(os_error) => {
+                write!(f, "Failed to create window: {os_error}")
+            }
+        }
+    }
+}
+
+impl Error for WindowError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            WindowError::WindowEntityError(_) => {
+                None
+            }
+            WindowError::IconError(bad_icon) => {
+                Some(bad_icon)
+            }
+            WindowError::WindowCreationError(os_error) => {
+                Some(os_error)
+            }
+        }
     }
 }

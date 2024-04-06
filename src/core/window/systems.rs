@@ -5,24 +5,30 @@ use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
 
-/// System to make sure there is only ever one primary window
-/// Called on Update and will remove the primary window component from any duplicates found
+/// System to make sure there is only ever one primary window and every primary window has a window component
+/// Called on Update and will remove the primary window component from any duplicates found and any primary windows without a window component
 pub fn u_primary_window_check(
     mut commands: Commands,
     mut query: Query<(Entity, Option<&Window>), Added<PrimaryWindow>>,
     mut primary_window_count: ResMut<PrimaryWindowCount>,
 ) {
     for (entity, window) in query.iter_mut() {
+        if window.is_none() {
+            warn!(
+                "Entity {:?} has a PrimaryWindow component but no Window component, removing PrimaryWindow",
+                entity
+            );
+            commands.entity(entity).remove::<PrimaryWindow>();
+            continue;
+        }
+        
+        let window = window.expect("Window component should exist");
+        
         primary_window_count.0 += 1;
         if primary_window_count.0 > 1 {
-            let with_window_titled = if let Some(window) = window {
-                format!("with Window titled \"{}\"", window.title)
-            } else {
-                "with no Window component".to_string()
-            };
             warn!(
-                "A primary window already exists, removing PrimaryWindow component from entity {:?} {}",
-                entity, with_window_titled
+                "A primary window already exists, removing PrimaryWindow component from entity {:?} with window titled {}",
+                entity, window.title
             );
             commands.entity(entity).remove::<PrimaryWindow>();
             primary_window_count.0 -= 1;
@@ -52,7 +58,7 @@ pub fn pu_close_windows(
     mut winit_windows: NonSendMut<WinitWindows>,
 ) {
     for entity in removed_windows.read() {
-        winit_windows.destroy_window(entity);
+        winit_windows.destroy_window(entity).expect("Entity should have a winit-window");
     }
 }
 
