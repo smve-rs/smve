@@ -15,7 +15,8 @@
 <p align="center">
   <a href="https://github.com/ItsSunnyMonster/ruxel/stargazers"><img src="https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
   <a href="https://github.com/ItsSunnyMonster/ruxel#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
-  <a href="https://github.com/ItsSunnyMonster/ruxel/actions"><img src="https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_ci.svg" alt="CI"></a>
+  <a href="https://github.com/ItsSunnyMonster/ruxel/actions"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FItsSunnyMonster%2Fa488eb0391a5fc6a2918d13184cd0a26%2Fraw%2Fruxel_ci.json
+" alt="CI"></a>
   <a href="https://github.com/ItsSunnyMonster/ruxel/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
   <a href="https://github.com/ItsSunnyMonster/ruxel/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
 </p>
