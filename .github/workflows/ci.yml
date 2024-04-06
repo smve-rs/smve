@@ -215,7 +215,7 @@ jobs:
           sudo apt-get update -y && sudo apt-get install -y cloc
       - name: Count lines of code
         run: |
-          echo "CODE_LINES=$(   ./cloc.sh --loc)" >> $GITHUB_ENV
+          echo "CODE_LINES=$(   ./scripts/cloc.sh --loc)" >> $GITHUB_ENV
       - name: Create Lines-of-Code-Badge
         uses: schneegans/dynamic-badges-action@v1.3.0
         with:
