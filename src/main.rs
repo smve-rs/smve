@@ -13,7 +13,6 @@
 
 pub mod core;
 
-use crate::core::window::components::{PrimaryWindow, Window, WindowResolution};
 use crate::core::window::WindowPlugin;
 use bevy_app::prelude::*;
 
