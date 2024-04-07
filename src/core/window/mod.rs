@@ -7,19 +7,16 @@ pub mod events;
 mod icon;
 mod systems;
 
-use crate::core::window::components::{PrimaryWindow, RawHandleWrapper, Window};
+use crate::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
-use crate::core::window::systems::{
-    pu_close_windows, pu_exit_on_all_closed, pu_exit_on_primary_closed, u_despawn_windows,
-    u_primary_window_check,
-};
+use crate::core::window::systems::{pu_close_windows, pu_exit_on_all_closed, pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check, l_react_to_resize, l_update_windows};
 use bevy_app::prelude::*;
 use bevy_app::{AppExit, PluginsState};
 use bevy_ecs::event::ManualEventReader;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
-use log::{error, info};
+use log::{error, info, warn};
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
@@ -85,8 +82,12 @@ impl Plugin for WindowPlugin {
 
         // Add systems
         app.add_systems(Update, u_primary_window_check);
-        app.add_systems(PostUpdate, pu_close_windows);
         app.add_systems(Update, u_despawn_windows);
+        app.add_systems(PostUpdate, pu_close_windows);
+        app.add_systems(Last, (
+            l_update_windows,
+            l_react_to_resize.before(l_update_windows),
+        ));
 
         app.add_plugins(GraphicsPlugin);
 
@@ -116,9 +117,15 @@ fn runner(mut app: App) {
     // We will use this in the event loop to create any new windows that were added
     let mut create_windows_system_state: SystemState<(
         Commands,
-        Query<(Entity, &Window), Added<Window>>,
+        Query<(Entity, &mut Window), Added<Window>>,
         NonSendMut<WinitWindows>,
         EventWriter<WindowCreatedEvent>,
+    )> = SystemState::from_world(&mut app.world);
+
+    let mut window_event_system_state: SystemState<(
+        EventWriter<WindowResizedEvent>,
+        Query<(Entity, &mut Window)>,
+        NonSendMut<WinitWindows>,
     )> = SystemState::from_world(&mut app.world);
 
     // Event reader to read any app exit events
@@ -159,16 +166,31 @@ fn runner(mut app: App) {
                 create_windows_system_state.apply(&mut app.world);
             }
             Event::WindowEvent { window_id, event } => {
+                let (mut window_resized_event, mut query, winit_windows) = window_event_system_state.get_mut(&mut app.world);
+                let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
+                    warn!("Skipped event {event:?} for unknown winit window {window_id:?}");
+                    return;
+                };
+                let Ok((_, mut window)) = query.get_mut(window_entity) else {
+                    warn!("Window {window_entity:?} is missing Window component, skipping event {event:?}");
+                    return;
+                };
+
                 match event {
                     WindowEvent::CloseRequested => {
                         // Send a close requested event so systems can drop the Window and despawn windows
                         app.world.send_event(CloseRequestedEvent { window_id });
                     }
                     WindowEvent::Resized(size) => {
-                        app.world.send_event(WindowResizedEvent {
-                            window_id,
-                            new_inner_size: size,
+                        window_resized_event.send(WindowResizedEvent {
+                            entity: window_entity,
+                            new_width: size.to_logical(window.resolution.scale_factor()).width,
+                            new_height: size.to_logical(window.resolution.scale_factor()).height,
                         });
+                    }
+                    WindowEvent::ScaleFactorChanged {scale_factor, ..} => {
+                        window.resolution.set_scale_factor(scale_factor);
+                        //info!("Scale factor changed {}, {}, {}", window.resolution.physical_width(), window.resolution.physical_height(), window.resolution.scale_factor());
                     }
                     _ => {}
                 }
@@ -237,22 +259,24 @@ fn runner(mut app: App) {
 /// - If the window handle cannot be retrieved
 fn create_windows(
     mut commands: Commands,
-    query: Query<(Entity, &Window), Added<Window>>,
+    mut query: Query<(Entity, &mut Window), Added<Window>>,
     mut winit_windows: NonSendMut<WinitWindows>,
     mut window_created_event: EventWriter<WindowCreatedEvent>,
     event_loop: &EventLoopWindowTarget<()>,
 ) {
-    for (entity, window) in query.iter() {
+    for (entity, mut window) in query.iter_mut() {
         // If the winit window already exists somehow, don't create another one
         if winit_windows.entity_to_window.contains_key(&entity) {
             continue;
         }
 
         let winit_window = winit_windows
-            .create_window(event_loop, entity, window)
+            .create_window(event_loop, entity, window.as_ref())
             .unwrap_or_else(|err| {
                 panic!("Failed to create window for entity {:?}: {err}", entity);
             });
+        
+        window.resolution.set_scale_factor(winit_window.scale_factor());
 
         let display_handle = winit_window.display_handle().unwrap_or_else(|err| {
             panic!(
@@ -271,6 +295,8 @@ fn create_windows(
             display_handle: display_handle.as_raw(),
             window_handle: window_handle.as_raw(),
         });
+
+        commands.entity(entity).insert(CachedWindow(window.clone()));
 
         window_created_event.send(WindowCreatedEvent {
             window_id: winit_window.id(),

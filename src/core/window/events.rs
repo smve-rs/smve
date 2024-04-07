@@ -13,10 +13,12 @@ pub struct CloseRequestedEvent {
 /// This event is emitted when a window is resized.
 #[derive(Event)]
 pub struct WindowResizedEvent {
-    /// The window that was resized
-    pub window_id: winit::window::WindowId,
-    /// The new size of the window
-    pub new_inner_size: winit::dpi::PhysicalSize<u32>,
+    /// The entity with the window that was resized
+    pub entity: Entity,
+    /// The new logical width of the window
+    pub new_width: f64,
+    /// The new logical height of the window
+    pub new_height: f64,
 }
 
 /// This event is emitted when a window is created.

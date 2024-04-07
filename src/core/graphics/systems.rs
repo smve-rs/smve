@@ -46,13 +46,20 @@ pub fn u_create_surface(
 /// Runs on `Update` when a [`WindowResizedEvent`] is received,
 pub fn u_resize(
     mut window_resized_event: EventReader<WindowResizedEvent>,
+    winit_windows: NonSend<WinitWindows>,
+    query: Query<&Window>,
     mut graphics_state: NonSendMut<GraphicsState>,
 ) {
     for event in window_resized_event.read() {
         let graphics_state = &mut *graphics_state;
-        let surface_state = graphics_state.surface_states.get_mut(&event.window_id);
+        
+        let window_id = winit_windows.entity_to_window.get(&event.entity).expect("Window should exist");
+        
+        let window = query.get(event.entity).expect("Window component should exist");
+        
+        let surface_state = graphics_state.surface_states.get_mut(window_id);
         if let Some(surface_state) = surface_state {
-            surface_state.resize(event.new_inner_size, &graphics_state.device);
+            surface_state.resize(window.resolution.physical_size(), &graphics_state.device);
         }
     }
 }

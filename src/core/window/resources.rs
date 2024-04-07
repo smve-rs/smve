@@ -8,8 +8,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
-use winit::dpi::LogicalSize;
-use winit::window::{BadIcon, Icon, WindowBuilder};
+use winit::window::{BadIcon, Icon, WindowBuilder, WindowId};
 
 /// Resource to keep track of the number of primary windows
 /// Used in a system to make sure there is only ever one primary window
@@ -50,8 +49,9 @@ impl WinitWindows {
         window: &Window,
     ) -> Result<&winit::window::Window, WindowError> {
         info!("Opening window {} on {:?}", window.title, entity);
+        
         let mut window_builder = WindowBuilder::new()
-            .with_inner_size(LogicalSize::new(window.width, window.height))
+            .with_inner_size(window.resolution.size())
             .with_title(&window.title);
         if let Some(icon_data) = window.icon_data.clone() {
             window_builder = window_builder.with_window_icon(Some(
@@ -75,6 +75,13 @@ impl WinitWindows {
             Entry::Vacant(e) => Ok(e.insert(winit_window)),
         }
     }
+    
+    /// Gets the winit window associated with an entity.
+    pub fn get_window(&self, entity: Entity) -> Option<&winit::window::Window> {
+        self.entity_to_window
+            .get(&entity)
+            .and_then(|window_id| self.windows.get(window_id))
+    }
 
     /// Destroys a window and removes it from the resource.
     pub fn destroy_window(&mut self, entity: Entity) -> Result<(), WindowError> {
@@ -86,6 +93,11 @@ impl WinitWindows {
         } else {
             Err(WindowError::WindowEntityError(entity))
         }
+    }
+    
+    /// Gets the entity associated with a window.
+    pub fn get_window_entity(&self, window_id: WindowId) -> Option<Entity> {
+        self.window_to_entity.get(&window_id).cloned()
     }
 }
 

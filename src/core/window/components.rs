@@ -6,6 +6,7 @@ use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,
 };
+use winit::dpi::{LogicalSize, PhysicalSize, Pixel, Size};
 
 /// A marker component for the primary window.
 /// There should be only one primary window at any one time.
@@ -17,10 +18,8 @@ pub struct PrimaryWindow;
 /// This contains various parameters of the window.
 #[derive(Component, Clone)]
 pub struct Window {
-    /// The width of the window
-    pub width: u32,
-    /// The height of the window
-    pub height: u32,
+    /// The dimensions of the window
+    pub resolution: WindowResolution,
     /// The title of the window
     pub title: String,
     /// 0 if there is no icon
@@ -37,8 +36,7 @@ pub struct Window {
 impl Default for Window {
     fn default() -> Self {
         Window {
-            width: 800,
-            height: 600,
+            resolution: Default::default(),
             title: "Ruxel".to_string(),
             icon_width: icon::IMAGE_WIDTH as u32,
             icon_height: icon::IMAGE_HEIGHT as u32,
@@ -47,6 +45,111 @@ impl Default for Window {
         }
     }
 }
+
+/// A structure representing the resolution of the window
+#[derive(Clone, PartialEq, Debug)]
+pub struct WindowResolution {
+    /// The physical width (pixels) of the window
+    physical_width: u32,
+    /// The physical height (pixels) of the window
+    physical_height: u32,
+    /// The scale factor of the window
+    scale_factor: f64,
+}
+
+impl Default for WindowResolution {
+    fn default() -> Self {
+        WindowResolution {
+            physical_width: 800,
+            physical_height: 600,
+            scale_factor: 1.0,
+        }
+    }
+}
+
+impl WindowResolution {
+    /// Creates a new window resolution with the given logical size
+    pub fn new<P: Pixel>(logical_size: LogicalSize<P>) -> Self {
+        // Assume the scale factor is 1 since it should be updated when the window is created
+        let physical_size = logical_size.to_physical(1.0);
+        WindowResolution {
+            physical_width: physical_size.width,
+            physical_height: physical_size.height,
+            scale_factor: 1.0,
+        }
+    }
+    
+    /// Creates a new window resolution with the given physical size and scale factor
+    pub fn new_physical<P: Pixel>(physical_size: PhysicalSize<P>, scale_factor: f64) -> Self {
+        let physical_size = physical_size.cast::<u32>();
+        WindowResolution {
+            physical_width: physical_size.width,
+            physical_height: physical_size.height,
+            scale_factor,
+        }
+    }
+    
+    /// Returns the physical width of the window
+    pub fn physical_width(&self) -> u32 {
+        self.physical_width
+    }
+    
+    /// Returns the physical height of the window
+    pub fn physical_height(&self) -> u32 {
+        self.physical_height
+    }
+    
+    /// Returns the scale factor of the window
+    pub fn scale_factor(&self) -> f64 {
+        self.scale_factor
+    }
+    
+    /// Returns the logical width of the window
+    pub fn width(&self) -> f64 {
+        self.physical_width as f64 / self.scale_factor
+    }
+    
+    /// Returns the logical height of the window
+    pub fn height(&self) -> f64 {
+        self.physical_height as f64 / self.scale_factor
+    }
+    
+    /// Returns the logical size of the window
+    pub fn size(&self) -> LogicalSize<f64> {
+        LogicalSize::new(self.width(), self.height())
+    }
+    
+    /// Returns the physical size of the window
+    pub fn physical_size(&self) -> PhysicalSize<u32> {
+        PhysicalSize::new(self.physical_width, self.physical_height)
+    }
+    
+    /// Sets the physical width of the window
+    pub fn set_physical_size<P: Pixel>(&mut self, physical_size: PhysicalSize<P>) {
+        let physical_size = physical_size.cast::<u32>();
+        self.physical_width = physical_size.width;
+        self.physical_height = physical_size.height;
+    }
+    
+    /// Sets the logical size of the window
+    pub fn set_logical_size<P: Pixel>(&mut self, logical_size: LogicalSize<P>) {
+        let physical_size: PhysicalSize<u32> = logical_size.to_physical(self.scale_factor);
+        self.set_physical_size(physical_size);
+    }
+    
+    /// Sets the scale factor of the window
+    /// To ensure the logical size does not change, the physical size is adjusted based on the new scale factor
+    pub fn set_scale_factor(&mut self, scale_factor: f64) {
+        let old_scale_factor = self.scale_factor;
+        self.scale_factor = scale_factor;
+        self.physical_width = (self.physical_width as f64 / old_scale_factor * scale_factor) as u32;
+        self.physical_height = (self.physical_height as f64 / old_scale_factor * scale_factor) as u32;
+    }
+}
+
+/// A cached state of the window so that we can check if it has changed
+#[derive(Component)]
+pub struct CachedWindow(pub Window);
 
 /// A wrapper for the raw handle of the window
 ///
