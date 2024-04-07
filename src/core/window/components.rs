@@ -6,7 +6,7 @@ use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,
 };
-use winit::dpi::{LogicalSize, PhysicalSize, Pixel, Size};
+use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
 
 /// A marker component for the primary window.
 /// There should be only one primary window at any one time.

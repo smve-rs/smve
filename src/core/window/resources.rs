@@ -20,11 +20,11 @@ pub struct PrimaryWindowCount(pub u32);
 /// This creates an association between the entity and the winit window associated with it
 pub struct WinitWindows {
     /// Maps from ID (which can be cloned, moved, etc.) to the winit window (which this resource exclusively owns)
-    pub windows: HashMap<winit::window::WindowId, winit::window::Window>,
+    pub windows: HashMap<WindowId, winit::window::Window>,
     /// Maps from entity to window ID
-    pub entity_to_window: HashMap<Entity, winit::window::WindowId>,
+    pub entity_to_window: HashMap<Entity, WindowId>,
     /// Maps from window ID to entity
-    pub window_to_entity: HashMap<winit::window::WindowId, Entity>,
+    pub window_to_entity: HashMap<WindowId, Entity>,
     // Many winit functions are not Send or Sync, so this resource is not Send or Sync
     _not_send_sync: PhantomData<*const ()>,
 }
