@@ -217,7 +217,7 @@ jobs:
         run: |
           echo "CODE_LINES=$(   ./scripts/cloc.sh --loc)" >> $GITHUB_ENV
       - name: Create Lines-of-Code-Badge
-        uses: schneegans/dynamic-badges-action@v1.3.0
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.CI_GIST_TOKEN }}
           gistID: a488eb0391a5fc6a2918d13184cd0a26
