@@ -10,7 +10,10 @@ mod systems;
 use crate::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
-use crate::core::window::systems::{pu_close_windows, pu_exit_on_all_closed, pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check, l_react_to_resize, l_update_windows};
+use crate::core::window::systems::{
+    l_react_to_resize, l_update_windows, pu_close_windows, pu_exit_on_all_closed,
+    pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check,
+};
 use bevy_app::prelude::*;
 use bevy_app::{AppExit, PluginsState};
 use bevy_ecs::event::ManualEventReader;
@@ -84,10 +87,10 @@ impl Plugin for WindowPlugin {
         app.add_systems(Update, u_primary_window_check);
         app.add_systems(Update, u_despawn_windows);
         app.add_systems(PostUpdate, pu_close_windows);
-        app.add_systems(Last, (
-            l_update_windows,
-            l_react_to_resize.before(l_update_windows),
-        ));
+        app.add_systems(
+            Last,
+            (l_update_windows, l_react_to_resize.before(l_update_windows)),
+        );
 
         app.add_plugins(GraphicsPlugin);
 
@@ -166,7 +169,8 @@ fn runner(mut app: App) {
                 create_windows_system_state.apply(&mut app.world);
             }
             Event::WindowEvent { window_id, event } => {
-                let (mut window_resized_event, mut query, winit_windows) = window_event_system_state.get_mut(&mut app.world);
+                let (mut window_resized_event, mut query, winit_windows) =
+                    window_event_system_state.get_mut(&mut app.world);
                 let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
                     warn!("Skipped event {event:?} for unknown winit window {window_id:?}");
                     return;
@@ -188,7 +192,7 @@ fn runner(mut app: App) {
                             new_height: size.to_logical(window.resolution.scale_factor()).height,
                         });
                     }
-                    WindowEvent::ScaleFactorChanged {scale_factor, ..} => {
+                    WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                         window.resolution.set_scale_factor(scale_factor);
                         //info!("Scale factor changed {}, {}, {}", window.resolution.physical_width(), window.resolution.physical_height(), window.resolution.scale_factor());
                     }
@@ -275,8 +279,10 @@ fn create_windows(
             .unwrap_or_else(|err| {
                 panic!("Failed to create window for entity {:?}: {err}", entity);
             });
-        
-        window.resolution.set_scale_factor(winit_window.scale_factor());
+
+        window
+            .resolution
+            .set_scale_factor(winit_window.scale_factor());
 
         let display_handle = winit_window.display_handle().unwrap_or_else(|err| {
             panic!(

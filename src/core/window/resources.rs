@@ -49,7 +49,7 @@ impl WinitWindows {
         window: &Window,
     ) -> Result<&winit::window::Window, WindowError> {
         info!("Opening window {} on {:?}", window.title, entity);
-        
+
         let mut window_builder = WindowBuilder::new()
             .with_inner_size(window.resolution.size())
             .with_title(&window.title);
@@ -75,7 +75,7 @@ impl WinitWindows {
             Entry::Vacant(e) => Ok(e.insert(winit_window)),
         }
     }
-    
+
     /// Gets the winit window associated with an entity.
     pub fn get_window(&self, entity: Entity) -> Option<&winit::window::Window> {
         self.entity_to_window
@@ -94,7 +94,7 @@ impl WinitWindows {
             Err(WindowError::WindowEntityError(entity))
         }
     }
-    
+
     /// Gets the entity associated with a window.
     pub fn get_window_entity(&self, window_id: WindowId) -> Option<Entity> {
         self.window_to_entity.get(&window_id).cloned()

@@ -13,6 +13,7 @@
 
 pub mod core;
 
+use crate::core::window::components::{PrimaryWindow, Window, WindowResolution};
 use crate::core::window::WindowPlugin;
 use bevy_app::prelude::*;
 use bevy_ecs::prelude::Query;
@@ -21,7 +22,6 @@ use bevy_ecs::system::{Commands, Local};
 use cfg_if::cfg_if;
 use log::info;
 use winit::dpi::{LogicalSize, PhysicalSize};
-use crate::core::window::components::{PrimaryWindow, Window, WindowResolution};
 
 /// The main entry point for the application.
 ///
@@ -31,9 +31,7 @@ pub fn main() {
 
     log_panics::init();
 
-    App::new()
-        .add_plugins(WindowPlugin::default())
-        .run();
+    App::new().add_plugins(WindowPlugin::default()).run();
 }
 
 /// Initializes loggers based on the features enabled.

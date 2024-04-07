@@ -4,16 +4,15 @@ use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
 use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
-use winit::dpi::{LogicalSize};
+use winit::dpi::LogicalSize;
 
 /// System to update the physical window when a value is changed on the [`Window`] component
 pub fn l_update_windows(
     mut query: Query<(Entity, &mut Window, &mut CachedWindow), Changed<Window>>,
     winit_windows: NonSendMut<WinitWindows>,
-    mut window_resized: EventWriter<WindowResizedEvent>
+    mut window_resized: EventWriter<WindowResizedEvent>,
 ) {
     for (entity, mut window, mut cache) in query.iter_mut() {
-        
         let Some(winit_window) = winit_windows.get_window(entity) else {
             continue;
         };
@@ -38,28 +37,36 @@ pub fn l_update_windows(
         if window.icon_data != cache.0.icon_data {
             if let Some(icon_data) = window.icon_data.clone() {
                 winit_window.set_window_icon(Some(
-                    winit::window::Icon::from_rgba(icon_data, window.icon_width, window.icon_height)
-                        .expect("Failed to create window icon"),
+                    winit::window::Icon::from_rgba(
+                        icon_data,
+                        window.icon_width,
+                        window.icon_height,
+                    )
+                    .expect("Failed to create window icon"),
                 ));
             } else {
                 winit_window.set_window_icon(None);
             }
         }
-        
+
         // TODO: Ignored the vsync field since it should be handled by graphics subapp
-        
+
         cache.0 = window.clone();
     }
 }
 
 pub fn l_react_to_resize(
     mut window_resized: EventReader<WindowResizedEvent>,
-    mut query: Query<&mut Window>
+    mut query: Query<&mut Window>,
 ) {
     for event in window_resized.read() {
-        let mut window = query.get_mut(event.entity).expect("Window component should exist");
-        window.resolution.set_logical_size(LogicalSize::new(event.new_width, event.new_height));
-        
+        let mut window = query
+            .get_mut(event.entity)
+            .expect("Window component should exist");
+        window
+            .resolution
+            .set_logical_size(LogicalSize::new(event.new_width, event.new_height));
+
         //info!("React to resize: {}, {}, {}", window.resolution.physical_width(), window.resolution.physical_height(), window.resolution.scale_factor());
     }
 }
