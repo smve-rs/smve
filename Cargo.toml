@@ -44,6 +44,9 @@ opt-level = 3
 [lints.clippy]
 type_complexity = "allow"
 
+[build-dependencies]
+winres = "0.1.12"
+
 [profile.dist]
 inherits = "release"
 strip = true
