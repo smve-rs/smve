@@ -66,7 +66,23 @@ fn init_logger() {
                     panic!("Failed to initialize logger: {}", e);
                 });
         } else {
-            env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    use std::io::Write;
+            use env_logger::fmt::style::AnsiColor;
+
+    env_logger::Builder::from_env(env_logger::Env::default()
+        .default_filter_or("info"))
+        .format(|buf, record| {
+            let level_style = buf.default_level_style(record.level()).bold();
+            let time_target_style = env_logger::fmt::style::Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
+            writeln!(buf, "{time_target_style}{}{time_target_style:#}  {level_style}[{}]{level_style:#} {time_target_style}{}:{time_target_style:#} {}",
+                     humantime::format_rfc3339_seconds(std::time::SystemTime::now()),
+                     record.level(),
+                     record.target(),
+                     record.args()
+            )
+        })
+        .init();
         }
     }
 }

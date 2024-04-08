@@ -26,12 +26,12 @@ cfg-if = "1.0.0"
 
 # Dependencies for file logging
 fern = { version = "0.6.2", features = ["colored"], optional = true }
-humantime = { version = "2.1.0", optional = true }
+humantime = { version = "2.1.0"}
 chrono = { version = "0.4.37", optional = true }
 flate2 = { version = "1.0.28", optional = true }
 
 [features]
-log-to-file = ["dep:fern", "dep:flate2", "dep:chrono", "dep:humantime"]
+log-to-file = ["dep:fern", "dep:flate2", "dep:chrono"]
 windowed = []
 dist = ["log-to-file", "windowed"]
 
