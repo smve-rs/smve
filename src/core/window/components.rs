@@ -19,6 +19,8 @@ pub struct PrimaryWindow;
 #[derive(Component, Clone)]
 pub struct Window {
     /// The dimensions of the window
+    // * Fun Fact: This used to be just a width and a height. Then I ran into a few problems with the scale factor.
+    // *           So I decided to also store the scale factor and make functions that would convert from physical size to logical size.
     pub resolution: WindowResolution,
     /// The title of the window
     pub title: String,
@@ -30,6 +32,7 @@ pub struct Window {
     /// `None` if there is no icon
     pub icon_data: Option<Vec<u8>>,
     /// Whether vsync is enabled
+    // TODO: Perhaps turn this into an enum with different present modes
     pub vsync: bool,
 }
 
@@ -187,6 +190,7 @@ impl RawHandleWrapper {
 ///
 /// This is a wrapper around the raw handle wrapper and can ONLY be constructed by calling [`RawHandleWrapper::get_handle`].
 /// This ensures that the raw handle wrapper is only used in a correct context.
+// * Fun Fact: This struct is not actually thread-locked. I'm not sure why but this is exactly how bevy handles this situation in their code.
 pub struct ThreadLockedRawHandleWrapper(RawHandleWrapper);
 
 impl HasDisplayHandle for ThreadLockedRawHandleWrapper {

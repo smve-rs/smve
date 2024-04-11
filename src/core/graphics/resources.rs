@@ -26,6 +26,7 @@ pub struct GraphicsState<'window> {
     // Per-Window Objects
     /// Contains a mapping from the window id to the surface state.
     pub surface_states: HashMap<winit::window::WindowId, SurfaceState<'window>>,
+    // TODO: The graphics state should not be a NonSend resource.
     //_not_send_sync: PhantomData<*const ()>,
 }
 
@@ -48,6 +49,9 @@ impl<'window> GraphicsState<'window> {
 
         info!("Selected Backend: {:?}", adapter.get_info().backend);
 
+        // * Fun Fact: This "DX12" problem was extremely hard to debug.
+        // *           Turns out it is something to do with the fact that wgpu creates an instance for all backends when using the default constructor.
+        // *           This causes the DX12 backend to fail as it could not share the instance with the Vulkan backend.
         // Recreate the instance based on the backend chosen (fix DX12 problem on windows)
         let instance = wgpu::Instance::new(InstanceDescriptor {
             backends: adapter.get_info().backend.into(),
@@ -91,9 +95,9 @@ impl<'window> GraphicsState<'window> {
     /// This function creates a new surface for the window and configures it with the given parameters specified in the [`Window`] component.
     ///
     /// # Arguments
-    /// * `window` - The winit window to create the surface for.
-    /// * `window_component` - The corresponding window component of the window.
-    /// * `raw_handle_wrapper` - The raw handle wrapper component containing the raw handle of the window.
+    /// - `window` - The winit window to create the surface for.
+    /// - `window_component` - The corresponding window component of the window.
+    /// - `raw_handle_wrapper` - The raw handle wrapper component containing the raw handle of the window.
     ///
     /// # Returns
     /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
@@ -102,7 +106,17 @@ impl<'window> GraphicsState<'window> {
         window: &winit::window::Window,
         window_component: &Window,
         raw_handle_wrapper: &RawHandleWrapper,
+        // * Fun Fact: I used to not return a Result here because I was simply panicking if the surface creation failed.
+        // *           That was a horrible idea.
     ) -> Result<(), CreateSurfaceError> {
+        // * Fun Fact: I saw tutorials online suggesting to pass the window straight in to the create_surface function.
+        // *           But the create_surface function needs to take ownership of whatever was passed in.
+        // *           But x2, all windows are owned by WinitWindows.
+        // *           So I "solved" the problem by making WinitWindows own Arcs of the windows, and cloning the Arc here.
+        // *           That was a horrible idea though as an Arc means ownership is shared. This means when we drop the window
+        // *           in WinitWindows, it might not drop the window as somebody else might still own it.
+        // *           I finally solved the problem by looking at bevy's code and realizing that I could've just passed in a struct
+        // *           containing the handles (which could be cloned)
         let handle = unsafe { raw_handle_wrapper.get_handle() };
         let surface = self.instance.create_surface(handle)?;
 
@@ -145,7 +159,7 @@ impl<'window> GraphicsState<'window> {
     /// Destroys the surface for a window.
     ///
     /// # Arguments
-    /// * `window_id` - The id of the window to destroy the surface for.
+    /// - `window_id` - The id of the window to destroy the surface for.
     pub fn destroy_surface(&mut self, window_id: winit::window::WindowId) {
         self.surface_states.remove(&window_id);
     }
@@ -168,8 +182,8 @@ impl SurfaceState<'_> {
     /// Resizes the surface to the new size.
     ///
     /// # Arguments
-    /// * `new_size` - The new size to resize the surface to.
-    /// * `device` - The wgpu device to configure the surface with.
+    /// - `new_size` - The new size to resize the surface to.
+    /// - `device` - The wgpu device to configure the surface with.
     ///
     /// # Notes
     /// Use this when the window is resized, moved between monitors or when the DPI changes.

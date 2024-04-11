@@ -23,10 +23,10 @@ winit = "0.29.15"
 raw-window-handle = "0.6.0"
 log-panics = { version = "2", features = ["with-backtrace"]}
 cfg-if = "1.0.0"
+humantime = { version = "2.1.0"}
 
 # Dependencies for file logging
 fern = { version = "0.6.2", features = ["colored"], optional = true }
-humantime = { version = "2.1.0"}
 chrono = { version = "0.4.37", optional = true }
 flate2 = { version = "1.0.28", optional = true }
 

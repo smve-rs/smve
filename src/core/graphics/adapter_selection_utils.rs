@@ -8,6 +8,10 @@
 use log::info;
 use wgpu::{Adapter, Backend, DeviceType};
 
+// * FUN FACT: Initially I did not implement adapter selection with weights.
+// *           Instead, I used functions which returned the best adapters found based on some criteria
+// *           and called them in the order of importance.
+// *           Then I simply selected the first one after all the filtering is done.
 /// Used to weight the importance of feature support
 ///
 /// Feature support is the most important since it determines if the adapter can be used at all.
@@ -50,7 +54,7 @@ pub type Index = usize;
 /// Sorts the adapters based on their scores
 ///
 /// # Arguments
-/// * `adapters` - The list of adapters to choose from
+/// - `adapters` - The list of adapters to choose from
 ///
 /// # Returns
 /// The best adapter based on the scores
@@ -93,7 +97,7 @@ pub fn get_best_adapter(adapters: Vec<Adapter>) -> Adapter {
 /// Gets the score of an individual adapter based on the criteria
 ///
 /// # Arguments
-/// * `adapter` - The adapter to get the score of
+/// - `adapter` - The adapter to get the score of
 ///
 /// # Returns
 /// The score of the adapter
@@ -108,7 +112,7 @@ pub fn get_adapter_score(adapter: &Adapter) -> Score {
 /// In this case, all CPU adapters are removed.
 ///
 /// # Arguments
-/// * `adapters` - The list of adapters to filter
+/// - `adapters` - The list of adapters to filter
 ///
 /// # Returns
 /// The list of adapters without any CPU adapters
@@ -137,7 +141,7 @@ fn filter_unwanted_adapters(adapters: Vec<Adapter>) -> Vec<Adapter> {
 /// Currently, it always returns 0 since there are no features to check for.
 ///
 /// # Arguments
-/// * `adapter` - The adapter to get the feature score of
+/// - `adapter` - The adapter to get the feature score of
 ///
 /// # Returns
 /// The unweighted feature score of the adapter
@@ -148,7 +152,7 @@ fn get_feature_score(_adapter: &Adapter) -> Score {
 /// Gets the unweighted score of an adapter based on the backend
 ///
 /// # Arguments
-/// * `adapter` - The adapter to get the backend score of
+/// - `adapter` - The adapter to get the backend score of
 ///
 /// # Returns
 /// The unweighted backend score of the adapter
@@ -190,7 +194,7 @@ fn get_backend_score(adapter: &Adapter) -> Score {
 /// Gets the unweighted score of an adapter based on the type of adapter
 ///
 /// # Arguments
-/// * `adapter` - The adapter to get the type score of
+/// - `adapter` - The adapter to get the type score of
 ///
 /// # Returns
 /// The unweighted type score of the adapter

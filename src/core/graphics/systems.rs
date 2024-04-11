@@ -12,6 +12,8 @@ use log::info;
 ///
 /// Runs on `Update` when a [`WindowCreatedEvent`] is received,
 /// use the [`GraphicsState`] to create a surface for the window, passing in the window and raw handle.
+// * Fun Fact: Regarding error handling, I eventually settled on only panicking in systems and never panic in helper functions.
+// *           I don't know why I did that since no matter where it panics, if it does panic the program will crash.
 pub fn u_create_surface(
     mut window_created_event: EventReader<WindowCreatedEvent>,
     winit_windows: NonSend<WinitWindows>,
@@ -22,6 +24,7 @@ pub fn u_create_surface(
         let window = winit_windows
             .windows
             .get(&event.window_id)
+            // * Fun Fact: I used to always use unwrap here. I eventually learned to use unwrap_or_else to provide a custom panic message.
             .unwrap_or_else(|| panic!("Window {:?} not found!", event.window_id));
         let window_entity = winit_windows.window_to_entity[&event.window_id];
         let (window_component, raw_window_handle) = query

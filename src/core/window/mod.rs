@@ -81,6 +81,7 @@ impl Plugin for WindowPlugin {
         });
         app.insert_non_send_resource(event_loop);
         app.insert_non_send_resource(WinitWindows::default());
+        // TODO: This could very much just be a Local instead of a resource
         app.insert_resource(PrimaryWindowCount::default());
 
         // Add systems
@@ -92,6 +93,7 @@ impl Plugin for WindowPlugin {
             (l_update_windows, l_react_to_resize.before(l_update_windows)),
         );
 
+        // TODO: Maybe GraphicsPlugin should add the window plugin instead? Since GraphicsPlugin is the one that requires the window plugin
         app.add_plugins(GraphicsPlugin);
 
         // Set event loop runner
@@ -233,6 +235,7 @@ fn runner(mut app: App) {
     };
 
     // This ensures that new events will be started whenever possible
+    // TODO: Maybe change this so that the control flow changes based on other factors like battery saver
     event_loop.set_control_flow(ControlFlow::Poll);
 
     // Run event loop
@@ -247,11 +250,11 @@ fn runner(mut app: App) {
 /// Helper function called from the runner to create windows with the [`WinitWindows`] resource.
 ///
 /// # Arguments
-/// * `commands` - Bevy commands
-/// * `query` - Query for entities with the [`Window`] component added
-/// * `winit_windows` - The [`WinitWindows`] resource
-/// * `window_created_event` - The event writer for [`WindowCreatedEvent`] events
-/// * `event_loop` - The event loop window target for creating windows
+/// - `commands` - Bevy commands
+/// - `query` - Query for entities with the [`Window`] component added
+/// - `winit_windows` - The [`WinitWindows`] resource
+/// - `window_created_event` - The event writer for [`WindowCreatedEvent`] events
+/// - `event_loop` - The event loop window target for creating windows
 ///
 /// # Notes
 /// This function is called in the event loop to create any new windows that were added.
