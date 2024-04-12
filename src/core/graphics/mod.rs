@@ -15,26 +15,35 @@ mod systems;
 ///
 /// This plugin initializes the graphics state and adds the necessary systems to create and destroy surfaces.
 ///
-/// # Notes
-/// This plugin is added automatically when using the [`WindowPlugin`](crate::core::window::WindowPlugin).
-///
 /// # Examples
 ///
-/// The following App will initialize some wgpu objects but will not create any surfaces.
+/// * Creates a primary window with default settings, initializes the graphics state and creates a surface for the primary window.
 /// ```rust
 /// App::new().add_plugin(GraphicsPlugin).run();
 /// ```
-///
-/// To use the plugin with the [`WindowPlugin`](crate::core::window::WindowPlugin) you can do the following:
+/// * Applies custom parameters to the WindowPlugin.
 /// ```rust
-/// App::new().add_plugins(WindowPlugin::default()).run();
+/// App::new()
+///     .add_plugins((
+///         WindowPlugin {
+///             primary_window: Some(Window {
+///                 title: "New Title".to_string(),
+///                 ..Default::default()
+///             }),
+///             ..Default::default()
+///         },
+///         GraphicsPlugin,
+///     ))
+///     .run();
 /// ```
-/// This creates a primary window with default settings, initializes the graphics state and creates a surface for the primary window.
+///
 pub struct GraphicsPlugin;
 
 impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(WindowPlugin::default());
+        if !app.is_plugin_added::<WindowPlugin>() {
+            app.add_plugins(WindowPlugin::default());
+        }
 
         // TODO: Perhaps do this asynchronously instead of blocking?
         // By implementing ready() to check if the async process is done.
