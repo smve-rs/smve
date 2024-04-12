@@ -44,7 +44,7 @@ impl Plugin for GraphicsPlugin {
         if !app.is_plugin_added::<WindowPlugin>() {
             app.add_plugins(WindowPlugin::default());
         }
-        
+
         app.insert_resource(pollster::block_on(GraphicsState::new()));
         app.add_systems(Update, u_create_surface);
         app.add_systems(Update, u_resize);
