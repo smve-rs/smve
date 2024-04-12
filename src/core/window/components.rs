@@ -32,7 +32,6 @@ pub struct Window {
     /// `None` if there is no icon
     pub icon_data: Option<Vec<u8>>,
     /// Whether vsync is enabled
-    // TODO: Perhaps turn this into an enum with different present modes
     pub vsync: bool,
 }
 
