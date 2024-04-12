@@ -15,8 +15,8 @@ pub mod core;
 
 use bevy_app::prelude::*;
 
-use cfg_if::cfg_if;
 use crate::core::graphics::GraphicsPlugin;
+use cfg_if::cfg_if;
 
 /// The main entry point for the application.
 ///
