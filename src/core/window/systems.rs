@@ -7,6 +7,8 @@ use log::{info, warn};
 use winit::dpi::LogicalSize;
 
 /// System to update the physical window when a value is changed on the [`Window`] component
+/// 
+/// Called on `Late` to update the winit window when the window component changes
 pub fn l_update_windows(
     mut query: Query<(Entity, &mut Window, &mut CachedWindow), Changed<Window>>,
     winit_windows: NonSendMut<WinitWindows>,
@@ -55,6 +57,9 @@ pub fn l_update_windows(
     }
 }
 
+/// System to update window component when winit windows get resized
+/// 
+/// Called on `Late`
 pub fn l_react_to_resize(
     mut window_resized: EventReader<WindowResizedEvent>,
     mut query: Query<&mut Window>,
