@@ -4,6 +4,7 @@
 
 use crate::core::graphics::adapter_selection_utils::get_best_adapter;
 use crate::core::window::components::{RawHandleWrapper, Window};
+use bevy_ecs::system::Resource;
 use log::info;
 use std::collections::HashMap;
 use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
@@ -12,6 +13,7 @@ use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
 ///
 /// # Notes
 /// This owns the wgpu instance, device, queue, adapter and all the surfaces.
+#[derive(Resource)]
 pub struct GraphicsState<'window> {
     // Global Objects
     /// The wgpu instance.
@@ -26,7 +28,6 @@ pub struct GraphicsState<'window> {
     // Per-Window Objects
     /// Contains a mapping from the window id to the surface state.
     pub surface_states: HashMap<winit::window::WindowId, SurfaceState<'window>>,
-    // TODO: The graphics state should not be a NonSend resource.
     //_not_send_sync: PhantomData<*const ()>,
 }
 

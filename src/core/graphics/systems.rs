@@ -5,7 +5,7 @@ use crate::core::window::components::{RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
 use crate::core::window::resources::WinitWindows;
 use bevy_ecs::event::EventReader;
-use bevy_ecs::system::{NonSend, NonSendMut, Query};
+use bevy_ecs::system::{NonSend, Query, ResMut};
 use log::info;
 
 /// Creates a surface for each window created.
@@ -17,7 +17,7 @@ use log::info;
 pub fn u_create_surface(
     mut window_created_event: EventReader<WindowCreatedEvent>,
     winit_windows: NonSend<WinitWindows>,
-    mut graphics_state: NonSendMut<GraphicsState>,
+    mut graphics_state: ResMut<GraphicsState<'static>>,
     query: Query<(&Window, &RawHandleWrapper)>,
 ) {
     for event in window_created_event.read() {
@@ -51,7 +51,7 @@ pub fn u_resize(
     mut window_resized_event: EventReader<WindowResizedEvent>,
     winit_windows: NonSend<WinitWindows>,
     query: Query<&Window>,
-    mut graphics_state: NonSendMut<GraphicsState>,
+    mut graphics_state: ResMut<GraphicsState<'static>>,
 ) {
     for event in window_resized_event.read() {
         let graphics_state = &mut *graphics_state;
@@ -78,7 +78,7 @@ pub fn u_resize(
 /// use the [`GraphicsState`] to destroy the surface for the window.
 pub fn u_destroy_surface(
     mut close_requested_event: EventReader<CloseRequestedEvent>,
-    mut graphics_state: NonSendMut<GraphicsState>,
+    mut graphics_state: ResMut<GraphicsState<'static>>,
 ) {
     for event in close_requested_event.read() {
         graphics_state.destroy_surface(event.window_id);

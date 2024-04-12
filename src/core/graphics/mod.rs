@@ -35,7 +35,7 @@ impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
         // TODO: Perhaps do this asynchronously instead of blocking?
         // By implementing ready() to check if the async process is done.
-        app.insert_non_send_resource(pollster::block_on(GraphicsState::new()));
+        app.insert_resource(pollster::block_on(GraphicsState::new()));
         app.add_systems(Update, u_create_surface);
         app.add_systems(Update, u_resize);
         app.add_systems(Update, u_destroy_surface);
