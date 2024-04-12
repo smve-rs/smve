@@ -44,9 +44,7 @@ impl Plugin for GraphicsPlugin {
         if !app.is_plugin_added::<WindowPlugin>() {
             app.add_plugins(WindowPlugin::default());
         }
-
-        // TODO: Perhaps do this asynchronously instead of blocking?
-        // By implementing ready() to check if the async process is done.
+        
         app.insert_resource(pollster::block_on(GraphicsState::new()));
         app.add_systems(Update, u_create_surface);
         app.add_systems(Update, u_resize);
