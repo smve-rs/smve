@@ -5,6 +5,7 @@
 use crate::core::graphics::resources::GraphicsState;
 use crate::core::graphics::systems::{u_create_surface, u_destroy_surface, u_resize};
 use bevy_app::{App, Plugin, Update};
+use crate::core::window::WindowPlugin;
 
 mod adapter_selection_utils;
 pub mod resources;
@@ -33,6 +34,8 @@ pub struct GraphicsPlugin;
 
 impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(WindowPlugin::default());
+        
         // TODO: Perhaps do this asynchronously instead of blocking?
         // By implementing ready() to check if the async process is done.
         app.insert_resource(pollster::block_on(GraphicsState::new()));

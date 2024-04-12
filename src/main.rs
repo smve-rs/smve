@@ -13,10 +13,10 @@
 
 pub mod core;
 
-use crate::core::window::WindowPlugin;
 use bevy_app::prelude::*;
 
 use cfg_if::cfg_if;
+use crate::core::graphics::GraphicsPlugin;
 
 /// The main entry point for the application.
 ///
@@ -26,7 +26,7 @@ pub fn main() {
 
     log_panics::init();
 
-    App::new().add_plugins(WindowPlugin::default()).run();
+    App::new().add_plugins(GraphicsPlugin).run();
 }
 
 /// Initializes loggers based on the features enabled.

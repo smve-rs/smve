@@ -24,8 +24,6 @@ use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
 
-use super::graphics::GraphicsPlugin;
-
 /// The plugin which adds a window and associated systems to the app.
 ///
 /// It also overrides the default bevy runner with an event loop.
@@ -90,9 +88,6 @@ impl Plugin for WindowPlugin {
             Last,
             (l_update_windows, l_react_to_resize.before(l_update_windows)),
         );
-
-        // TODO: Maybe GraphicsPlugin should add the window plugin instead? Since GraphicsPlugin is the one that requires the window plugin
-        app.add_plugins(GraphicsPlugin);
 
         // Set event loop runner
         app.set_runner(runner);
