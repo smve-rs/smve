@@ -1,7 +1,7 @@
 //! Bevy resources for the windowing module.
 
 use crate::core::window::components::Window;
-use bevy_ecs::prelude::{Entity, Resource};
+use bevy_ecs::prelude::Entity;
 use log::{info, warn};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -9,11 +9,6 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use winit::window::{BadIcon, Icon, WindowBuilder, WindowId};
-
-/// Resource to keep track of the number of primary windows
-/// Used in a system to make sure there is only ever one primary window
-#[derive(Resource, Default)]
-pub struct PrimaryWindowCount(pub u32);
 
 /// Resource used to keep track of all the windows
 ///

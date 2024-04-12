@@ -1,6 +1,6 @@
 use crate::core::window::components::{CachedWindow, PrimaryWindow, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowResizedEvent};
-use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
+use crate::core::window::resources::WinitWindows;
 use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};
@@ -76,7 +76,7 @@ pub fn l_react_to_resize(
 pub fn u_primary_window_check(
     mut commands: Commands,
     mut query: Query<(Entity, Option<&Window>), Added<PrimaryWindow>>,
-    mut primary_window_count: ResMut<PrimaryWindowCount>,
+    mut primary_window_count: Local<u32>,
 ) {
     for (entity, window) in query.iter_mut() {
         if window.is_none() {
@@ -90,14 +90,14 @@ pub fn u_primary_window_check(
 
         let window = window.expect("Window component should exist");
 
-        primary_window_count.0 += 1;
-        if primary_window_count.0 > 1 {
+        *primary_window_count += 1;
+        if *primary_window_count > 1 {
             warn!(
                 "A primary window already exists, removing PrimaryWindow component from entity {:?} with window titled {}",
                 entity, window.title
             );
             commands.entity(entity).remove::<PrimaryWindow>();
-            primary_window_count.0 -= 1;
+            *primary_window_count -= 1;
         }
     }
 }

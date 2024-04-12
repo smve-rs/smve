@@ -9,7 +9,7 @@ mod systems;
 
 use crate::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
 use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
-use crate::core::window::resources::{PrimaryWindowCount, WinitWindows};
+use crate::core::window::resources::WinitWindows;
 use crate::core::window::systems::{
     l_react_to_resize, l_update_windows, pu_close_windows, pu_exit_on_all_closed,
     pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check,
@@ -81,8 +81,6 @@ impl Plugin for WindowPlugin {
         });
         app.insert_non_send_resource(event_loop);
         app.insert_non_send_resource(WinitWindows::default());
-        // TODO: This could very much just be a Local instead of a resource
-        app.insert_resource(PrimaryWindowCount::default());
 
         // Add systems
         app.add_systems(Update, u_primary_window_check);
