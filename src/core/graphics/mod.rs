@@ -9,6 +9,7 @@ use bevy_app::{App, Plugin, Update};
 
 mod adapter_selection_utils;
 pub mod resources;
+pub mod camera;
 mod systems;
 
 /// Responsible for initializing rendering with wgpu.
