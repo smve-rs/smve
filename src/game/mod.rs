@@ -3,9 +3,9 @@
 
 mod camera;
 
-use bevy_app::{App, Plugin, Startup};
 use crate::core::graphics::camera::CameraPlugin;
 use crate::game::camera::systems::s_spawn_camera;
+use bevy_app::{App, Plugin, Startup};
 
 pub struct GamePlugin;
 
@@ -14,7 +14,7 @@ impl Plugin for GamePlugin {
         if !app.is_plugin_added::<CameraPlugin>() {
             app.add_plugins(CameraPlugin);
         }
-        
+
         app.add_systems(Startup, s_spawn_camera);
     }
 }

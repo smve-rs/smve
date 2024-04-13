@@ -8,8 +8,8 @@ use crate::core::window::WindowPlugin;
 use bevy_app::{App, Plugin, Update};
 
 mod adapter_selection_utils;
-pub mod resources;
 pub mod camera;
+pub mod resources;
 mod systems;
 
 /// Responsible for initializing rendering with wgpu.

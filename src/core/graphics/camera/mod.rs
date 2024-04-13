@@ -8,7 +8,5 @@ use bevy_app::{App, Plugin};
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
-    fn build(&self, _app: &mut App) {
-        
-    }
+    fn build(&self, _app: &mut App) {}
 }

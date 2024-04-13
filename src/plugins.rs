@@ -1,8 +1,8 @@
 //! Module containing plugin groups
 
-use bevy_app::{PluginGroup, PluginGroupBuilder};
 use crate::core::graphics::GraphicsPlugin;
 use crate::game::GamePlugin;
+use bevy_app::{PluginGroup, PluginGroupBuilder};
 
 /// Default plugins for Ruxel
 pub struct RuxelPlugins;
