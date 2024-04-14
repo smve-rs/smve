@@ -27,15 +27,7 @@ pub fn main() {
 
     log_panics::init();
 
-    App::new().add_plugins(
-
-
-
-
-
-
-        RuxelPlugins
-                                     ).run();
+    App::new().add_plugins(RuxelPlugins).run();
 }
 
 /// Initializes loggers based on the features enabled.
