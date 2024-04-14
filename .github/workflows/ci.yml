@@ -203,7 +203,7 @@ jobs:
         if: github.event_name == 'push'
         uses: mbrobbel/rustfmt-check@master
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           commit-message: |
             style: auto format
 
