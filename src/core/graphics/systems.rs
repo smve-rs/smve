@@ -3,13 +3,17 @@
 use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
 use bevy_ecs::prelude::Res;
 use bevy_ecs::system::ResMut;
+use cfg_if::cfg_if;
 use log::info;
 use std::ops::DerefMut;
 use winit::dpi::PhysicalSize;
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-use crate::core::graphics::resources::NonSendMarker;
-use bevy_ecs::system::NonSend;
+cfg_if! {
+    if #[cfg(any(target_os = "macos", target_os = "ios"))] {
+        use crate::core::graphics::resources::NonSendMarker;
+        use bevy_ecs::system::NonSend;
+    }
+}
 
 /// Creates a surface for each window created.
 ///
@@ -18,6 +22,7 @@ use bevy_ecs::system::NonSend;
 // * Fun Fact: Regarding error handling, I eventually settled on only panicking in systems and never panic in helper functions.
 // *           I don't know why I did that since no matter where it panics, if it does panic the program will crash.
 pub fn rp_create_surface(
+    // On macOS windowing operations can only happen on the main thread
     #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
     mut graphics_state: ResMut<GraphicsState<'static>>,
     extracted_windows: Res<ExtractedWindows>,
