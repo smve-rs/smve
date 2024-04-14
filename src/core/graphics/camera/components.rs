@@ -46,7 +46,7 @@ impl CameraRenderTarget {
         match self {
             CameraRenderTarget::PrimaryWindow => Some(primary_window),
             CameraRenderTarget::Window(entity) => Some(*entity),
-            CameraRenderTarget::None => None
+            CameraRenderTarget::None => None,
         }
     }
 }

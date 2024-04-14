@@ -11,7 +11,7 @@ pub fn s_spawn_camera(mut commands: Commands) {
             r: 0.0,
             g: 0.6328125,
             b: 0.92578125,
-            a: 1.0
+            a: 1.0,
         }),
         ..Default::default()
     });
