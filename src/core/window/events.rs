@@ -7,7 +7,7 @@ use bevy_ecs::prelude::*;
 #[derive(Event)]
 pub struct CloseRequestedEvent {
     /// The window that received the close request
-    pub window_id: winit::window::WindowId,
+    pub entity: Entity,
 }
 
 /// This event is emitted when a window is resized.

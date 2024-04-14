@@ -7,6 +7,7 @@ use raw_window_handle::{
     RawWindowHandle, WindowHandle,
 };
 use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
+use macros::ExtractComponent;
 
 /// A marker component for the primary window.
 /// There should be only one primary window at any one time.
@@ -159,7 +160,7 @@ pub struct CachedWindow(pub Window);
 /// [`create_surface`](wgpu::Instance::create_surface) requires ownership to an object that implements [`HasWindowHandle`] and [`HasDisplayHandle`].
 /// The winit [`Window`](winit::window::Window) is owned by [`WinitWindows`](crate::core::window::WinitWindows) and cannot be cloned.
 /// This wrapper allows the raw handle to be cloned and passed to the [`create_surface`](wgpu::Instance::create_surface) function.
-#[derive(Clone, Component)]
+#[derive(Clone, Component, ExtractComponent)]
 pub struct RawHandleWrapper {
     /// The raw display handle of the window
     pub display_handle: RawDisplayHandle,

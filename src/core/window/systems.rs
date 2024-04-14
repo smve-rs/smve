@@ -113,11 +113,9 @@ pub fn u_primary_window_check(
 pub fn u_despawn_windows(
     mut commands: Commands,
     mut close_requested_event: EventReader<CloseRequestedEvent>,
-    winit_windows: NonSendMut<WinitWindows>,
 ) {
     for event in close_requested_event.read() {
-        let entity = winit_windows.window_to_entity[&event.window_id];
-        commands.entity(entity).despawn();
+        commands.entity(event.entity).despawn();
     }
 }
 

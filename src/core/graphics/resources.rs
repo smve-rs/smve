@@ -3,11 +3,17 @@
 //! This module contains the resources used by the graphics module such as the [`GraphicsState`] struct.
 
 use crate::core::graphics::adapter_selection_utils::get_best_adapter;
-use crate::core::window::components::{RawHandleWrapper, Window};
+use crate::core::window::components::{RawHandleWrapper};
 use bevy_ecs::system::Resource;
 use log::info;
 use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
+use bevy_ecs::entity::{Entity, EntityHashMap};
+use bevy_ecs::world::World;
 use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
+use winit::dpi::PhysicalSize;
+use crate::core::graphics::extract::window::ExtractedWindow;
 
 /// Contains the global and per-window objects needed for rendering.
 ///
@@ -27,7 +33,7 @@ pub struct GraphicsState<'window> {
 
     // Per-Window Objects
     /// Contains a mapping from the window id to the surface state.
-    pub surface_states: HashMap<winit::window::WindowId, SurfaceState<'window>>,
+    pub surface_states: HashMap<Entity, SurfaceState<'window>>,
     //_not_send_sync: PhantomData<*const ()>,
 }
 
@@ -104,8 +110,8 @@ impl<'window> GraphicsState<'window> {
     /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
     pub fn create_surface(
         &mut self,
-        window: &winit::window::Window,
-        window_component: &Window,
+        window_component: &ExtractedWindow,
+        entity: Entity,
         raw_handle_wrapper: &RawHandleWrapper,
         // * Fun Fact: I used to not return a Result here because I was simply panicking if the surface creation failed.
         // *           That was a horrible idea.
@@ -132,8 +138,8 @@ impl<'window> GraphicsState<'window> {
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
-            width: window.inner_size().width,
-            height: window.inner_size().height,
+            width: window_component.physical_width,
+            height: window_component.physical_height,
             present_mode: if window_component.vsync {
                 PresentMode::AutoVsync
             } else {
@@ -146,11 +152,11 @@ impl<'window> GraphicsState<'window> {
         surface.configure(&self.device, &config);
 
         self.surface_states.insert(
-            window.id(),
+            entity,
             SurfaceState {
                 surface,
                 config,
-                size: window.inner_size(),
+                size: PhysicalSize::new(window_component.physical_width, window_component.physical_height),
             },
         );
 
@@ -160,9 +166,10 @@ impl<'window> GraphicsState<'window> {
     /// Destroys the surface for a window.
     ///
     /// # Arguments
-    /// - `window_id` - The id of the window to destroy the surface for.
-    pub fn destroy_surface(&mut self, window_id: winit::window::WindowId) {
-        self.surface_states.remove(&window_id);
+    /// - `entity` - The entity corresponding to the surface to be destroyed
+    pub fn destroy_surface(&mut self, entity: Entity) {
+        self.surface_states.remove(&entity);
+        info!("Surface destroyed for entity {:?}", entity);
     }
 }
 
@@ -175,7 +182,7 @@ pub struct SurfaceState<'window> {
     /// The surface configuration.
     pub config: wgpu::SurfaceConfiguration,
     /// The size of the surface.
-    pub size: winit::dpi::PhysicalSize<u32>,
+    pub size: PhysicalSize<u32>,
 }
 
 impl SurfaceState<'_> {
@@ -188,7 +195,7 @@ impl SurfaceState<'_> {
     ///
     /// # Notes
     /// Use this when the window is resized, moved between monitors or when the DPI changes.
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, device: &wgpu::Device) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>, device: &wgpu::Device) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
@@ -196,4 +203,39 @@ impl SurfaceState<'_> {
             self.surface.configure(device, &self.config);
         }
     }
+}
+
+/// A blank world to swap the actual world with during extraction to avoid constantly making new worlds
+#[derive(Default, Resource)]
+pub struct ScratchMainWorld(pub World);
+
+/// A resource for the render app to access the main app for extraction
+#[derive(Resource)]
+pub struct MainWorld(pub World);
+
+impl Deref for MainWorld {
+    type Target = World;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for MainWorld {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+/// A dummy type that is [`!Send](Send) to force systems to run on the main thread.
+#[derive(Default)]
+pub struct NonSendMarker(PhantomData<*mut ()>);
+
+/// A resource on the render app that contains all the extracted windows
+#[derive(Default, Resource)]
+pub struct ExtractedWindows {
+    /// The primary window
+    pub primary: Option<Entity>,
+    /// Map from entities to their corresponding windows
+    pub windows: EntityHashMap<ExtractedWindow>
 }

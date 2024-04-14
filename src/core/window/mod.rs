@@ -178,7 +178,7 @@ fn runner(mut app: App) {
                 match event {
                     WindowEvent::CloseRequested => {
                         // Send a close requested event so systems can drop the Window and despawn windows
-                        app.world.send_event(CloseRequestedEvent { window_id });
+                        app.world.send_event(CloseRequestedEvent { entity: window_entity });
                     }
                     WindowEvent::Resized(size) => {
                         window_resized_event.send(WindowResizedEvent {

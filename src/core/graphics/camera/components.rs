@@ -3,11 +3,13 @@
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Component;
 use wgpu::Color;
+use macros::ExtractComponent;
 
 /// A component representing a camera and its settings.
 ///
 /// Not exhaustive at the moment, but it will be expanded with more fields later on.
-#[derive(Component)]
+// TODO: Derive default and make primary window the default render target
+#[derive(Component, Clone, ExtractComponent)]
 pub struct Camera {
     /// Where the camera renders to
     ///
@@ -28,14 +30,17 @@ pub struct Camera {
 ///
 /// Will eventually support rendering to textures.
 #[non_exhaustive]
+#[derive(Clone, Default)]
 pub enum CameraRenderTarget {
     /// Rendering to a window
     Window(Entity),
     /// Ignores the camera when rendering
+    #[default]
     None,
 }
 
 /// How a camera clears the render target.
+#[derive(Clone)]
 pub enum CameraClearBehaviour {
     /// Do not clear the target at the start of the frame
     DontClear,
