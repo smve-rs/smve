@@ -9,7 +9,9 @@ use crate::core::graphics::systems::{rec_apply_commands, rp_create_surface, rp_r
 use crate::core::window::WindowPlugin;
 use bevy_app::{App, AppLabel, Plugin, SubApp};
 use bevy_ecs::prelude::{Schedule, SystemSet, World};
-use bevy_ecs::schedule::{IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel};
+use bevy_ecs::schedule::{
+    IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel,
+};
 
 mod adapter_selection_utils;
 pub mod camera;
@@ -122,13 +124,15 @@ impl Render {
     fn schedule() -> Schedule {
         let mut schedule = Schedule::new(Render);
 
-        schedule
-            .configure_sets((
+        schedule.configure_sets(
+            (
                 RenderSet::ExtractCommands,
-                RenderSet::Prepare, 
-                RenderSet::Render, 
-                RenderSet::CleanUp
-            ).chain());
+                RenderSet::Prepare,
+                RenderSet::Render,
+                RenderSet::CleanUp,
+            )
+                .chain(),
+        );
 
         schedule
     }

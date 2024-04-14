@@ -1,14 +1,14 @@
 //! Bevy systems for the graphics module.
 
 use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use crate::core::graphics::ExtractSchedule;
 use bevy_ecs::prelude::{Res, Schedules, World};
 use bevy_ecs::system::ResMut;
+use bevy_ecs::world::Mut;
 use cfg_if::cfg_if;
 use log::info;
 use std::ops::DerefMut;
-use bevy_ecs::world::Mut;
 use winit::dpi::PhysicalSize;
-use crate::core::graphics::ExtractSchedule;
 
 cfg_if! {
     if #[cfg(any(target_os = "macos", target_os = "ios"))] {
@@ -69,7 +69,7 @@ pub fn rp_resize(
 }
 
 /// Applies commands added from the extract schedule
-/// 
+///
 /// Called on `ExtractCommands` to allow it to run in parallel with the main world
 pub fn rec_apply_commands(render_world: &mut World) {
     render_world.resource_scope(|render_world, mut schedules: Mut<Schedules>| {
