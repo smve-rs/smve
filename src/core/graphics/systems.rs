@@ -2,13 +2,14 @@
 
 use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
 use bevy_ecs::prelude::Res;
-use bevy_ecs::system::{NonSend, ResMut};
+use bevy_ecs::system::ResMut;
 use log::info;
 use std::ops::DerefMut;
 use winit::dpi::PhysicalSize;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 use crate::core::graphics::resources::NonSendMarker;
+use bevy_ecs::system::NonSend;
 
 // TODO: Update documentation
 
