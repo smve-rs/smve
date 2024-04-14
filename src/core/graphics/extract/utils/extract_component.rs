@@ -1,14 +1,14 @@
 //! Utility trait to easily extract components into the render world by cloning
 
+use crate::core::graphics::extract::utils::extract_param::Extract;
 use crate::core::graphics::{ExtractSchedule, RenderSubApp};
 use bevy_app::{App, Plugin};
 use bevy_ecs::bundle::Bundle;
+use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::{Component, Local};
 use bevy_ecs::query::{QueryFilter, QueryItem, ReadOnlyQueryData};
 use bevy_ecs::system::{Commands, Query};
 use std::marker::PhantomData;
-use bevy_ecs::entity::Entity;
-use crate::core::graphics::extract::utils::extract_param::Extract;
 
 /// A trait representing the extraction from the main world to the render world
 pub trait ExtractComponent: Component {
@@ -25,13 +25,13 @@ pub trait ExtractComponent: Component {
     /// ```
     type QueryData: ReadOnlyQueryData;
     /// The filter part of the query
-    /// 
+    ///
     /// # Example
     /// For this query:
     /// ```rust
     /// Query<(Entity, Camera), With<PrimaryWindow>>
     /// ```
-    /// the query filter should be 
+    /// the query filter should be
     /// ```rust
     /// QueryFilter = With<PrimaryWindow>
     /// ```
@@ -45,7 +45,7 @@ pub trait ExtractComponent: Component {
 }
 
 /// Add this plugin to the main app to extract the component
-/// 
+///
 /// # Generics
 /// - `C`: The component implementing the [`ExtractComponent`] trait.
 pub struct ExtractComponentPlugin<C> {
@@ -55,7 +55,7 @@ pub struct ExtractComponentPlugin<C> {
 impl<C> Default for ExtractComponentPlugin<C> {
     fn default() -> Self {
         Self {
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 }
@@ -69,9 +69,9 @@ impl<C: ExtractComponent> Plugin for ExtractComponentPlugin<C> {
 }
 
 /// A system that runs the [`extract_component`][1] function for all the components found
-/// 
+///
 /// Runs on `Extract`.
-/// 
+///
 /// [1]: ExtractComponent::extract_component()
 fn e_extract_components<C: ExtractComponent>(
     mut commands: Commands,
@@ -84,7 +84,7 @@ fn e_extract_components<C: ExtractComponent>(
             values.push((entity, component));
         }
     }
-    
+
     *previous_len = values.len();
     commands.insert_or_spawn_batch(values);
 }

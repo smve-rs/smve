@@ -3,17 +3,17 @@
 //! This module contains the resources used by the graphics module such as the [`GraphicsState`] struct.
 
 use crate::core::graphics::adapter_selection_utils::get_best_adapter;
-use crate::core::window::components::{RawHandleWrapper};
+use crate::core::graphics::extract::window::ExtractedWindow;
+use crate::core::window::components::RawHandleWrapper;
+use bevy_ecs::entity::{Entity, EntityHashMap};
 use bevy_ecs::system::Resource;
+use bevy_ecs::world::World;
 use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
-use bevy_ecs::entity::{Entity, EntityHashMap};
-use bevy_ecs::world::World;
 use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
 use winit::dpi::PhysicalSize;
-use crate::core::graphics::extract::window::ExtractedWindow;
 
 /// Contains the global and per-window objects needed for rendering.
 ///
@@ -156,7 +156,10 @@ impl<'window> GraphicsState<'window> {
             SurfaceState {
                 surface,
                 config,
-                size: PhysicalSize::new(window_component.physical_width, window_component.physical_height),
+                size: PhysicalSize::new(
+                    window_component.physical_width,
+                    window_component.physical_height,
+                ),
             },
         );
 
@@ -237,5 +240,5 @@ pub struct ExtractedWindows {
     /// The primary window
     pub primary: Option<Entity>,
     /// Map from entities to their corresponding windows
-    pub windows: EntityHashMap<ExtractedWindow>
+    pub windows: EntityHashMap<ExtractedWindow>,
 }

@@ -1,10 +1,10 @@
 //! Bevy systems for the graphics module.
 
-use std::ops::DerefMut;
 use crate::core::graphics::resources::{ExtractedWindows, GraphicsState, NonSendMarker};
-use bevy_ecs::prelude::{Res};
+use bevy_ecs::prelude::Res;
 use bevy_ecs::system::{NonSend, ResMut};
 use log::info;
+use std::ops::DerefMut;
 use winit::dpi::PhysicalSize;
 
 // TODO: Update documentation
@@ -16,10 +16,9 @@ use winit::dpi::PhysicalSize;
 // * Fun Fact: Regarding error handling, I eventually settled on only panicking in systems and never panic in helper functions.
 // *           I don't know why I did that since no matter where it panics, if it does panic the program will crash.
 pub fn rp_create_surface(
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    _non_send: Option<NonSend<NonSendMarker>>,
+    #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
     mut graphics_state: ResMut<GraphicsState<'static>>,
-    extracted_windows: Res<ExtractedWindows>
+    extracted_windows: Res<ExtractedWindows>,
 ) {
     for (entity, window) in extracted_windows.windows.iter() {
         if !graphics_state.surface_states.contains_key(entity) {
@@ -41,8 +40,7 @@ pub fn rp_create_surface(
 ///
 /// Runs on `Update` when a [`WindowResizedEvent`] is received,
 pub fn rp_resize(
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    _non_send: Option<NonSend<NonSendMarker>>,
+    #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
     extracted_windows: Res<ExtractedWindows>,
     mut graphics_state: ResMut<GraphicsState<'static>>,
 ) {
@@ -50,10 +48,13 @@ pub fn rp_resize(
         if !window.size_changed {
             continue;
         }
-        
+
         let graphics_state = graphics_state.deref_mut();
         if let Some(surface_state) = graphics_state.surface_states.get_mut(entity) {
-            surface_state.resize(PhysicalSize::new(window.physical_width, window.physical_height), &graphics_state.device);
+            surface_state.resize(
+                PhysicalSize::new(window.physical_width, window.physical_height),
+                &graphics_state.device,
+            );
         }
     }
 }

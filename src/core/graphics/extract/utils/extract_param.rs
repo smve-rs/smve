@@ -1,5 +1,6 @@
 //! From Bevy's extract param.
 
+use crate::core::graphics::resources::MainWorld;
 use bevy_ecs::{
     component::Tick,
     prelude::*,
@@ -7,7 +8,6 @@ use bevy_ecs::{
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 use std::ops::{Deref, DerefMut};
-use crate::core::graphics::resources::MainWorld;
 
 /// A helper for accessing [`MainWorld`] content using a system parameter.
 ///
@@ -44,8 +44,8 @@ use crate::core::graphics::resources::MainWorld;
 /// [`ExtractSchedule`]: crate::ExtractSchedule
 /// [Window]: bevy_window::Window
 pub struct Extract<'w, 's, P>
-    where
-        P: ReadOnlySystemParam + 'static,
+where
+    P: ReadOnlySystemParam + 'static,
 {
     item: SystemParamItem<'w, 's, P>,
 }
@@ -62,8 +62,8 @@ unsafe impl<P> ReadOnlySystemParam for Extract<'_, '_, P> where P: ReadOnlySyste
 // SAFETY: The only `World` access is properly registered by `Res<MainWorld>::init_state`.
 // This call will also ensure that there are no conflicts with prior params.
 unsafe impl<P> SystemParam for Extract<'_, '_, P>
-    where
-        P: ReadOnlySystemParam,
+where
+    P: ReadOnlySystemParam,
 {
     type State = ExtractState<P>;
     type Item<'w, 's> = Extract<'w, 's, P>;
@@ -99,8 +99,8 @@ unsafe impl<P> SystemParam for Extract<'_, '_, P>
 }
 
 impl<'w, 's, P> Deref for Extract<'w, 's, P>
-    where
-        P: ReadOnlySystemParam,
+where
+    P: ReadOnlySystemParam,
 {
     type Target = SystemParamItem<'w, 's, P>;
 
@@ -111,8 +111,8 @@ impl<'w, 's, P> Deref for Extract<'w, 's, P>
 }
 
 impl<'w, 's, P> DerefMut for Extract<'w, 's, P>
-    where
-        P: ReadOnlySystemParam,
+where
+    P: ReadOnlySystemParam,
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -121,9 +121,9 @@ impl<'w, 's, P> DerefMut for Extract<'w, 's, P>
 }
 
 impl<'a, 'w, 's, P> IntoIterator for &'a Extract<'w, 's, P>
-    where
-        P: ReadOnlySystemParam,
-        &'a SystemParamItem<'w, 's, P>: IntoIterator,
+where
+    P: ReadOnlySystemParam,
+    &'a SystemParamItem<'w, 's, P>: IntoIterator,
 {
     type Item = <&'a SystemParamItem<'w, 's, P> as IntoIterator>::Item;
     type IntoIter = <&'a SystemParamItem<'w, 's, P> as IntoIterator>::IntoIter;

@@ -2,12 +2,12 @@
 
 use crate::core::window::icon;
 use bevy_ecs::prelude::Component;
+use macros::ExtractComponent;
 use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,
 };
 use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
-use macros::ExtractComponent;
 
 /// A marker component for the primary window.
 /// There should be only one primary window at any one time.
