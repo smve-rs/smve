@@ -51,8 +51,6 @@ pub fn l_update_windows(
             }
         }
 
-        // TODO: Ignored the vsync field since it should be handled by graphics subapp
-
         cache.0 = window.clone();
     }
 }

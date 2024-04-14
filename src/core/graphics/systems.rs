@@ -11,8 +11,6 @@ use winit::dpi::PhysicalSize;
 use crate::core::graphics::resources::NonSendMarker;
 use bevy_ecs::system::NonSend;
 
-// TODO: Update documentation
-
 /// Creates a surface for each window created.
 ///
 /// Runs on `Prepare`
@@ -40,9 +38,9 @@ pub fn rp_create_surface(
     }
 }
 
-/// Resizes the surface for each window that has a resized event.
+/// Resizes the surface for each window whose size changed.
 ///
-/// Runs on `Update` when a [`WindowResizedEvent`] is received,
+/// Runs on `Prepare` for all windows whose size changed.
 pub fn rp_resize(
     #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
     extracted_windows: Res<ExtractedWindows>,
