@@ -78,8 +78,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-clippy-
+          key: ${{ runner.os }}-rust-clippy-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-rust-
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -87,6 +87,44 @@ jobs:
       - name: README IF FAILED
         if: failure()
         run: echo "Please fix clippy's suggestions with cargo clippy --fix"
+
+  docs_skip_check:
+    needs: commitlint
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths: '["src/**/*.rs"]'
+
+  docs:
+    needs: docs_skip_check
+    if: needs.docs_skip_check.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-rust-docs-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-rust-
+      - name: Cargo doc
+        run: cargo doc --bin ruxel --document-private-items --no-deps
+      - name: Upload docs
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: Docs
+          path: target/doc/**/*
+      - name: README IF FAILED
+        if: failure()
+        run: echo 'Docs failed to build. Please fix the errors.'
 
   build:
     needs: clippy
@@ -105,8 +143,8 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
-        restore-keys: ${{ runner.os }}-build-
+        key: ${{ runner.os }}-rust-build-${{ hashFiles('**/Cargo.toml') }}
+        restore-keys: ${{ runner.os }}-rust-
     - name: Install LLD on Windows
       if: matrix.os == 'windows'
       run: |
@@ -155,8 +193,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-format-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-format-
+          key: ${{ runner.os }}-rust-format-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-rust-
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
