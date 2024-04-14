@@ -5,11 +5,11 @@
 use crate::core::graphics::extract::camera::CameraExtractPlugin;
 use crate::core::graphics::extract::window::WindowExtractPlugin;
 use crate::core::graphics::resources::{GraphicsState, MainWorld, ScratchMainWorld};
-use crate::core::graphics::systems::{rp_create_surface, rp_resize};
+use crate::core::graphics::systems::{rec_apply_commands, rp_create_surface, rp_resize};
 use crate::core::window::WindowPlugin;
 use bevy_app::{App, AppLabel, Plugin, SubApp};
 use bevy_ecs::prelude::{Schedule, SystemSet, World};
-use bevy_ecs::schedule::{IntoSystemConfigs, IntoSystemSetConfigs, ScheduleLabel};
+use bevy_ecs::schedule::{IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel};
 
 mod adapter_selection_utils;
 pub mod camera;
@@ -53,30 +53,33 @@ impl Plugin for GraphicsPlugin {
 
         app.init_resource::<ScratchMainWorld>();
 
+        let mut extract_schedule = Schedule::new(ExtractSchedule);
+        extract_schedule.set_build_settings(ScheduleBuildSettings {
+            auto_insert_apply_deferred: false,
+            ..Default::default()
+        });
+        extract_schedule.set_apply_final_deferred(false);
+
         let mut render_app_inner = App::empty();
 
-        render_app_inner.add_schedule(Render::schedule());
-        render_app_inner.add_schedule(Schedule::new(ExtractSchedule));
         render_app_inner.main_schedule_label = Render.intern();
-
-        render_app_inner.insert_resource(pollster::block_on(GraphicsState::new()));
-        render_app_inner.add_systems(
-            Render,
-            (
-                (rp_create_surface, rp_resize).in_set(RenderSet::Prepare),
-                World::clear_entities.in_set(RenderSet::CleanUp),
-            ),
-        );
-        //render_app_inner.add_systems(
-        //    Render,
-        //    (rp_create_surface, rp_destroy_surface, rp_resize).in_set(RenderSet::Prepare),
-        //);
+        render_app_inner
+            .add_schedule(Render::schedule())
+            .add_schedule(extract_schedule)
+            .insert_resource(pollster::block_on(GraphicsState::new()))
+            .add_systems(
+                Render,
+                (
+                    rec_apply_commands.in_set(RenderSet::ExtractCommands),
+                    (rp_create_surface, rp_resize).in_set(RenderSet::Prepare),
+                    World::clear_entities.in_set(RenderSet::CleanUp),
+                ),
+            );
 
         let render_app = SubApp::new(render_app_inner, extract);
         app.insert_sub_app(RenderSubApp, render_app);
-
-        app.add_plugins(CameraExtractPlugin);
-        app.add_plugins(WindowExtractPlugin);
+        app.add_plugins(CameraExtractPlugin)
+            .add_plugins(WindowExtractPlugin);
     }
 }
 
@@ -101,6 +104,8 @@ fn extract(world: &mut World, app: &mut App) {
 /// System sets for the Render schedule
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum RenderSet {
+    /// Applies commands used in extract schedule
+    ExtractCommands,
     /// Prepare resources and entities needed for rendering
     Prepare,
     /// Rendering happens here
@@ -118,7 +123,12 @@ impl Render {
         let mut schedule = Schedule::new(Render);
 
         schedule
-            .configure_sets((RenderSet::Prepare, RenderSet::Render, RenderSet::CleanUp).chain());
+            .configure_sets((
+                RenderSet::ExtractCommands,
+                RenderSet::Prepare, 
+                RenderSet::Render, 
+                RenderSet::CleanUp
+            ).chain());
 
         schedule
     }
