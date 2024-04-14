@@ -8,8 +8,7 @@ use wgpu::Color;
 /// A component representing a camera and its settings.
 ///
 /// Not exhaustive at the moment, but it will be expanded with more fields later on.
-// TODO: Derive default and make primary window the default render target
-#[derive(Component, Clone, ExtractComponent)]
+#[derive(Component, Clone, ExtractComponent, Default)]
 pub struct Camera {
     /// Where the camera renders to
     ///
@@ -32,11 +31,24 @@ pub struct Camera {
 #[non_exhaustive]
 #[derive(Clone, Default)]
 pub enum CameraRenderTarget {
+    /// Rendering to the primary window
+    #[default]
+    PrimaryWindow,
     /// Rendering to a window
     Window(Entity),
     /// Ignores the camera when rendering
-    #[default]
     None,
+}
+
+impl CameraRenderTarget {
+    /// Convert primary window to entity
+    pub fn normalize(&self, primary_window: Entity) -> Option<Entity> {
+        match self {
+            CameraRenderTarget::PrimaryWindow => Some(primary_window),
+            CameraRenderTarget::Window(entity) => Some(*entity),
+            CameraRenderTarget::None => None
+        }
+    }
 }
 
 /// How a camera clears the render target.
