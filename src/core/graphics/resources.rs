@@ -242,3 +242,17 @@ pub struct ExtractedWindows {
     /// Map from entities to their corresponding windows
     pub windows: EntityHashMap<ExtractedWindow>,
 }
+
+impl Deref for ExtractedWindows {
+    type Target = EntityHashMap<ExtractedWindow>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.windows
+    }
+}
+
+impl DerefMut for ExtractedWindows {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.windows
+    }
+}

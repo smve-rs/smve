@@ -12,12 +12,14 @@ use bevy_ecs::prelude::{Schedule, SystemSet, World};
 use bevy_ecs::schedule::{
     IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel,
 };
+use crate::core::graphics::rendering::RenderingPlugin;
 
 mod adapter_selection_utils;
 pub mod camera;
 pub mod extract;
 pub mod resources;
 mod systems;
+mod rendering;
 
 /// Responsible for initializing rendering with wgpu.
 ///
@@ -76,7 +78,8 @@ impl Plugin for GraphicsPlugin {
                     (rp_create_surface, rp_resize).in_set(RenderSet::Prepare),
                     World::clear_entities.in_set(RenderSet::CleanUp),
                 ),
-            );
+            )
+            .add_plugins(RenderingPlugin);
 
         let render_app = SubApp::new(render_app_inner, extract);
         app.insert_sub_app(RenderSubApp, render_app);
@@ -110,6 +113,12 @@ pub enum RenderSet {
     ExtractCommands,
     /// Prepare resources and entities needed for rendering
     Prepare,
+    /// This happens before Queue and begins the render pass
+    PreQueue,
+    /// The various commands are recorded here
+    Queue,
+    /// Finishes the command buffer
+    FinishQueue,
     /// Rendering happens here
     Render,
     /// Clean up the ECS world after rendering
@@ -128,11 +137,12 @@ impl Render {
             (
                 RenderSet::ExtractCommands,
                 RenderSet::Prepare,
+                RenderSet::PreQueue,
+                RenderSet::Queue,
+                RenderSet::FinishQueue,
                 RenderSet::Render,
-                RenderSet::CleanUp,
-            )
-                .chain(),
-        );
+                RenderSet::CleanUp
+            ).chain());
 
         schedule
     }

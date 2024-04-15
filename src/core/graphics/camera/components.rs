@@ -42,9 +42,13 @@ pub enum CameraRenderTarget {
 
 impl CameraRenderTarget {
     /// Convert primary window to entity
-    pub fn normalize(&self, primary_window: Entity) -> Option<Entity> {
+    /// 
+    /// # Returns
+    /// [`Some(entity)`](Some) if the camera is pointing to a window
+    /// [`None`] otherwise.
+    pub fn get_window_entity(&self, primary_window: Option<Entity>) -> Option<Entity> {
         match self {
-            CameraRenderTarget::PrimaryWindow => Some(primary_window),
+            CameraRenderTarget::PrimaryWindow => primary_window,
             CameraRenderTarget::Window(entity) => Some(*entity),
             CameraRenderTarget::None => None,
         }

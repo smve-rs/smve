@@ -57,7 +57,6 @@ fn e_extract_windows(
         );
 
         let extracted_window = extracted_windows
-            .windows
             .entry(entity)
             .or_insert(ExtractedWindow {
                 physical_width: new_width,
@@ -84,7 +83,7 @@ fn e_extract_windows(
     }
 
     for closed_window in closed_windows.read() {
-        extracted_windows.windows.remove(&closed_window.entity);
+        extracted_windows.remove(&closed_window.entity);
         graphics_state.destroy_surface(closed_window.entity);
     }
 }

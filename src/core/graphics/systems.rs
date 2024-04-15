@@ -29,7 +29,7 @@ pub fn rp_create_surface(
     mut graphics_state: ResMut<GraphicsState<'static>>,
     extracted_windows: Res<ExtractedWindows>,
 ) {
-    for (entity, window) in extracted_windows.windows.iter() {
+    for (entity, window) in extracted_windows.iter() {
         if !graphics_state.surface_states.contains_key(entity) {
             graphics_state
                 .create_surface(window, *entity, &window.raw_handles)
@@ -53,7 +53,7 @@ pub fn rp_resize(
     extracted_windows: Res<ExtractedWindows>,
     mut graphics_state: ResMut<GraphicsState<'static>>,
 ) {
-    for (entity, window) in extracted_windows.windows.iter() {
+    for (entity, window) in extracted_windows.iter() {
         if !window.size_changed {
             continue;
         }
