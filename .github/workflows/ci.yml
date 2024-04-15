@@ -63,7 +63,6 @@ jobs:
         with:
           paths: '["**/Cargo.lock", "**/Cargo.toml", "src/**/*.rs"]'
 
-
   clippy:
     needs: clippy_skip_check
     if: needs.clippy_skip_check.outputs.should_skip != 'true'
@@ -268,6 +267,21 @@ jobs:
           namedLogo: googledocs
           style: for-the-badge
 
+  typos:
+    needs: commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for typos
+        uses: crate-ci/typos@v1.20.8
+      - name: Typos info
+        if: failure()
+        run: |
+          echo 'To fix typos, please run `typos -w`'
+          echo 'To check for a diff, run `typos`'
+          echo 'You can find typos here: https://crates.io/crates/typos'
+          echo 'if you use VSCode, you can also install `Typos Spell Checker'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tekumara.typos-vscode'
 
 #  markdown_lint_skip_check:
 #    needs: commitlint
