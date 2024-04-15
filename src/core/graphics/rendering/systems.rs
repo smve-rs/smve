@@ -12,7 +12,7 @@ use std::ops::DerefMut;
 use wgpu::{CommandEncoderDescriptor, SurfaceError};
 
 /// Begins the render pass through the command encoder
-/// 
+///
 /// Called on `PreQueue`
 pub fn rpq_begin_render_passes(
     cameras: Query<(Entity, &Camera)>,
@@ -62,7 +62,7 @@ pub fn rpq_begin_render_passes(
 }
 
 /// Creates the command encoder
-/// 
+///
 /// Called on `Prepare`
 pub fn rp_create_command_encoder(
     graphics_state: Res<GraphicsState<'static>>,
@@ -78,7 +78,7 @@ pub fn rp_create_command_encoder(
 }
 
 /// Submits the command buffer
-/// 
+///
 /// Called on `FinishQueue`
 pub fn rfq_finish_queue(world: &mut World, params: &mut SystemState<Res<GraphicsState<'static>>>) {
     let command_encoder = world
@@ -92,7 +92,7 @@ pub fn rfq_finish_queue(world: &mut World, params: &mut SystemState<Res<Graphics
 }
 
 /// Presents the surface texture
-/// 
+///
 /// Called on `Render`
 pub fn rr_render(mut query: Query<&mut SurfaceTextureComponent>) {
     for mut output in query.iter_mut() {
