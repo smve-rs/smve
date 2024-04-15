@@ -6,10 +6,10 @@ mod systems;
 mod utils;
 
 use crate::core::graphics::rendering::systems::{
-    rc_clear_entities, rfq_finish_queue, rp_create_command_encoder, rpq_begin_render_passes,
+    rfq_finish_queue, rp_create_command_encoder, rpq_begin_render_passes,
     rr_render,
 };
-use crate::core::graphics::RenderSet::{CleanUp, FinishQueue, PreQueue, Prepare, Queue};
+use crate::core::graphics::RenderSet::{FinishQueue, PreQueue, Prepare, Queue};
 use crate::core::graphics::{Render, RenderSet};
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::IntoSystemConfigs;
