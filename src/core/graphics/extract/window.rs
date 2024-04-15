@@ -39,6 +39,7 @@ pub struct ExtractedWindow {
     pub present_mode_changed: bool,
 }
 
+/// System added to the extract schedule to extract windows
 fn e_extract_windows(
     mut extracted_windows: ResMut<ExtractedWindows>,
     main_world_query: Extract<Query<(Entity, &Window, &RawHandleWrapper, Option<&PrimaryWindow>)>>,

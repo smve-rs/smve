@@ -1,6 +1,9 @@
+//! Utility functions for rendering
+
 use crate::core::graphics::camera::components::CameraClearBehaviour;
 use wgpu::{CommandEncoder, LoadOp, Surface, SurfaceError, SurfaceTexture};
 
+/// Writes the command to begin a render pass for the surface supplied
 pub fn begin_render_pass(
     id: &str,
     surface: &Surface,

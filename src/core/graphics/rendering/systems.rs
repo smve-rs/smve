@@ -11,6 +11,9 @@ use log::{error, warn};
 use std::ops::DerefMut;
 use wgpu::{CommandEncoderDescriptor, SurfaceError};
 
+/// Begins the render pass through the command encoder
+/// 
+/// Called on `PreQueue`
 pub fn rpq_begin_render_passes(
     cameras: Query<(Entity, &Camera)>,
     extracted_windows: Res<ExtractedWindows>,
@@ -58,6 +61,9 @@ pub fn rpq_begin_render_passes(
     }
 }
 
+/// Creates the command encoder
+/// 
+/// Called on `Prepare`
 pub fn rp_create_command_encoder(
     graphics_state: Res<GraphicsState<'static>>,
     mut commands: Commands,
@@ -71,6 +77,9 @@ pub fn rp_create_command_encoder(
     commands.insert_resource(CommandEncoderWrapper(encoder));
 }
 
+/// Submits the command buffer
+/// 
+/// Called on `FinishQueue`
 pub fn rfq_finish_queue(world: &mut World, params: &mut SystemState<Res<GraphicsState<'static>>>) {
     let command_encoder = world
         .remove_resource::<CommandEncoderWrapper>()
@@ -82,13 +91,12 @@ pub fn rfq_finish_queue(world: &mut World, params: &mut SystemState<Res<Graphics
     params.apply(world);
 }
 
+/// Presents the surface texture
+/// 
+/// Called on `Render`
 pub fn rr_render(mut query: Query<&mut SurfaceTextureComponent>) {
     for mut output in query.iter_mut() {
         let output = std::mem::take(&mut output.0).expect("Surface texture should not be None");
         output.present();
     }
-}
-
-pub fn rc_clear_entities(world: &mut World) {
-    world.clear_entities();
 }

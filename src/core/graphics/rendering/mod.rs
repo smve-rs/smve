@@ -1,3 +1,5 @@
+//! Contains all the code to do with wgpu rendering
+
 mod components;
 mod resources;
 mod systems;
@@ -12,6 +14,7 @@ use crate::core::graphics::{Render, RenderSet};
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::IntoSystemConfigs;
 
+/// Plugin that contains all the code to do with wgpu rendering
 pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
@@ -24,7 +27,6 @@ impl Plugin for RenderingPlugin {
                 rpq_begin_render_passes.in_set(Queue),
                 rfq_finish_queue.in_set(FinishQueue),
                 rr_render.in_set(RenderSet::Render),
-                rc_clear_entities.in_set(CleanUp),
             ),
         );
     }
