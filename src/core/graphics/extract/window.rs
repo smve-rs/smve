@@ -56,16 +56,14 @@ fn e_extract_windows(
             window.resolution.physical_height().max(1),
         );
 
-        let extracted_window = extracted_windows
-            .entry(entity)
-            .or_insert(ExtractedWindow {
-                physical_width: new_width,
-                physical_height: new_height,
-                vsync: window.vsync,
-                raw_handles: handle.clone(),
-                size_changed: false,
-                present_mode_changed: false,
-            });
+        let extracted_window = extracted_windows.entry(entity).or_insert(ExtractedWindow {
+            physical_width: new_width,
+            physical_height: new_height,
+            vsync: window.vsync,
+            raw_handles: handle.clone(),
+            size_changed: false,
+            present_mode_changed: false,
+        });
 
         // This relies on the fact that `extracted_window` will reflect the old values if it already exists
         extracted_window.size_changed = new_width != extracted_window.physical_width

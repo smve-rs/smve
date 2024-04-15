@@ -1,15 +1,15 @@
 use crate::core::graphics::camera::components::Camera;
-use crate::core::graphics::rendering::resources::{CommandEncoderWrapper};
+use crate::core::graphics::rendering::components::SurfaceTextureComponent;
+use crate::core::graphics::rendering::resources::CommandEncoderWrapper;
 use crate::core::graphics::rendering::utils::begin_render_pass;
 use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Query;
 use bevy_ecs::system::{Commands, Res, ResMut, SystemState};
+use bevy_ecs::world::World;
 use log::{error, warn};
 use std::ops::DerefMut;
-use bevy_ecs::world::World;
 use wgpu::{CommandEncoderDescriptor, SurfaceError};
-use crate::core::graphics::rendering::components::SurfaceTextureComponent;
 
 pub fn rpq_begin_render_passes(
     cameras: Query<(Entity, &Camera)>,
@@ -36,7 +36,9 @@ pub fn rpq_begin_render_passes(
                 &camera.clear_behaviour,
             ) {
                 Ok(surface_texture) => {
-                    commands.entity(entity).insert(SurfaceTextureComponent(Some(surface_texture)));
+                    commands
+                        .entity(entity)
+                        .insert(SurfaceTextureComponent(Some(surface_texture)));
                 }
                 Err(SurfaceError::Lost) => {
                     surface_state.resize(surface_state.size, &graphics_state.device);
@@ -69,26 +71,24 @@ pub fn rp_create_command_encoder(
     commands.insert_resource(CommandEncoderWrapper(encoder));
 }
 
-pub fn rfq_finish_queue(
-    world: &mut World,
-    params: &mut SystemState<Res<GraphicsState<'static>>>,
-) {
-    let command_encoder = world.remove_resource::<CommandEncoderWrapper>().expect("Command encoder should exist");
-    params.get(world).queue.submit(std::iter::once(command_encoder.0.finish()));
+pub fn rfq_finish_queue(world: &mut World, params: &mut SystemState<Res<GraphicsState<'static>>>) {
+    let command_encoder = world
+        .remove_resource::<CommandEncoderWrapper>()
+        .expect("Command encoder should exist");
+    params
+        .get(world)
+        .queue
+        .submit(std::iter::once(command_encoder.0.finish()));
     params.apply(world);
 }
 
-pub fn rr_render(
-    mut query: Query<&mut SurfaceTextureComponent>,
-) {
+pub fn rr_render(mut query: Query<&mut SurfaceTextureComponent>) {
     for mut output in query.iter_mut() {
         let output = std::mem::take(&mut output.0).expect("Surface texture should not be None");
         output.present();
     }
 }
 
-pub fn rc_clear_entities(
-    world: &mut World
-) {
+pub fn rc_clear_entities(world: &mut World) {
     world.clear_entities();
 }

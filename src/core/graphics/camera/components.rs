@@ -42,7 +42,7 @@ pub enum CameraRenderTarget {
 
 impl CameraRenderTarget {
     /// Convert primary window to entity
-    /// 
+    ///
     /// # Returns
     /// [`Some(entity)`](Some) if the camera is pointing to a window
     /// [`None`] otherwise.

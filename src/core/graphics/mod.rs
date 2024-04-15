@@ -4,6 +4,7 @@
 
 use crate::core::graphics::extract::camera::CameraExtractPlugin;
 use crate::core::graphics::extract::window::WindowExtractPlugin;
+use crate::core::graphics::rendering::RenderingPlugin;
 use crate::core::graphics::resources::{GraphicsState, MainWorld, ScratchMainWorld};
 use crate::core::graphics::systems::{rec_apply_commands, rp_create_surface, rp_resize};
 use crate::core::window::WindowPlugin;
@@ -12,14 +13,13 @@ use bevy_ecs::prelude::{Schedule, SystemSet, World};
 use bevy_ecs::schedule::{
     IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel,
 };
-use crate::core::graphics::rendering::RenderingPlugin;
 
 mod adapter_selection_utils;
 pub mod camera;
 pub mod extract;
+mod rendering;
 pub mod resources;
 mod systems;
-mod rendering;
 
 /// Responsible for initializing rendering with wgpu.
 ///
@@ -141,8 +141,10 @@ impl Render {
                 RenderSet::Queue,
                 RenderSet::FinishQueue,
                 RenderSet::Render,
-                RenderSet::CleanUp
-            ).chain());
+                RenderSet::CleanUp,
+            )
+                .chain(),
+        );
 
         schedule
     }

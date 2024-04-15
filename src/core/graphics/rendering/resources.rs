@@ -1,5 +1,5 @@
-use std::ops::{Deref, DerefMut};
 use bevy_ecs::system::Resource;
+use std::ops::{Deref, DerefMut};
 use wgpu::CommandEncoder;
 
 #[derive(Resource)]
