@@ -14,9 +14,9 @@
 mod client;
 pub mod plugins;
 
+use crate::plugins::client::ClientPlugins;
 use bevy_app::prelude::*;
 use cfg_if::cfg_if;
-use crate::plugins::client::ClientPlugins;
 
 /// The main entry point for the application.
 ///

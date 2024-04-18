@@ -7,8 +7,12 @@ pub mod events;
 mod icon;
 mod systems;
 
-use crate::client::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
-use crate::client::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
+use crate::client::core::window::components::{
+    CachedWindow, PrimaryWindow, RawHandleWrapper, Window,
+};
+use crate::client::core::window::events::{
+    CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent,
+};
 use crate::client::core::window::resources::WinitWindows;
 use crate::client::core::window::systems::{
     l_react_to_resize, l_update_windows, pu_close_windows, pu_exit_on_all_closed,
