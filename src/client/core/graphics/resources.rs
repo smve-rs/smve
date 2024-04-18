@@ -47,26 +47,9 @@ impl<'window> GraphicsState<'window> {
     pub async fn new() -> Self {
         // Create instance with all backends
         let instance = wgpu::Instance::default();
-
-        // Get the backend of the best adapter
+        
         let adapters = instance.enumerate_adapters(Backends::all());
         assert!(!adapters.is_empty(), "No adapters found!");
-
-        let adapter = get_best_adapter(adapters);
-
-        info!("Selected Backend: {:?}", adapter.get_info().backend);
-
-        // * Fun Fact: This "DX12" problem was extremely hard to debug.
-        // *           Turns out it is something to do with the fact that wgpu creates an instance for all backends when using the default constructor.
-        // *           This causes the DX12 backend to fail as it could not share the instance with the Vulkan backend.
-        // Recreate the instance based on the backend chosen (fix DX12 problem on windows)
-        let instance = wgpu::Instance::new(InstanceDescriptor {
-            backends: adapter.get_info().backend.into(),
-            ..Default::default()
-        });
-
-        // Find the best adapter again
-        let adapters = instance.enumerate_adapters(Backends::all());
 
         let adapter = get_best_adapter(adapters);
 
