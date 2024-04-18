@@ -47,7 +47,7 @@ impl<'window> GraphicsState<'window> {
     pub async fn new() -> Self {
         // Create instance with all backends
         let instance = wgpu::Instance::default();
-        
+
         let adapters = instance.enumerate_adapters(Backends::all());
         assert!(!adapters.is_empty(), "No adapters found!");
 
