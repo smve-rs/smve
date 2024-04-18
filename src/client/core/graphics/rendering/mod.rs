@@ -5,11 +5,11 @@ mod resources;
 mod systems;
 mod utils;
 
-use crate::core::graphics::rendering::systems::{
+use crate::client::core::graphics::rendering::systems::{
     rfq_finish_queue, rp_create_command_encoder, rpq_begin_render_passes, rr_render,
 };
-use crate::core::graphics::RenderSet::{FinishQueue, PreQueue, Prepare, Queue};
-use crate::core::graphics::{Render, RenderSet};
+use crate::client::core::graphics::RenderSet::{FinishQueue, PreQueue, Prepare, Queue};
+use crate::client::core::graphics::{Render, RenderSet};
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::IntoSystemConfigs;
 

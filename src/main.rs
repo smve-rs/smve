@@ -11,13 +11,12 @@
 //!
 //! A voxel engine written in Rust.
 
-pub mod core;
-mod game;
+mod client;
 pub mod plugins;
 
 use bevy_app::prelude::*;
 use cfg_if::cfg_if;
-use plugins::RuxelPlugins;
+use crate::plugins::client::ClientPlugins;
 
 /// The main entry point for the application.
 ///
@@ -27,7 +26,7 @@ pub fn main() {
 
     log_panics::init();
 
-    App::new().add_plugins(RuxelPlugins).run();
+    App::new().add_plugins(ClientPlugins).run();
 }
 
 /// Initializes loggers based on the features enabled.

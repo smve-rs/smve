@@ -1,6 +1,6 @@
 //! Components for the window system
 
-use crate::core::window::icon;
+use crate::client::core::window::icon;
 use bevy_ecs::prelude::Component;
 use macros::ExtractComponent;
 use raw_window_handle::{

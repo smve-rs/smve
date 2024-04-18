@@ -31,7 +31,7 @@ pub fn derive_extract_component(input: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(quote! {
-        impl crate::core::graphics::extract::utils::extract_component::ExtractComponent for #struct_name {
+        impl crate::client::core::graphics::extract::utils::extract_component::ExtractComponent for #struct_name {
             type QueryData = &'static Self;
             type QueryFilter = #filter;
             type Out = Self;

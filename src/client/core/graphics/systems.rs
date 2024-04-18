@@ -1,7 +1,7 @@
 //! Bevy systems for the graphics module.
 
-use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
-use crate::core::graphics::ExtractSchedule;
+use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use crate::client::core::graphics::ExtractSchedule;
 use bevy_ecs::prelude::{Res, Schedules, World};
 use bevy_ecs::system::ResMut;
 use bevy_ecs::world::Mut;
@@ -12,7 +12,7 @@ use winit::dpi::PhysicalSize;
 
 cfg_if! {
     if #[cfg(any(target_os = "macos", target_os = "ios"))] {
-        use crate::core::graphics::resources::NonSendMarker;
+        use crate::client::core::graphics::resources::NonSendMarker;
         use bevy_ecs::system::NonSend;
     }
 }

@@ -2,9 +2,9 @@
 //!
 //! This module contains the resources used by the graphics module such as the [`GraphicsState`] struct.
 
-use crate::core::graphics::adapter_selection_utils::get_best_adapter;
-use crate::core::graphics::extract::window::ExtractedWindow;
-use crate::core::window::components::RawHandleWrapper;
+use crate::client::core::graphics::adapter_selection_utils::get_best_adapter;
+use crate::client::core::graphics::extract::window::ExtractedWindow;
+use crate::client::core::window::components::RawHandleWrapper;
 use bevy_ecs::entity::{Entity, EntityHashMap};
 use bevy_ecs::system::Resource;
 use bevy_ecs::world::World;

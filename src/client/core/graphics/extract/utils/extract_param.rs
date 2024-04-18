@@ -1,6 +1,6 @@
 //! From Bevy's extract param.
 
-use crate::core::graphics::resources::MainWorld;
+use crate::client::core::graphics::resources::MainWorld;
 use bevy_ecs::{
     component::Tick,
     prelude::*,

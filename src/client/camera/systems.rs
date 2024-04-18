@@ -1,6 +1,6 @@
-//! Systems to spawn and manage cameras in game
+//! Systems to spawn and manage cameras in client
 
-use crate::core::graphics::camera::components::{Camera, CameraClearBehaviour};
+use crate::client::core::graphics::camera::components::{Camera, CameraClearBehaviour};
 use bevy_ecs::system::Commands;
 use wgpu::Color;
 

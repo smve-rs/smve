@@ -18,7 +18,7 @@ bevy_ecs = { version = "0.13.2", features = ["multi-threaded"] }
 env_logger = "0.11.3"
 log = "0.4.21"
 pollster = "0.3.0"
-wgpu = "0.19.3"
+wgpu = "0.19.4"
 winit = "0.29.15"
 raw-window-handle = "0.6.0"
 log-panics = { version = "2", features = ["with-backtrace"]}

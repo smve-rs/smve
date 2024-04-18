@@ -1,6 +1,6 @@
-use crate::core::window::components::{CachedWindow, PrimaryWindow, Window};
-use crate::core::window::events::{CloseRequestedEvent, WindowResizedEvent};
-use crate::core::window::resources::WinitWindows;
+use crate::client::core::window::components::{CachedWindow, PrimaryWindow, Window};
+use crate::client::core::window::events::{CloseRequestedEvent, WindowResizedEvent};
+use crate::client::core::window::resources::WinitWindows;
 use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
 use log::{info, warn};

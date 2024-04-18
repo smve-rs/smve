@@ -1,8 +1,8 @@
-use crate::core::graphics::camera::components::Camera;
-use crate::core::graphics::rendering::components::SurfaceTextureComponent;
-use crate::core::graphics::rendering::resources::CommandEncoderWrapper;
-use crate::core::graphics::rendering::utils::begin_render_pass;
-use crate::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use crate::client::core::graphics::camera::components::Camera;
+use crate::client::core::graphics::rendering::components::SurfaceTextureComponent;
+use crate::client::core::graphics::rendering::resources::CommandEncoderWrapper;
+use crate::client::core::graphics::rendering::utils::begin_render_pass;
+use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Query;
 use bevy_ecs::system::{Commands, Res, ResMut, SystemState};

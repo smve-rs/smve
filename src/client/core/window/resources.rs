@@ -1,6 +1,6 @@
 //! Bevy resources for the windowing module.
 
-use crate::core::window::components::Window;
+use crate::client::core::window::components::Window;
 use bevy_ecs::prelude::Entity;
 use log::{info, warn};
 use std::collections::hash_map::Entry;

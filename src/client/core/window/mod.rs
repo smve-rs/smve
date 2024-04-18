@@ -7,10 +7,10 @@ pub mod events;
 mod icon;
 mod systems;
 
-use crate::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
-use crate::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
-use crate::core::window::resources::WinitWindows;
-use crate::core::window::systems::{
+use crate::client::core::window::components::{CachedWindow, PrimaryWindow, RawHandleWrapper, Window};
+use crate::client::core::window::events::{CloseRequestedEvent, WindowCreatedEvent, WindowResizedEvent};
+use crate::client::core::window::resources::WinitWindows;
+use crate::client::core::window::systems::{
     l_react_to_resize, l_update_windows, pu_close_windows, pu_exit_on_all_closed,
     pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check,
 };
@@ -96,7 +96,7 @@ impl Plugin for WindowPlugin {
 
 /// The custom runner for the app which runs on the winit event loop.
 ///
-/// Handles window creation, window events and the main game loop.
+/// Handles window creation, window events and the main client loop.
 fn runner(mut app: App) {
     // Bevy stuff that I don't understand
     // Apparently if plugin loading is ready, we need to call finish and cleanup
