@@ -12,7 +12,7 @@ use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
-use wgpu::{Backends, CreateSurfaceError, InstanceDescriptor, PresentMode};
+use wgpu::{Backends, CreateSurfaceError, PresentMode};
 use winit::dpi::PhysicalSize;
 
 /// Contains the global and per-window objects needed for rendering.

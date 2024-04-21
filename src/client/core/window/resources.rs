@@ -51,13 +51,13 @@ impl WinitWindows {
         if let Some(icon_data) = window.icon_data.clone() {
             window_builder = window_builder.with_window_icon(Some(
                 Icon::from_rgba(icon_data, window.icon_width, window.icon_height)
-                    .map_err(WindowError::IconError)?,
+                    .map_err(WindowError::Icon)?,
             ));
         }
 
         let winit_window = window_builder
             .build(event_loop)
-            .map_err(WindowError::WindowCreationError)?;
+            .map_err(WindowError::WindowCreation)?;
 
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);
@@ -86,7 +86,7 @@ impl WinitWindows {
             self.window_to_entity.remove(&window);
             Ok(())
         } else {
-            Err(WindowError::WindowEntityError(entity))
+            Err(WindowError::WindowEntity(entity))
         }
     }
 
@@ -99,27 +99,27 @@ impl WinitWindows {
 /// Handling various errors related to windowing
 pub enum WindowError {
     /// Error when an entity does not have a window associated with it
-    WindowEntityError(Entity),
+    WindowEntity(Entity),
     /// Error on failure to load an icon
-    IconError(BadIcon),
+    Icon(BadIcon),
     /// Error on failure to create a window
-    WindowCreationError(winit::error::OsError),
+    WindowCreation(winit::error::OsError),
 }
 
 impl Debug for WindowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            WindowError::WindowEntityError(entity) => {
+            WindowError::WindowEntity(entity) => {
                 write!(
                     f,
                     "Entity {:?} does not have a window associated with it",
                     entity
                 )
             }
-            WindowError::IconError(bad_icon) => {
+            WindowError::Icon(bad_icon) => {
                 write!(f, "Failed to load icon: {:?}", bad_icon)
             }
-            WindowError::WindowCreationError(os_error) => {
+            WindowError::WindowCreation(os_error) => {
                 write!(f, "Failed to create window: {:?}", os_error)
             }
         }
@@ -129,17 +129,17 @@ impl Debug for WindowError {
 impl Display for WindowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            WindowError::WindowEntityError(entity) => {
+            WindowError::WindowEntity(entity) => {
                 write!(
                     f,
                     "Entity {:?} does not have a window associated with it",
                     entity
                 )
             }
-            WindowError::IconError(bad_icon) => {
+            WindowError::Icon(bad_icon) => {
                 write!(f, "Failed to load icon: {bad_icon}")
             }
-            WindowError::WindowCreationError(os_error) => {
+            WindowError::WindowCreation(os_error) => {
                 write!(f, "Failed to create window: {os_error}")
             }
         }
@@ -149,9 +149,9 @@ impl Display for WindowError {
 impl Error for WindowError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            WindowError::WindowEntityError(_) => None,
-            WindowError::IconError(bad_icon) => Some(bad_icon),
-            WindowError::WindowCreationError(os_error) => Some(os_error),
+            WindowError::WindowEntity(_) => None,
+            WindowError::Icon(bad_icon) => Some(bad_icon),
+            WindowError::WindowCreation(os_error) => Some(os_error),
         }
     }
 }

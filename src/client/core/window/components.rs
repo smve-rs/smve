@@ -70,6 +70,7 @@ impl Default for WindowResolution {
     }
 }
 
+#[allow(dead_code)]
 impl WindowResolution {
     /// Creates a new window resolution with the given logical size
     pub fn new<P: Pixel>(logical_size: LogicalSize<P>) -> Self {

@@ -23,6 +23,7 @@ pub struct WindowResizedEvent {
 
 /// This event is emitted when a window is created.
 #[derive(Event)]
+#[allow(dead_code)]
 pub struct WindowCreatedEvent {
     /// The window that was created
     pub window_id: winit::window::WindowId,

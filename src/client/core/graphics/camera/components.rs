@@ -29,6 +29,7 @@ pub struct Camera {
 ///
 /// Will eventually support rendering to textures.
 #[non_exhaustive]
+#[allow(dead_code)]
 #[derive(Clone, Default)]
 pub enum CameraRenderTarget {
     /// Rendering to the primary window
@@ -57,6 +58,7 @@ impl CameraRenderTarget {
 
 /// How a camera clears the render target.
 #[derive(Clone)]
+#[allow(dead_code)]
 pub enum CameraClearBehaviour {
     /// Do not clear the target at the start of the frame
     DontClear,
