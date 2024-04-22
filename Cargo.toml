@@ -20,7 +20,7 @@ log = "0.4.21"
 pollster = "0.3.0"
 wgpu = "0.19.4"
 winit = "0.29.15"
-raw-window-handle = "0.6.0"
+raw-window-handle = "0.6.1"
 log-panics = { version = "2", features = ["with-backtrace"]}
 cfg-if = "1.0.0"
 humantime = { version = "2.1.0"}
