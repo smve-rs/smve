@@ -144,6 +144,7 @@ jobs:
           target/
         key: ${{ runner.os }}-rust-build-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: ${{ runner.os }}-rust-
+    - uses: dtolnay/rust-toolchain@nightly
     - name: Install LLD on Windows
       if: matrix.os == 'windows'
       run: |
