@@ -55,7 +55,9 @@ impl WinitWindows {
             ));
         }
 
-        let winit_window = event_loop.create_window(window_attributes).map_err(WindowError::WindowCreation)?;
+        let winit_window = event_loop
+            .create_window(window_attributes)
+            .map_err(WindowError::WindowCreation)?;
 
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);

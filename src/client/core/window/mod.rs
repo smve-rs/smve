@@ -126,15 +126,21 @@ impl ApplicationHandler for WinitApp {
 
         // Close the event loop if there is any app exit events
         if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
-            if self.app_exit_event_reader.read(app_exit_events).last().is_some() {
+            if self
+                .app_exit_event_reader
+                .read(app_exit_events)
+                .last()
+                .is_some()
+            {
                 event_loop.exit();
                 return;
             }
         }
 
         // Create any new windows that were added
-        let (commands, query, winit_windows, window_created_event) =
-            self.create_windows_system_state.get_mut(&mut self.app.world);
+        let (commands, query, winit_windows, window_created_event) = self
+            .create_windows_system_state
+            .get_mut(&mut self.app.world);
         create_windows(
             commands,
             query,
@@ -143,13 +149,14 @@ impl ApplicationHandler for WinitApp {
             event_loop,
         );
         self.create_windows_system_state.apply(&mut self.app.world);
-        
+
         if cause != StartCause::Init {
             return;
         }
         // Create any new windows
-        let (commands, query, winit_windows, window_created_event) =
-            self.create_windows_system_state.get_mut(&mut self.app.world);
+        let (commands, query, winit_windows, window_created_event) = self
+            .create_windows_system_state
+            .get_mut(&mut self.app.world);
         create_windows(
             commands,
             query,
@@ -164,7 +171,12 @@ impl ApplicationHandler for WinitApp {
         // TODO: Actually handle the resumed event for android
     }
 
-    fn window_event(&mut self, _event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
+    fn window_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: WindowEvent,
+    ) {
         let (mut window_resized_event, mut query, winit_windows) =
             self.window_event_system_state.get_mut(&mut self.app.world);
         let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
@@ -206,7 +218,12 @@ impl ApplicationHandler for WinitApp {
 
             // Close event loop if received events
             if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
-                if self.app_exit_event_reader.read(app_exit_events).last().is_some() {
+                if self
+                    .app_exit_event_reader
+                    .read(app_exit_events)
+                    .last()
+                    .is_some()
+                {
                     event_loop.exit();
                     return;
                 }
