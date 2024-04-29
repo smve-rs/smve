@@ -225,7 +225,6 @@ impl ApplicationHandler for WinitApp {
                     .is_some()
                 {
                     event_loop.exit();
-                    return;
                 }
             }
         }
