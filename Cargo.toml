@@ -29,7 +29,7 @@ macros = { path = "crates/macros" }
 # Dependencies for file logging
 fern = { version = "0.6.2", features = ["colored"], optional = true }
 chrono = { version = "0.4.38", optional = true }
-flate2 = { version = "1.0.28", optional = true }
+flate2 = { version = "1.0.29", optional = true }
 
 [features]
 log-to-file = ["dep:fern", "dep:flate2", "dep:chrono"]
