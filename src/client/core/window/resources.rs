@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
-use winit::window::{BadIcon, Icon, WindowBuilder, WindowId};
+use winit::window::{BadIcon, Icon, WindowId};
 
 /// Resource used to keep track of all the windows
 ///
@@ -39,25 +39,23 @@ impl WinitWindows {
     /// Creates a winit window, configures it and associates it with an entity.
     pub fn create_window(
         &mut self,
-        event_loop: &winit::event_loop::EventLoopWindowTarget<()>,
+        event_loop: &winit::event_loop::ActiveEventLoop,
         entity: Entity,
         window: &Window,
     ) -> Result<&winit::window::Window, WindowError> {
         info!("Opening window {} on {:?}", window.title, entity);
 
-        let mut window_builder = WindowBuilder::new()
+        let mut window_attributes = winit::window::Window::default_attributes()
             .with_inner_size(window.resolution.size())
             .with_title(&window.title);
         if let Some(icon_data) = window.icon_data.clone() {
-            window_builder = window_builder.with_window_icon(Some(
+            window_attributes = window_attributes.with_window_icon(Some(
                 Icon::from_rgba(icon_data, window.icon_width, window.icon_height)
                     .map_err(WindowError::Icon)?,
             ));
         }
 
-        let winit_window = window_builder
-            .build(event_loop)
-            .map_err(WindowError::WindowCreation)?;
+        let winit_window = event_loop.create_window(window_attributes).map_err(WindowError::WindowCreation)?;
 
         self.entity_to_window.insert(entity, winit_window.id());
         self.window_to_entity.insert(winit_window.id(), entity);

@@ -25,8 +25,10 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use log::{error, info, warn};
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use winit::event::{Event, StartCause, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget};
+use winit::application::ApplicationHandler;
+use winit::event::{StartCause, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::window::WindowId;
 
 /// The plugin which adds a window and associated systems to the app.
 ///
@@ -98,6 +100,121 @@ impl Plugin for WindowPlugin {
     }
 }
 
+struct WinitApp {
+    create_windows_system_state: SystemState<(
+        Commands<'static, 'static>,
+        Query<'static, 'static, (Entity, &'static mut Window), Added<Window>>,
+        NonSendMut<'static, WinitWindows>,
+        EventWriter<'static, WindowCreatedEvent>,
+    )>,
+    window_event_system_state: SystemState<(
+        EventWriter<'static, WindowResizedEvent>,
+        Query<'static, 'static, (Entity, &'static mut Window)>,
+        NonSendMut<'static, WinitWindows>,
+    )>,
+    app: App,
+    app_exit_event_reader: ManualEventReader<AppExit>,
+}
+
+impl ApplicationHandler for WinitApp {
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: StartCause) {
+        // Do bevy plugin thing again
+        if self.app.plugins_state() == PluginsState::Ready {
+            self.app.finish();
+            self.app.cleanup();
+        }
+
+        // Close the event loop if there is any app exit events
+        if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
+            if self.app_exit_event_reader.read(app_exit_events).last().is_some() {
+                event_loop.exit();
+                return;
+            }
+        }
+
+        // Create any new windows that were added
+        let (commands, query, winit_windows, window_created_event) =
+            self.create_windows_system_state.get_mut(&mut self.app.world);
+        create_windows(
+            commands,
+            query,
+            winit_windows,
+            window_created_event,
+            event_loop,
+        );
+        self.create_windows_system_state.apply(&mut self.app.world);
+        
+        if cause != StartCause::Init {
+            return;
+        }
+        // Create any new windows
+        let (commands, query, winit_windows, window_created_event) =
+            self.create_windows_system_state.get_mut(&mut self.app.world);
+        create_windows(
+            commands,
+            query,
+            winit_windows,
+            window_created_event,
+            event_loop,
+        );
+        self.create_windows_system_state.apply(&mut self.app.world);
+    }
+
+    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
+        // TODO: Actually handle the resumed event for android
+    }
+
+    fn window_event(&mut self, _event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
+        let (mut window_resized_event, mut query, winit_windows) =
+            self.window_event_system_state.get_mut(&mut self.app.world);
+        let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
+            warn!("Skipped event {event:?} for unknown winit window {window_id:?}");
+            return;
+        };
+        let Ok((_, mut window)) = query.get_mut(window_entity) else {
+            warn!("Window {window_entity:?} is missing Window component, skipping event {event:?}");
+            return;
+        };
+
+        match event {
+            WindowEvent::CloseRequested => {
+                // Send a close requested event so systems can drop the Window and despawn windows
+                self.app.world.send_event(CloseRequestedEvent {
+                    entity: window_entity,
+                });
+            }
+            WindowEvent::Resized(size) => {
+                window_resized_event.send(WindowResizedEvent {
+                    entity: window_entity,
+                    new_width: size.to_logical(window.resolution.scale_factor()).width,
+                    new_height: size.to_logical(window.resolution.scale_factor()).height,
+                });
+            }
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                window.resolution.set_scale_factor(scale_factor);
+                //info!("Scale factor changed {}, {}, {}", window.resolution.physical_width(), window.resolution.physical_height(), window.resolution.scale_factor());
+            }
+            _ => {}
+        }
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        // Don't update if plugins are not ready
+        if self.app.plugins_state() == PluginsState::Cleaned {
+            // Run the frame
+            self.app.update();
+
+            // Close event loop if received events
+            if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
+                if self.app_exit_event_reader.read(app_exit_events).last().is_some() {
+                    event_loop.exit();
+                    return;
+                }
+            }
+        }
+    }
+}
+
 /// The custom runner for the app which runs on the winit event loop.
 ///
 /// Handles window creation, window events and the main client loop.
@@ -117,120 +234,27 @@ fn runner(mut app: App) {
 
     // System state of added window component
     // We will use this in the event loop to create any new windows that were added
-    let mut create_windows_system_state: SystemState<(
+    let create_windows_system_state: SystemState<(
         Commands,
         Query<(Entity, &mut Window), Added<Window>>,
         NonSendMut<WinitWindows>,
         EventWriter<WindowCreatedEvent>,
     )> = SystemState::from_world(&mut app.world);
 
-    let mut window_event_system_state: SystemState<(
+    let window_event_system_state: SystemState<(
         EventWriter<WindowResizedEvent>,
         Query<(Entity, &mut Window)>,
         NonSendMut<WinitWindows>,
     )> = SystemState::from_world(&mut app.world);
 
     // Event reader to read any app exit events
-    let mut app_exit_event_reader = ManualEventReader::<AppExit>::default();
+    let app_exit_event_reader = ManualEventReader::<AppExit>::default();
 
-    // ! Temporary fix of extra AboutToWait events on windows
-    let mut exited = false;
-
-    let event_handler = move |event: Event<()>, window_target: &EventLoopWindowTarget<()>| {
-        // Do bevy plugin thing again
-        if app.plugins_state() == PluginsState::Ready {
-            app.finish();
-            app.cleanup();
-        }
-
-        // Close the event loop if there is any app exit events
-        if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
-            if app_exit_event_reader.read(app_exit_events).last().is_some() {
-                window_target.exit();
-                exited = true;
-                return;
-            }
-        }
-
-        match event {
-            // Start of the event loop
-            Event::NewEvents(StartCause::Init) => {
-                // Create any new windows
-                let (commands, query, winit_windows, window_created_event) =
-                    create_windows_system_state.get_mut(&mut app.world);
-                create_windows(
-                    commands,
-                    query,
-                    winit_windows,
-                    window_created_event,
-                    window_target,
-                );
-                create_windows_system_state.apply(&mut app.world);
-            }
-            Event::WindowEvent { window_id, event } => {
-                let (mut window_resized_event, mut query, winit_windows) =
-                    window_event_system_state.get_mut(&mut app.world);
-                let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
-                    warn!("Skipped event {event:?} for unknown winit window {window_id:?}");
-                    return;
-                };
-                let Ok((_, mut window)) = query.get_mut(window_entity) else {
-                    warn!("Window {window_entity:?} is missing Window component, skipping event {event:?}");
-                    return;
-                };
-
-                match event {
-                    WindowEvent::CloseRequested => {
-                        // Send a close requested event so systems can drop the Window and despawn windows
-                        app.world.send_event(CloseRequestedEvent {
-                            entity: window_entity,
-                        });
-                    }
-                    WindowEvent::Resized(size) => {
-                        window_resized_event.send(WindowResizedEvent {
-                            entity: window_entity,
-                            new_width: size.to_logical(window.resolution.scale_factor()).width,
-                            new_height: size.to_logical(window.resolution.scale_factor()).height,
-                        });
-                    }
-                    WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
-                        window.resolution.set_scale_factor(scale_factor);
-                        //info!("Scale factor changed {}, {}, {}", window.resolution.physical_width(), window.resolution.physical_height(), window.resolution.scale_factor());
-                    }
-                    _ => {}
-                }
-            }
-            // This is where the frame happens
-            Event::AboutToWait => {
-                // Don't update if plugins are not ready
-                if app.plugins_state() == PluginsState::Cleaned && !exited {
-                    // Run the frame
-                    app.update();
-
-                    // Close event loop if received events
-                    if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
-                        if app_exit_event_reader.read(app_exit_events).last().is_some() {
-                            window_target.exit();
-                            exited = true;
-                            return;
-                        }
-                    }
-                }
-            }
-            _ => {}
-        };
-
-        // Create any new windows that were added
-        let (commands, query, winit_windows, window_created_event) =
-            create_windows_system_state.get_mut(&mut app.world);
-        create_windows(
-            commands,
-            query,
-            winit_windows,
-            window_created_event,
-            window_target,
-        );
-        create_windows_system_state.apply(&mut app.world);
+    let mut winit_app = WinitApp {
+        create_windows_system_state,
+        window_event_system_state,
+        app,
+        app_exit_event_reader,
     };
 
     // This ensures that new events will be started whenever possible
@@ -239,7 +263,7 @@ fn runner(mut app: App) {
 
     // Run event loop
     info!("Entered event loop");
-    if let Err(err) = event_loop.run(event_handler) {
+    if let Err(err) = event_loop.run_app(&mut winit_app) {
         error!("winit event loop error: {err}");
     }
 }
@@ -268,7 +292,7 @@ fn create_windows(
     mut query: Query<(Entity, &mut Window), Added<Window>>,
     mut winit_windows: NonSendMut<WinitWindows>,
     mut window_created_event: EventWriter<WindowCreatedEvent>,
-    event_loop: &EventLoopWindowTarget<()>,
+    event_loop: &ActiveEventLoop,
 ) {
     for (entity, mut window) in query.iter_mut() {
         // If the winit window already exists somehow, don't create another one
