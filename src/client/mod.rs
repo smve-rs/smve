@@ -8,6 +8,7 @@ use crate::client::camera::systems::s_spawn_camera;
 use crate::client::core::graphics::camera::CameraPlugin;
 use bevy_app::{App, Plugin, Startup};
 
+/// Plugin that contains everything the game uses.
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {

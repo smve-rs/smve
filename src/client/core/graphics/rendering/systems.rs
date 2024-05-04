@@ -1,3 +1,5 @@
+//! Contains wgpu code for rendering
+
 use crate::client::core::graphics::camera::components::Camera;
 use crate::client::core::graphics::rendering::components::SurfaceTextureComponent;
 use crate::client::core::graphics::rendering::resources::CommandEncoderWrapper;

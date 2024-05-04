@@ -1,3 +1,5 @@
+//! Build script of Ruxel. Currently sets the windows icon resource.
+
 use {
     std::{env, io},
     winres::WindowsResource,

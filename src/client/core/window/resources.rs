@@ -20,7 +20,7 @@ pub struct WinitWindows {
     pub entity_to_window: HashMap<Entity, WindowId>,
     /// Maps from window ID to entity
     pub window_to_entity: HashMap<WindowId, Entity>,
-    // Many winit functions are not Send or Sync, so this resource is not Send or Sync
+    /// Marker to make this resource non-Send and Sync. This is because many winit functions cannot be called off the main thread.
     _not_send_sync: PhantomData<*const ()>,
 }
 

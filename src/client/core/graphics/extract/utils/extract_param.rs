@@ -47,6 +47,7 @@ pub struct Extract<'w, 's, P>
 where
     P: ReadOnlySystemParam + 'static,
 {
+    /// The item to extract from the world
     item: SystemParamItem<'w, 's, P>,
 }
 

@@ -88,6 +88,7 @@ impl Plugin for GraphicsPlugin {
     }
 }
 
+/// Helper function to run the extract schedule on the main world.
 fn extract(world: &mut World, app: &mut App) {
     // Move app world into render app and replace app world with empty world
     let scratch_world = world
@@ -130,6 +131,7 @@ pub enum RenderSet {
 pub struct Render;
 
 impl Render {
+    /// Returns a schedule pre-configured with render system sets.
     fn schedule() -> Schedule {
         let mut schedule = Schedule::new(Render);
 

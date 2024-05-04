@@ -4,6 +4,7 @@ use crate::client::core::graphics::camera::components::{Camera, CameraClearBehav
 use bevy_ecs::system::Commands;
 use wgpu::Color;
 
+/// Runs on startup and spawns the game camera.
 pub fn s_spawn_camera(mut commands: Commands) {
     commands.spawn(Camera {
         clear_behaviour: CameraClearBehaviour::Color(Color {

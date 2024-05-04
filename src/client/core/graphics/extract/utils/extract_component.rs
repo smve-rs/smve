@@ -49,6 +49,8 @@ pub trait ExtractComponent: Component {
 /// # Generics
 /// - `C`: The component implementing the [`ExtractComponent`] trait.
 pub struct ExtractComponentPlugin<C> {
+    /// Marks the type of the plugin.
+    /// It contains a function pointer so that `C` does not need to implement [`Default`]
     marker: PhantomData<fn() -> C>,
 }
 

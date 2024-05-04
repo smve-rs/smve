@@ -2,7 +2,7 @@
 
 use crate::client::core::window::icon;
 use bevy_ecs::prelude::Component;
-use macros::ExtractComponent;
+use ruxel_macros::ExtractComponent;
 use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,

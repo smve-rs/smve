@@ -4,6 +4,7 @@ pub mod resources;
 
 pub mod components;
 pub mod events;
+#[doc(hidden)]
 mod icon;
 mod systems;
 
@@ -100,19 +101,26 @@ impl Plugin for WindowPlugin {
     }
 }
 
+/// This structure contains everything needed in the event loop. It is passed to [`EventLoop::run_app`].
+/// 
+/// See [`ApplicationHandler`] and [`EventLoop::run_app`] for more information.
 struct WinitApp {
+    /// System state used to acquire required objects from the world to create windows
     create_windows_system_state: SystemState<(
         Commands<'static, 'static>,
         Query<'static, 'static, (Entity, &'static mut Window), Added<Window>>,
         NonSendMut<'static, WinitWindows>,
         EventWriter<'static, WindowCreatedEvent>,
     )>,
+    /// System state used to acquire required objects to send window events
     window_event_system_state: SystemState<(
         EventWriter<'static, WindowResizedEvent>,
         Query<'static, 'static, (Entity, &'static mut Window)>,
         NonSendMut<'static, WinitWindows>,
     )>,
+    /// Bevy App
     app: App,
+    /// For reading [`AppExit`] events
     app_exit_event_reader: ManualEventReader<AppExit>,
 }
 

@@ -1,3 +1,5 @@
+//! Systems managing winit windows and window components.
+
 use crate::client::core::window::components::{CachedWindow, PrimaryWindow, Window};
 use crate::client::core::window::events::{CloseRequestedEvent, WindowResizedEvent};
 use crate::client::core::window::resources::WinitWindows;
