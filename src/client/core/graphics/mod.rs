@@ -2,17 +2,18 @@
 //!
 //! This module contains the [`GraphicsPlugin`] which is responsible for initializing rendering with [`wgpu`](https://docs.rs/wgpu/latest/wgpu/index.html).
 
+use bevy_app::{App, AppLabel, Plugin, SubApp};
+use bevy_ecs::prelude::{Schedule, SystemSet, World};
+use bevy_ecs::schedule::{
+    IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel,
+};
+
 use crate::client::core::graphics::extract::camera::CameraExtractPlugin;
 use crate::client::core::graphics::extract::window::WindowExtractPlugin;
 use crate::client::core::graphics::rendering::RenderingPlugin;
 use crate::client::core::graphics::resources::{GraphicsState, MainWorld, ScratchMainWorld};
 use crate::client::core::graphics::systems::{rec_apply_commands, rp_create_surface, rp_resize};
 use crate::client::core::window::WindowPlugin;
-use bevy_app::{App, AppLabel, Plugin, SubApp};
-use bevy_ecs::prelude::{Schedule, SystemSet, World};
-use bevy_ecs::schedule::{
-    IntoSystemConfigs, IntoSystemSetConfigs, ScheduleBuildSettings, ScheduleLabel,
-};
 
 mod adapter_selection_utils;
 pub mod camera;

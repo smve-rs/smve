@@ -1,14 +1,16 @@
 //! Bevy systems for the graphics module.
 
-use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
-use crate::client::core::graphics::ExtractSchedule;
+use std::ops::DerefMut;
+
 use bevy_ecs::prelude::{Res, Schedules, World};
 use bevy_ecs::system::ResMut;
 use bevy_ecs::world::Mut;
 use cfg_if::cfg_if;
 use log::info;
-use std::ops::DerefMut;
 use winit::dpi::PhysicalSize;
+
+use crate::client::core::graphics::ExtractSchedule;
+use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
 
 cfg_if! {
     if #[cfg(any(target_os = "macos", target_os = "ios"))] {

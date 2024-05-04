@@ -1,12 +1,16 @@
 //! Windowing code for the engine.
 
-pub mod resources;
-
-pub mod components;
-pub mod events;
-#[doc(hidden)]
-mod icon;
-mod systems;
+use bevy_app::{AppExit, PluginsState};
+use bevy_app::prelude::*;
+use bevy_ecs::event::ManualEventReader;
+use bevy_ecs::prelude::*;
+use bevy_ecs::system::SystemState;
+use log::{error, info, warn};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
+use winit::application::ApplicationHandler;
+use winit::event::{StartCause, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::window::WindowId;
 
 use crate::client::core::window::components::{
     CachedWindow, PrimaryWindow, RawHandleWrapper, Window,
@@ -19,17 +23,14 @@ use crate::client::core::window::systems::{
     l_react_to_resize, l_update_windows, pu_close_windows, pu_exit_on_all_closed,
     pu_exit_on_primary_closed, u_despawn_windows, u_primary_window_check,
 };
-use bevy_app::prelude::*;
-use bevy_app::{AppExit, PluginsState};
-use bevy_ecs::event::ManualEventReader;
-use bevy_ecs::prelude::*;
-use bevy_ecs::system::SystemState;
-use log::{error, info, warn};
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use winit::application::ApplicationHandler;
-use winit::event::{StartCause, WindowEvent};
-use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::window::WindowId;
+
+pub mod resources;
+
+pub mod components;
+pub mod events;
+#[doc(hidden)]
+mod icon;
+mod systems;
 
 /// The plugin which adds a window and associated systems to the app.
 ///

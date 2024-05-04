@@ -1,17 +1,18 @@
 //! Contains all the code to do with wgpu rendering
 
+use bevy_app::{App, Plugin};
+use bevy_ecs::prelude::IntoSystemConfigs;
+
+use crate::client::core::graphics::{Render, RenderSet};
+use crate::client::core::graphics::rendering::systems::{
+    rfq_finish_queue, rp_create_command_encoder, rpq_begin_render_passes, rr_render,
+};
+use crate::client::core::graphics::RenderSet::{FinishQueue, Prepare, PreQueue, Queue};
+
 mod components;
 mod resources;
 mod systems;
 mod utils;
-
-use crate::client::core::graphics::rendering::systems::{
-    rfq_finish_queue, rp_create_command_encoder, rpq_begin_render_passes, rr_render,
-};
-use crate::client::core::graphics::RenderSet::{FinishQueue, PreQueue, Prepare, Queue};
-use crate::client::core::graphics::{Render, RenderSet};
-use bevy_app::{App, Plugin};
-use bevy_ecs::prelude::IntoSystemConfigs;
 
 /// Plugin that contains all the code to do with wgpu rendering
 pub struct RenderingPlugin;

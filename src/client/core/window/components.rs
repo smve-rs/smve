@@ -1,6 +1,5 @@
 //! Components for the window system
 
-use crate::client::core::window::icon;
 use bevy_ecs::prelude::Component;
 use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
@@ -8,6 +7,10 @@ use raw_window_handle::{
 };
 use ruxel_macros::ExtractComponent;
 use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
+
+use ruxel_macros::ExtractComponent;
+
+use crate::client::core::window::icon;
 
 /// A marker component for the primary window.
 /// There should be only one primary window at any one time.

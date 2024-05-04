@@ -1,14 +1,15 @@
 //! Used to extract Windows into the render world
 
-use crate::client::core::graphics::extract::utils::extract_param::Extract;
-use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
-use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
-use crate::client::core::window::components::{PrimaryWindow, RawHandleWrapper, Window};
-use crate::client::core::window::events::CloseRequestedEvent;
 use bevy_app::{App, Plugin};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{Query, ResMut};
+
+use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
+use crate::client::core::graphics::extract::utils::extract_param::Extract;
+use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use crate::client::core::window::components::{PrimaryWindow, RawHandleWrapper, Window};
+use crate::client::core::window::events::CloseRequestedEvent;
 
 /// Responsible for extracting the windows into the render world
 pub struct WindowExtractPlugin;

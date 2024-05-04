@@ -1,12 +1,13 @@
 //! This is the plugin that contains all code related to the client.
 //! It includes things such as cameras for now.
 
-mod camera;
-pub mod core;
+use bevy_app::{App, Plugin, Startup};
 
 use crate::client::camera::systems::s_spawn_camera;
 use crate::client::core::graphics::camera::CameraPlugin;
-use bevy_app::{App, Plugin, Startup};
+
+mod camera;
+pub mod core;
 
 /// Plugin that contains everything the game uses.
 pub struct GamePlugin;

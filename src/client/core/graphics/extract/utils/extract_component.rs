@@ -1,14 +1,16 @@
 //! Utility trait to easily extract components into the render world by cloning
 
-use crate::client::core::graphics::extract::utils::extract_param::Extract;
-use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
+use std::marker::PhantomData;
+
 use bevy_app::{App, Plugin};
 use bevy_ecs::bundle::Bundle;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::{Component, Local};
 use bevy_ecs::query::{QueryFilter, QueryItem, ReadOnlyQueryData};
 use bevy_ecs::system::{Commands, Query};
-use std::marker::PhantomData;
+
+use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
+use crate::client::core::graphics::extract::utils::extract_param::Extract;
 
 /// A trait representing the extraction from the main world to the render world
 pub trait ExtractComponent: Component {
