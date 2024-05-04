@@ -102,7 +102,7 @@ impl Plugin for WindowPlugin {
 }
 
 /// This structure contains everything needed in the event loop. It is passed to [`EventLoop::run_app`].
-/// 
+///
 /// See [`ApplicationHandler`] and [`EventLoop::run_app`] for more information.
 struct WinitApp {
     /// System state used to acquire required objects from the world to create windows

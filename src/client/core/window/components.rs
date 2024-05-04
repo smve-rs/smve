@@ -2,11 +2,11 @@
 
 use crate::client::core::window::icon;
 use bevy_ecs::prelude::Component;
-use ruxel_macros::ExtractComponent;
 use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,
 };
+use ruxel_macros::ExtractComponent;
 use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
 
 /// A marker component for the primary window.

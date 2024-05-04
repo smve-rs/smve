@@ -1,12 +1,12 @@
 //! Contains the [`LogPlugin`]
 
 use bevy_app::{App, Plugin};
-use std::io;
 use log::{info, Level};
 use owo_colors::{OwoColorize, Style};
+use std::io;
 
 /// The plugin that manages logging.
-/// 
+///
 /// Adding this plugin will initialize `log` implementation that will log to the console and/or a file.
 /// If the feature `log-to-console` is set then console logging will be initialized.
 /// If the feature `log-to-file` is set then file logging will be initialized.
@@ -26,8 +26,10 @@ impl Plugin for LogPlugin {
                     .format(move |out, message, record| {
                         out.finish(format_args!(
                             "{}  {} {} {}",
-                            humantime::format_rfc3339_millis(std::time::SystemTime::now()).bright_black(),
-                            format!("[{}]", record.level()).style(level_styles.style(record.level())),
+                            humantime::format_rfc3339_millis(std::time::SystemTime::now())
+                                .bright_black(),
+                            format!("[{}]", record.level())
+                                .style(level_styles.style(record.level())),
                             record.target().bright_black(),
                             message
                         ))
@@ -90,7 +92,10 @@ impl Plugin for LogPlugin {
         const RUXEL_VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
         info!("Hello! This is the LogPlugin speaking.");
-        info!("You are reading the logs of Ruxel version {}. Enjoy!", RUXEL_VERSION.unwrap_or("unknown"));
+        info!(
+            "You are reading the logs of Ruxel version {}. Enjoy!",
+            RUXEL_VERSION.unwrap_or("unknown")
+        );
     }
 }
 
@@ -135,9 +140,9 @@ fn initialize_log_directory() -> Result<(), std::io::Error> {
 }
 
 /// This contains styles (colors) for logging the different levels.
-/// 
+///
 /// [`LevelStyles::default`] returns the following styles:
-/// 
+///
 /// | Level            | Style                |
 /// | :--------------: | :------------------: |
 /// | [`Level::Trace`] | Bright Purple + Bold |
@@ -155,7 +160,7 @@ struct LevelStyles {
     /// Style for [`Level::Warn`]
     warn: Style,
     /// Style for [`Level::Error`]
-    error: Style
+    error: Style,
 }
 
 impl Default for LevelStyles {
@@ -165,7 +170,7 @@ impl Default for LevelStyles {
             debug: Style::new().blue().bold(),
             info: Style::new().green().bold(),
             warn: Style::new().yellow().bold(),
-            error: Style::new().red().bold()
+            error: Style::new().red().bold(),
         }
     }
 }
@@ -178,7 +183,7 @@ impl LevelStyles {
             Level::Warn => self.warn,
             Level::Info => self.info,
             Level::Debug => self.debug,
-            Level::Trace => self.trace
+            Level::Trace => self.trace,
         }
     }
 }

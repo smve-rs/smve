@@ -12,8 +12,8 @@
 //! A voxel engine written in Rust.
 
 mod client;
-mod plugins;
 mod common;
+mod plugins;
 
 use crate::plugins::client::ClientPlugins;
 use bevy_app::prelude::*;
