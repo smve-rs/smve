@@ -1,7 +1,7 @@
 //! Windowing code for the engine.
 
-use bevy_app::{AppExit, PluginsState};
 use bevy_app::prelude::*;
+use bevy_app::{AppExit, PluginsState};
 use bevy_ecs::event::ManualEventReader;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;

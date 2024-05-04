@@ -9,8 +9,8 @@ use cfg_if::cfg_if;
 use log::info;
 use winit::dpi::PhysicalSize;
 
-use crate::client::core::graphics::ExtractSchedule;
 use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use crate::client::core::graphics::ExtractSchedule;
 
 cfg_if! {
     if #[cfg(any(target_os = "macos", target_os = "ios"))] {

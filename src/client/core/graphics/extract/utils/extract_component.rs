@@ -9,8 +9,8 @@ use bevy_ecs::prelude::{Component, Local};
 use bevy_ecs::query::{QueryFilter, QueryItem, ReadOnlyQueryData};
 use bevy_ecs::system::{Commands, Query};
 
-use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
 use crate::client::core::graphics::extract::utils::extract_param::Extract;
+use crate::client::core::graphics::{ExtractSchedule, RenderSubApp};
 
 /// A trait representing the extraction from the main world to the render world
 pub trait ExtractComponent: Component {
