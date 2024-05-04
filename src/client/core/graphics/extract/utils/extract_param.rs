@@ -1,15 +1,13 @@
 //! From Bevy's extract param.
 
-use std::ops::{Deref, DerefMut};
-
+use crate::client::core::graphics::resources::MainWorld;
 use bevy_ecs::{
     component::Tick,
     prelude::*,
     system::{ReadOnlySystemParam, SystemMeta, SystemParam, SystemParamItem, SystemState},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
-
-use crate::client::core::graphics::resources::MainWorld;
+use std::ops::{Deref, DerefMut};
 
 /// A helper for accessing [`MainWorld`] content using a system parameter.
 ///

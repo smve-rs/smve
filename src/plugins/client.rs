@@ -1,7 +1,5 @@
 //! Module containing plugin groups
 
-use bevy_app::{PluginGroup, PluginGroupBuilder};
-
 use crate::client::core::graphics::GraphicsPlugin;
 use crate::client::GamePlugin;
 use crate::common::log::LogPlugin;

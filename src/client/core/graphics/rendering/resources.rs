@@ -1,8 +1,7 @@
 //! Resources for rendering
 
-use std::ops::{Deref, DerefMut};
-
 use bevy_ecs::system::Resource;
+use std::ops::{Deref, DerefMut};
 use wgpu::CommandEncoder;
 
 /// Wraps around the command encoder

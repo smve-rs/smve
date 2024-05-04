@@ -1,16 +1,14 @@
 //! Bevy resources for the windowing module.
 
+use crate::client::core::window::components::Window;
+use bevy_ecs::prelude::Entity;
+use log::{info, warn};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
-
-use bevy_ecs::prelude::Entity;
-use log::{info, warn};
 use winit::window::{BadIcon, Icon, WindowId};
-
-use crate::client::core::window::components::Window;
 
 /// Resource used to keep track of all the windows
 ///

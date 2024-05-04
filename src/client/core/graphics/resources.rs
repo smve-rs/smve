@@ -2,20 +2,18 @@
 //!
 //! This module contains the resources used by the graphics module such as the [`GraphicsState`] struct.
 
-use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut};
-
+use crate::client::core::graphics::adapter_selection_utils::get_best_adapter;
+use crate::client::core::graphics::extract::window::ExtractedWindow;
+use crate::client::core::window::components::RawHandleWrapper;
 use bevy_ecs::entity::{Entity, EntityHashMap};
 use bevy_ecs::system::Resource;
 use bevy_ecs::world::World;
 use log::info;
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
 use wgpu::{Backends, CreateSurfaceError, PresentMode};
 use winit::dpi::PhysicalSize;
-
-use crate::client::core::graphics::adapter_selection_utils::get_best_adapter;
-use crate::client::core::graphics::extract::window::ExtractedWindow;
-use crate::client::core::window::components::RawHandleWrapper;
 
 /// Contains the global and per-window objects needed for rendering.
 ///

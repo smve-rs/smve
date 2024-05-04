@@ -1,8 +1,8 @@
 //! Contains camera related functionality including the [`CameraPlugin`]
 
-use bevy_app::{App, Plugin};
-
 pub mod components;
+
+use bevy_app::{App, Plugin};
 
 /// Plugin containing functionality to do with a camera.
 pub struct CameraPlugin;

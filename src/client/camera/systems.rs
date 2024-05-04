@@ -1,9 +1,8 @@
 //! Systems to spawn and manage cameras in client
 
+use crate::client::core::graphics::camera::components::{Camera, CameraClearBehaviour};
 use bevy_ecs::system::Commands;
 use wgpu::Color;
-
-use crate::client::core::graphics::camera::components::{Camera, CameraClearBehaviour};
 
 /// Runs on startup and spawns the game camera.
 pub fn s_spawn_camera(mut commands: Commands) {

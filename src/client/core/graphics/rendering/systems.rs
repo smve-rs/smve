@@ -1,19 +1,17 @@
 //! Contains wgpu code for rendering
 
-use std::ops::DerefMut;
-
-use bevy_ecs::entity::Entity;
-use bevy_ecs::prelude::Query;
-use bevy_ecs::system::{Commands, Res, ResMut, SystemState};
-use bevy_ecs::world::World;
-use log::{error, warn};
-use wgpu::{CommandEncoderDescriptor, SurfaceError};
-
 use crate::client::core::graphics::camera::components::Camera;
 use crate::client::core::graphics::rendering::components::SurfaceTextureComponent;
 use crate::client::core::graphics::rendering::resources::CommandEncoderWrapper;
 use crate::client::core::graphics::rendering::utils::begin_render_pass;
 use crate::client::core::graphics::resources::{ExtractedWindows, GraphicsState};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::prelude::Query;
+use bevy_ecs::system::{Commands, Res, ResMut, SystemState};
+use bevy_ecs::world::World;
+use log::{error, warn};
+use std::ops::DerefMut;
+use wgpu::{CommandEncoderDescriptor, SurfaceError};
 
 /// Begins the render pass through the command encoder
 ///
