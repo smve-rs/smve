@@ -22,7 +22,7 @@ dependencies = [
 
 [[package]]
 name = "ruxel_macros"
-version = "0.1.0"
+version = "0.1.0-indev"
 dependencies = [
  "quote",
  "syn",
