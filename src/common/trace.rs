@@ -4,8 +4,8 @@ use bevy_app::{App, Plugin};
 use cfg_if::cfg_if;
 use tracing_panic::panic_hook;
 use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::registry;
+use tracing_subscriber::util::SubscriberInitExt;
 
 cfg_if! {
     if #[cfg(feature = "log-to-file")] {
