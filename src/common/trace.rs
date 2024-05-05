@@ -20,13 +20,6 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(feature = "tracing-chrome")] {
-        use tracing_chrome::ChromeLayerBuilder;
-        use tracing_subscriber::fmt::FormattedFields;
-    }
-}
-
-cfg_if! {
     if #[cfg(any(feature = "log-to-console", feature = "log-to-file"))] {
         use tracing::metadata::LevelFilter;
         use tracing_subscriber::{Layer, EnvFilter};
@@ -99,13 +92,13 @@ impl Plugin for TracePlugin {
                 let log_path = date
                     .format("tracing/ruxel_trace_%Y-%m-%d_%H-%M-%S-%f.json")
                     .to_string();
-                let (chrome, guard) = ChromeLayerBuilder::new()
+                let (chrome, guard) = tracing_chrome::ChromeLayerBuilder::new()
                     .file(log_path)
                     .name_fn(Box::new(|event_or_span| match event_or_span {
                         tracing_chrome::EventOrSpan::Event(event) => event.metadata().name().into(),
                         tracing_chrome::EventOrSpan::Span(span) => {
                             if let Some(fields) =
-                                span.extensions().get::<FormattedFields<tracing_subscriber::fmt::format::DefaultFields >>()
+                                span.extensions().get::<tracing_subscriber::fmt::FormattedFields<tracing_subscriber::fmt::format::DefaultFields >>()
                             {
                                 format!("{}: {}", span.metadata().name(), fields.fields.as_str())
                             } else {
@@ -248,7 +241,7 @@ where
                 // formatter in the `FmtContext`.
                 let ext = span.extensions();
                 let fields = &ext
-                    .get::<FormattedFields<N>>()
+                    .get::<tracing_subscriber::fmt::FormattedFields<N>>()
                     .expect("will never be `None`");
 
                 // Skip formatting the fields if the span had no fields.
