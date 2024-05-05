@@ -23,18 +23,22 @@ cfg-if = "1.0.0"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-panic = "0.1.2"
+tracing-log = "0.2.0"
 humantime = "2.1.0"
 ruxel_macros = { path = "crates/ruxel_macros" }
 
 # Dependencies for file logging
 chrono = { version = "0.4.38", optional = true }
 flate2 = { version = "1.0.30", optional = true }
-tracing-log = "0.2.0"
+
+# Chrome tracing
+tracing-chrome = { version = "0.7.2", optional = true }
 
 [features]
 default = ["log-to-console"]
 log-to-file = ["dep:flate2", "dep:chrono"]
 log-to-console = []
+tracing-chrome = ["dep:tracing-chrome", "dep:chrono", "bevy_app/trace", "bevy_ecs/trace"]
 windowed = []
 dist = ["log-to-file", "windowed"]
 

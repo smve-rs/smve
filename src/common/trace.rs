@@ -14,8 +14,15 @@ cfg_if! {
         use tracing::{Event, Subscriber};
         use tracing_log::NormalizeEvent;
         use tracing_subscriber::fmt::format::Writer;
-        use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, FormattedFields};
+        use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields};
         use tracing_subscriber::registry::LookupSpan;
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "tracing-chrome")] {
+        use tracing_chrome::ChromeLayerBuilder;
+        use tracing_subscriber::fmt::FormattedFields;
     }
 }
 
@@ -35,7 +42,8 @@ cfg_if! {
 pub struct TracePlugin;
 
 impl Plugin for TracePlugin {
-    fn build(&self, _app: &mut App) {
+    #[cfg_attr(not(feature = "tracing-chrome"), allow(unused_variables))]
+    fn build(&self, app: &mut App) {
         cfg_if! {
             if #[cfg(feature = "log-to-console")]
             {
@@ -80,7 +88,39 @@ impl Plugin for TracePlugin {
             }
         }
 
-        registry().with(stdout_log).with(file_log).init();
+        cfg_if! {
+            if #[cfg(feature = "tracing-chrome")] {
+                let result = initialize_tracing_directory();
+                if result.is_err() {
+                    eprintln!("Failed to initialize tracing directory: {}", result.unwrap_err());
+                    return;
+                }
+                let date = chrono::Utc::now();
+                let log_path = date
+                    .format("tracing/ruxel_trace_%Y-%m-%d_%H-%M-%S-%f.json")
+                    .to_string();
+                let (chrome, guard) = ChromeLayerBuilder::new()
+                    .file(log_path)
+                    .name_fn(Box::new(|event_or_span| match event_or_span {
+                        tracing_chrome::EventOrSpan::Event(event) => event.metadata().name().into(),
+                        tracing_chrome::EventOrSpan::Span(span) => {
+                            if let Some(fields) =
+                                span.extensions().get::<FormattedFields<tracing_subscriber::fmt::format::DefaultFields >>()
+                            {
+                                format!("{}: {}", span.metadata().name(), fields.fields.as_str())
+                            } else {
+                                span.metadata().name().into()
+                            }
+                        }
+                    }))
+                    .build();
+                app.insert_non_send_resource(guard);
+            } else {
+                let chrome = tracing_subscriber::layer::Identity::new();
+            }
+        }
+
+        registry().with(stdout_log).with(file_log).with(chrome).init();
 
         // Feed panic through tracing
         let old_hook = std::panic::take_hook();
@@ -131,10 +171,10 @@ fn initialize_log_directory() -> Result<(), std::io::Error> {
                 let compressed_file_name = format!("{}.gz", file_name);
                 let compressed_file_path = path.with_file_name(compressed_file_name);
 
-                let file = std::fs::File::open(&path)?;
+                let file = File::open(&path)?;
                 let mut reader = std::io::BufReader::new(file);
                 let mut compressed_file = flate2::write::GzEncoder::new(
-                    std::fs::File::create(&compressed_file_path)?,
+                    File::create(&compressed_file_path)?,
                     flate2::Compression::default(),
                 );
 
@@ -142,6 +182,16 @@ fn initialize_log_directory() -> Result<(), std::io::Error> {
                 std::fs::remove_file(&path)?;
             }
         }
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "tracing-chrome")]
+/// Creates the tracing directory if it does not exist
+fn initialize_tracing_directory() -> Result<(), std::io::Error> {
+    if !std::path::Path::new("tracing").exists() {
+        std::fs::create_dir("tracing")?;
     }
 
     Ok(())
