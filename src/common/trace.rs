@@ -120,7 +120,11 @@ impl Plugin for TracePlugin {
             }
         }
 
-        registry().with(stdout_log).with(file_log).with(chrome).init();
+        registry()
+            .with(stdout_log)
+            .with(file_log)
+            .with(chrome)
+            .init();
 
         // Feed panic through tracing
         let old_hook = std::panic::take_hook();
