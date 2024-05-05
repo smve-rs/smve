@@ -2,7 +2,7 @@
 
 use crate::client::core::graphics::GraphicsPlugin;
 use crate::client::GamePlugin;
-use crate::common::log::LogPlugin;
+use crate::common::trace::TracePlugin;
 use bevy_app::{PluginGroup, PluginGroupBuilder};
 
 /// Default plugins for Ruxel
@@ -13,7 +13,7 @@ impl PluginGroup for ClientPlugins {
         let mut group = PluginGroupBuilder::start::<Self>();
 
         group = group
-            .add(LogPlugin)
+            .add(TracePlugin)
             .add(GraphicsPlugin)
             .add_after::<GraphicsPlugin, _>(GamePlugin);
 

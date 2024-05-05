@@ -5,7 +5,7 @@ use crate::client::core::window::events::{CloseRequestedEvent, WindowResizedEven
 use crate::client::core::window::resources::WinitWindows;
 use bevy_app::AppExit;
 use bevy_ecs::prelude::*;
-use log::{info, warn};
+use tracing::{info, warn};
 use winit::dpi::LogicalSize;
 
 /// System to update the physical window when a value is changed on the [`Window`] component

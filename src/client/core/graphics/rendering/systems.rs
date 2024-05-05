@@ -9,8 +9,8 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Query;
 use bevy_ecs::system::{Commands, Res, ResMut, SystemState};
 use bevy_ecs::world::World;
-use log::{error, warn};
 use std::ops::DerefMut;
+use tracing::{error, warn};
 use wgpu::{CommandEncoderDescriptor, SurfaceError};
 
 /// Begins the render pass through the command encoder

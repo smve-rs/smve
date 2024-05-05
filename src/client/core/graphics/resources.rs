@@ -8,10 +8,10 @@ use crate::client::core::window::components::RawHandleWrapper;
 use bevy_ecs::entity::{Entity, EntityHashMap};
 use bevy_ecs::system::Resource;
 use bevy_ecs::world::World;
-use log::info;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use tracing::info;
 use wgpu::{Backends, CreateSurfaceError, PresentMode};
 use winit::dpi::PhysicalSize;
 

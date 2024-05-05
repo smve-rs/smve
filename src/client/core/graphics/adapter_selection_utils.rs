@@ -5,7 +5,7 @@
 //! - Type of adapter (CPU, Integrated GPU, Discrete GPU, etc.)
 //! - Backend (Vulkan, DX12, Metal, etc.)
 
-use log::info;
+use tracing::info;
 use wgpu::{Adapter, Backend, DeviceType};
 
 // * FUN FACT: Initially I did not implement adapter selection with weights.

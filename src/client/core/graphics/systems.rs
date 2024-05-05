@@ -6,8 +6,8 @@ use bevy_ecs::prelude::{Res, Schedules, World};
 use bevy_ecs::system::ResMut;
 use bevy_ecs::world::Mut;
 use cfg_if::cfg_if;
-use log::info;
 use std::ops::DerefMut;
+use tracing::info;
 use winit::dpi::PhysicalSize;
 
 cfg_if! {
