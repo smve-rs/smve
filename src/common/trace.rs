@@ -35,7 +35,7 @@ cfg_if! {
 pub struct TracePlugin;
 
 impl Plugin for TracePlugin {
-    #[cfg_attr(not(feature = "tracing-chrome"), allow(unused_variables))]
+    #[cfg_attr(not(feature = "trace"), allow(unused_variables))]
     fn build(&self, app: &mut App) {
         cfg_if! {
             if #[cfg(feature = "log-to-console")]
@@ -82,7 +82,7 @@ impl Plugin for TracePlugin {
         }
 
         cfg_if! {
-            if #[cfg(feature = "tracing-chrome")] {
+            if #[cfg(feature = "trace")] {
                 let result = initialize_tracing_directory();
                 if result.is_err() {
                     eprintln!("Failed to initialize tracing directory: {}", result.unwrap_err());
@@ -184,7 +184,7 @@ fn initialize_log_directory() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-#[cfg(feature = "tracing-chrome")]
+#[cfg(feature = "trace")]
 /// Creates the tracing directory if it does not exist
 fn initialize_tracing_directory() -> Result<(), std::io::Error> {
     if !std::path::Path::new("tracing").exists() {

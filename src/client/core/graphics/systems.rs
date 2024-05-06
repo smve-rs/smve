@@ -8,6 +8,7 @@ use bevy_ecs::world::Mut;
 use cfg_if::cfg_if;
 use std::ops::DerefMut;
 use tracing::info;
+use wgpu::PresentMode;
 use winit::dpi::PhysicalSize;
 
 cfg_if! {
@@ -23,7 +24,7 @@ cfg_if! {
 /// use the [`GraphicsState`] to create a surface for the window, passing in the window and raw handle.
 // * Fun Fact: Regarding error handling, I eventually settled on only panicking in systems and never panic in helper functions.
 // *           I don't know why I did that since no matter where it panics, if it does panic the program will crash.
-pub fn rp_create_surface(
+pub fn rp_configure_surfaces(
     // On macOS windowing operations can only happen on the main thread
     #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
     mut graphics_state: ResMut<GraphicsState<'static>>,
@@ -42,31 +43,53 @@ pub fn rp_create_surface(
 
             info!("Surface created for window on {:?}", entity);
         }
-    }
-}
-
-/// Resizes the surface for each window whose size changed.
-///
-/// Runs on `Prepare` for all windows whose size changed.
-pub fn rp_resize(
-    #[cfg(any(target_os = "macos", target_os = "ios"))] _non_send: Option<NonSend<NonSendMarker>>,
-    extracted_windows: Res<ExtractedWindows>,
-    mut graphics_state: ResMut<GraphicsState<'static>>,
-) {
-    for (entity, window) in extracted_windows.iter() {
-        if !window.size_changed {
-            continue;
-        }
 
         let graphics_state = graphics_state.deref_mut();
-        if let Some(surface_state) = graphics_state.surface_states.get_mut(entity) {
+        let surface_state = graphics_state
+            .surface_states
+            .get_mut(entity)
+            .expect("Surface state should be created above.");
+
+        if window.size_changed {
             surface_state.resize(
                 PhysicalSize::new(window.physical_width, window.physical_height),
                 &graphics_state.device,
             );
         }
+
+        if window.present_mode_changed {
+            surface_state.config.present_mode = match window.vsync {
+                true => PresentMode::AutoVsync,
+                false => PresentMode::AutoNoVsync,
+            };
+            surface_state
+                .surface
+                .configure(&graphics_state.device, &surface_state.config);
+        }
     }
 }
+
+/// Run condition for [`rp_configure_surfaces`]
+///
+/// This solves a deadlock occurring because [`rp_configure_surfaces`] tries to run on the main thread
+/// while it is blocking.
+pub fn cond_surface_needs_configuration(
+    graphics_state: Res<GraphicsState<'static>>,
+    extracted_windows: Res<ExtractedWindows>,
+) -> bool {
+    for (entity, window) in extracted_windows.iter() {
+        if !graphics_state.surface_states.contains_key(entity)
+            || window.size_changed
+            || window.present_mode_changed {
+            return true
+        }
+    }
+    
+    false
+}
+
+// TODO: Merge surface systems together
+// TODO: Handle vsync change
 
 /// Applies commands added from the extract schedule
 ///

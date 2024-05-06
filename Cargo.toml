@@ -15,6 +15,7 @@ license = "MIT and Apache-2.0"
 [dependencies]
 bevy_app = "0.13.2"
 bevy_ecs = { version = "0.13.2", features = ["multi-threaded"] }
+bevy_tasks = { version = "0.13.2", features = ["multi-threaded"] }
 pollster = "0.3.0"
 wgpu = "0.20.0"
 winit = "0.30.0"
@@ -25,6 +26,7 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-panic = "0.1.2"
 tracing-log = "0.2.0"
 humantime = "2.1.0"
+async-channel = "2.2.1"
 ruxel_macros = { path = "crates/ruxel_macros" }
 
 # Dependencies for file logging
@@ -35,10 +37,10 @@ flate2 = { version = "1.0.30", optional = true }
 tracing-chrome = { version = "0.7.2", optional = true }
 
 [features]
-default = ["log-to-console"]
+default = ["log-to-console", "trace"]
 log-to-file = ["dep:flate2", "dep:chrono"]
 log-to-console = []
-tracing-chrome = ["dep:tracing-chrome", "dep:chrono", "bevy_app/trace", "bevy_ecs/trace"]
+trace = ["dep:tracing-chrome", "dep:chrono", "bevy_app/trace", "bevy_ecs/trace"]
 windowed = []
 dist = ["log-to-file", "windowed"]
 

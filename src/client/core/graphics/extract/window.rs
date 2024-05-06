@@ -76,7 +76,7 @@ fn e_extract_windows(
             extracted_window.physical_height = new_height;
         }
 
-        if extracted_window.vsync {
+        if extracted_window.present_mode_changed {
             extracted_window.vsync = window.vsync;
         }
     }

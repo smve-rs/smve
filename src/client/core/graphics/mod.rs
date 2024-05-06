@@ -6,7 +6,7 @@ use crate::client::core::graphics::extract::camera::CameraExtractPlugin;
 use crate::client::core::graphics::extract::window::WindowExtractPlugin;
 use crate::client::core::graphics::rendering::RenderingPlugin;
 use crate::client::core::graphics::resources::{GraphicsState, MainWorld, ScratchMainWorld};
-use crate::client::core::graphics::systems::{rec_apply_commands, rp_create_surface, rp_resize};
+use crate::client::core::graphics::systems::{cond_surface_needs_configuration, rec_apply_commands, rp_configure_surfaces};
 use crate::client::core::window::WindowPlugin;
 use bevy_app::{App, AppLabel, Plugin, SubApp};
 use bevy_ecs::prelude::{Schedule, SystemSet, World};
@@ -20,6 +20,7 @@ pub mod extract;
 mod rendering;
 pub mod resources;
 mod systems;
+pub mod pipelined_rendering;
 
 /// Responsible for initializing rendering with wgpu.
 ///
@@ -75,7 +76,11 @@ impl Plugin for GraphicsPlugin {
                 Render,
                 (
                     rec_apply_commands.in_set(RenderSet::ExtractCommands),
-                    (rp_create_surface, rp_resize).in_set(RenderSet::Prepare),
+                    rp_configure_surfaces
+                        // This needs to run on the main thread on macos and ios
+                        // and it will cause a deadlock if called all the time
+                        .run_if(cond_surface_needs_configuration)
+                        .in_set(RenderSet::Prepare),
                     World::clear_entities.in_set(RenderSet::CleanUp),
                 ),
             )
