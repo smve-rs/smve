@@ -1,11 +1,11 @@
 //! Module containing plugin groups
 
+use crate::client::core::graphics::pipelined_rendering::PipelinedRenderingPlugin;
 use crate::client::core::graphics::GraphicsPlugin;
 use crate::client::GamePlugin;
+use crate::common::core::CorePlugin;
 use crate::common::trace::TracePlugin;
 use bevy_app::{PluginGroup, PluginGroupBuilder};
-use crate::client::core::graphics::pipelined_rendering::PipelinedRenderingPlugin;
-use crate::common::core::CorePlugin;
 
 /// Default plugins for Ruxel
 pub struct ClientPlugins;

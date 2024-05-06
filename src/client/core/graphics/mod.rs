@@ -6,7 +6,9 @@ use crate::client::core::graphics::extract::camera::CameraExtractPlugin;
 use crate::client::core::graphics::extract::window::WindowExtractPlugin;
 use crate::client::core::graphics::rendering::RenderingPlugin;
 use crate::client::core::graphics::resources::{GraphicsState, MainWorld, ScratchMainWorld};
-use crate::client::core::graphics::systems::{cond_surface_needs_configuration, rec_apply_commands, rp_configure_surfaces};
+use crate::client::core::graphics::systems::{
+    cond_surface_needs_configuration, rec_apply_commands, rp_configure_surfaces,
+};
 use crate::client::core::window::WindowPlugin;
 use bevy_app::{App, AppLabel, Plugin, SubApp};
 use bevy_ecs::prelude::{Schedule, SystemSet, World};
@@ -17,10 +19,10 @@ use bevy_ecs::schedule::{
 mod adapter_selection_utils;
 pub mod camera;
 pub mod extract;
+pub mod pipelined_rendering;
 mod rendering;
 pub mod resources;
 mod systems;
-pub mod pipelined_rendering;
 
 /// Responsible for initializing rendering with wgpu.
 ///

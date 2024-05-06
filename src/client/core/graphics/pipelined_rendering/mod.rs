@@ -11,10 +11,10 @@ use bevy_tasks::ComputeTaskPool;
 use tracing::{debug, info_span};
 
 /// This plugin manages the pipelined rendering.
-/// 
+///
 /// It removes the render sub app from the main app, spawns a separate thread for rendering
 /// and manages the render sub app (calling extract and update, etc.)
-/// 
+///
 /// Order of execution:
 /// ```text
 /// |--------------------------------------------------------------------|
@@ -88,7 +88,8 @@ impl Plugin for PipelinedRenderingPlugin {
                     let sent_app = compute_task_pool
                         .scope(|s| {
                             s.spawn(async { app_to_render_receiver.recv().await });
-                        }).pop();
+                        })
+                        .pop();
 
                     let Some(Ok(mut render_app)) = sent_app else {
                         break;
@@ -116,11 +117,10 @@ impl Plugin for PipelinedRenderingPlugin {
 }
 
 /// The extract for the pipelined render sub app.
-/// 
+///
 /// It receives the render app from the render thread, runs its extract and sends it back to
 /// the render thread.
 fn renderer_extract(world: &mut World, _app: &mut App) {
-    
     // Get both the executor and the channels from the main world
     world.resource_scope(|world, main_thread_executor: Mut<MainThreadExecutor>| {
         world.resource_scope(|world, mut render_channels: Mut<RenderAppChannels>| {
@@ -130,8 +130,8 @@ fn renderer_extract(world: &mut World, _app: &mut App) {
                     s.spawn(async { render_channels.recv().await });
                 })
                 .pop()
-                .expect("Render app should exist") {
-                
+                .expect("Render app should exist")
+            {
                 // Extract objects from main world to render world
                 render_app.extract(world);
 

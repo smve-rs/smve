@@ -80,11 +80,12 @@ pub fn cond_surface_needs_configuration(
     for (entity, window) in extracted_windows.iter() {
         if !graphics_state.surface_states.contains_key(entity)
             || window.size_changed
-            || window.present_mode_changed {
-            return true
+            || window.present_mode_changed
+        {
+            return true;
         }
     }
-    
+
     false
 }
 
