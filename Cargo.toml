@@ -6,9 +6,21 @@ readme = "README.md"
 repository = "https://github.com/ItsSunnyMonster/vuxt"
 keywords = ["voxel", "engine", "rust", "game", "open-source"]
 categories = ["game-development", "graphics", "game-engines"]
-version = "0.1.0-indev"
+version = "0.1.0"
 edition = "2021"
 license = "MIT and Apache-2.0"
+exclude = [
+    ".github/*",
+    ".husky/*",
+    ".vscode/*",
+    ".idea/*",
+    "images/*",
+    "icon/*",
+    "scripts/*",
+    "commitlint.config.js",
+    "package.json",
+    "package-lock.json"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
