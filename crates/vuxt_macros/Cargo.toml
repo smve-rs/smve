@@ -1,5 +1,5 @@
 [package]
-name = "ruxel_macros"
+name = "vuxt_macros"
 version = "0.1.0-indev"
 edition = "2021"
 

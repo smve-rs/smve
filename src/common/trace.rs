@@ -43,7 +43,7 @@ impl Plugin for TracePlugin {
 
                 let filter = EnvFilter::builder()
                     .with_default_directive(LevelFilter::INFO.into())
-                    .with_env_var("RUXEL_LOG")
+                    .with_env_var("VUXT_LOG")
                     .from_env_lossy();
 
                 let stdout_log =
@@ -60,7 +60,7 @@ impl Plugin for TracePlugin {
             {
                 let filter = EnvFilter::builder()
                     .with_default_directive(LevelFilter::INFO.into())
-                    .with_env_var("RUXEL_LOG")
+                    .with_env_var("VUXT_LOG")
                     .from_env_lossy();
 
                 let file = get_log_file();
@@ -90,7 +90,7 @@ impl Plugin for TracePlugin {
                 }
                 let date = chrono::Utc::now();
                 let log_path = date
-                    .format("tracing/ruxel_trace_%Y-%m-%d_%H-%M-%S-%f.json")
+                    .format("tracing/vuxt_trace_%Y-%m-%d_%H-%M-%S-%f.json")
                     .to_string();
                 let (chrome, guard) = tracing_chrome::ChromeLayerBuilder::new()
                     .file(log_path)
@@ -135,7 +135,7 @@ fn get_log_file() -> Result<File, std::io::Error> {
 
     let date = chrono::Utc::now();
     let log_path = date
-        .format("logs/ruxel_log_%Y-%m-%d_%H-%M-%S-%f.log")
+        .format("logs/vuxt_log_%Y-%m-%d_%H-%M-%S-%f.log")
         .to_string();
     let file = OpenOptions::new()
         .create(true)
@@ -201,7 +201,7 @@ fn initialize_tracing_directory() -> Result<(), std::io::Error> {
 /// \[\<timestamp>] \[\<level>] \[\<target>]: \<message>
 ///
 /// Example:
-/// \[2024-05-05T05:15:02.623Z] \[INFO] \[ruxel::client::core::window]: Entered event loop
+/// \[2024-05-05T05:15:02.623Z] \[INFO] \[vuxt::client::core::window]: Entered event loop
 struct FileFormatter;
 
 #[cfg(feature = "log-to-file")]

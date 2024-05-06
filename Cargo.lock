@@ -1606,39 +1606,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ruxel"
-version = "0.1.0-indev"
-dependencies = [
- "async-channel",
- "bevy_app",
- "bevy_ecs",
- "bevy_tasks",
- "cfg-if",
- "chrono",
- "flate2",
- "humantime",
- "pollster",
- "raw-window-handle",
- "ruxel_macros",
- "tracing",
- "tracing-chrome",
- "tracing-log",
- "tracing-panic",
- "tracing-subscriber",
- "wgpu",
- "winit",
- "winres",
-]
-
-[[package]]
-name = "ruxel_macros"
-version = "0.1.0-indev"
-dependencies = [
- "quote",
- "syn 2.0.58",
-]
-
-[[package]]
 name = "ryu"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2056,6 +2023,39 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vuxt"
+version = "0.1.0-indev"
+dependencies = [
+ "async-channel",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_tasks",
+ "cfg-if",
+ "chrono",
+ "flate2",
+ "humantime",
+ "pollster",
+ "raw-window-handle",
+ "tracing",
+ "tracing-chrome",
+ "tracing-log",
+ "tracing-panic",
+ "tracing-subscriber",
+ "vuxt_macros",
+ "wgpu",
+ "winit",
+ "winres",
+]
+
+[[package]]
+name = "vuxt_macros"
+version = "0.1.0-indev"
+dependencies = [
+ "quote",
+ "syn 2.0.58",
+]
 
 [[package]]
 name = "walkdir"

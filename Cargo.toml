@@ -1,9 +1,9 @@
 [package]
-name = "ruxel"
+name = "vuxt"
 authors = ["ItsSunnyMonster"]
 description = "A voxel engine written in Rust."
 readme = "README.md"
-repository = "https://github.com/ItsSunnyMonster/ruxel"
+repository = "https://github.com/ItsSunnyMonster/vuxt"
 keywords = ["voxel", "engine", "rust", "game", "open-source"]
 categories = ["game-development", "graphics", "game-engines"]
 version = "0.1.0-indev"
@@ -27,7 +27,7 @@ tracing-panic = "0.1.2"
 tracing-log = "0.2.0"
 humantime = "2.1.0"
 async-channel = "2.2.1"
-ruxel_macros = { path = "crates/ruxel_macros" }
+vuxt_macros = { path = "crates/vuxt_macros" }
 
 # Dependencies for file logging
 chrono = { version = "0.4.38", optional = true }

@@ -4,7 +4,7 @@
   <picture>
      <source media="(prefers-color-scheme: dark)" srcset="./images/title_logo_dark.svg">
      <source media="(prefers-color-scheme: light)" srcset="./images/title_logo_light.svg">
-     <img alt="Ruxel" width="200" src="./images/title_logo_light.svg">
+     <img alt="Vuxt" width="200" src="./images/title_logo_light.svg">
  </picture>
 </h3>
 
@@ -13,17 +13,17 @@
 ***
 
 <p align="center">
-  <a href="https://github.com/ItsSunnyMonster/ruxel/stargazers"><img src="https://img.shields.io/github/stars/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
-  <a href="https://github.com/ItsSunnyMonster/ruxel#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
-  <a href="https://github.com/ItsSunnyMonster/ruxel/actions"><img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_ci.json" alt="CI"></a>
-  <a href="https://github.com/ItsSunnyMonster/ruxel/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
-  <a href="https://github.com/ItsSunnyMonster/ruxel/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/ruxel?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
-  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/ruxel_loc.json" alt="Line of Code">
+  <a href="https://github.com/ItsSunnyMonster/vuxt/stargazers"><img src="https://img.shields.io/github/stars/ItsSunnyMonster/vuxt?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
+  <a href="https://github.com/ItsSunnyMonster/vuxt#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
+  <a href="https://github.com/ItsSunnyMonster/vuxt/actions"><img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/vuxt_ci.json" alt="CI"></a>
+  <a href="https://github.com/ItsSunnyMonster/vuxt/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/vuxt?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
+  <a href="https://github.com/ItsSunnyMonster/vuxt/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/vuxt?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/vuxt_loc.json" alt="Line of Code">
 </p>
 
 ### ➜ What does the name mean?
 
-"Ruxel" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "rust" and "voxel", because this project is a
+"Vuxt" is a [portmanteau](https://arc.net/l/quote/pnoxgupb) of the words "voxel" and "rust", because this project is a
 **voxel** engine written in **rust**.
 
 ### ➜ Plans
@@ -46,15 +46,15 @@ Modules hopefully also will be able to be written in normal Rust and compiled in
 
 ### ➜ Contributing
 
-See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md) for contributing guides.
+See [CONTRIBUTING.md](https://github.com/ItsSunnyMonster/vuxt/blob/master/CONTRIBUTING.md) for contributing guides.
 
 ### ➜ License
 
 Unless specifically stated, all code in this repository is dual-licensed under either
 
-* MIT License ([LICENSE-MIT](https://github.com/ItsSunnyMonster/ruxel/blob/master/LICENSE-MIT)
+* MIT License ([LICENSE-MIT](https://github.com/ItsSunnyMonster/vuxt/blob/master/LICENSE-MIT)
   or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-* Apache License ([LICENSE-APACHE](https://github.com/ItsSunnyMonster/ruxel/blob/master/LICENSE-APACHE)
+* Apache License ([LICENSE-APACHE](https://github.com/ItsSunnyMonster/vuxt/blob/master/LICENSE-APACHE)
   or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
 
 at your option. This means you can select the license you prefer.

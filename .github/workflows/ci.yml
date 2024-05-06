@@ -50,7 +50,7 @@ jobs:
 
       - name: README IF FAILED
         if: failure()
-        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/ruxel/blob/master/CONTRIBUTING.md#commits for more information.'
+        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/vuxt/blob/master/CONTRIBUTING.md#commits for more information.'
 
   clippy_skip_check:
     needs: commitlint
@@ -115,7 +115,7 @@ jobs:
           key: ${{ runner.os }}-rust-docs-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
       - name: Cargo doc
-        run: cargo doc --bin ruxel --document-private-items --no-deps
+        run: cargo doc --bin vuxt --document-private-items --no-deps
       - name: Upload docs
         uses: actions/upload-artifact@v4.3.3
         with:
@@ -162,8 +162,8 @@ jobs:
     - name: Upload binary
       uses: actions/upload-artifact@v4.3.3
       with:
-        name: Ruxel-${{ matrix.os }}-${{ matrix.configuration }}
-        path: target/${{ matrix.configuration }}/ruxel${{ matrix.os == 'windows' && '.exe' || '' }}
+        name: Vuxt-${{ matrix.os }}-${{ matrix.configuration }}
+        path: target/${{ matrix.configuration }}/vuxt${{ matrix.os == 'windows' && '.exe' || '' }}
     - name: README IF FAILED
       if: failure()
       run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
@@ -259,7 +259,7 @@ jobs:
         with:
           auth: ${{ secrets.CI_GIST_TOKEN }}
           gistID: a488eb0391a5fc6a2918d13184cd0a26
-          filename: ruxel_loc.json
+          filename: vuxt_loc.json
           label: Lines of Code
           message: ${{ env.CODE_LINES }}
           logoColor: cdd6f4

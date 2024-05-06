@@ -6,7 +6,7 @@ use raw_window_handle::{
     DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle,
     RawWindowHandle, WindowHandle,
 };
-use ruxel_macros::ExtractComponent;
+use vuxt_macros::ExtractComponent;
 use winit::dpi::{LogicalSize, PhysicalSize, Pixel};
 
 /// A marker component for the primary window.
@@ -40,7 +40,7 @@ impl Default for Window {
     fn default() -> Self {
         Window {
             resolution: Default::default(),
-            title: "Ruxel".to_string(),
+            title: "Vuxt".to_string(),
             icon_width: icon::IMAGE_WIDTH as u32,
             icon_height: icon::IMAGE_HEIGHT as u32,
             icon_data: Some(icon::IMAGE_DATA.to_vec()),
