@@ -9,7 +9,7 @@
 </h3>
 
 <p align="center"><strong>S</strong>unny<strong>M</strong>onster's <strong>V</strong>oxel <strong>E</strong>ngine</p>
-<p align="center">SEM-vay /sɛmvei/ [sẽ̞ṽ.ṽe̞i̯]</p>
+<p align="center">SEM-vay /sɛmvei/</p>
 
 ***
 
