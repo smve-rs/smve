@@ -1,4 +1,4 @@
-//! Build script of Vuxt. Currently sets the windows icon resource.
+//! Build script of smve. Currently sets the windows icon resource.
 
 use {
     std::{env, io},

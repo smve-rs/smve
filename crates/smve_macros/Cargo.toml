@@ -1,8 +1,8 @@
 [package]
-name = "vuxt_macros"
+name = "smve_macros"
 version = "0.1.0"
 edition = "2021"
-description = "Macro implementations for Vuxt"
+description = "Macro implementations for smve"
 license = "MIT OR Apache-2.0"
 
 [lib]

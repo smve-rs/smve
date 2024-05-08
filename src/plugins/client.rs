@@ -7,7 +7,7 @@ use crate::common::core::CorePlugin;
 use crate::common::trace::TracePlugin;
 use bevy_app::{PluginGroup, PluginGroupBuilder};
 
-/// Default plugins for Vuxt
+/// Default plugins for smve
 pub struct ClientPlugins;
 
 impl PluginGroup for ClientPlugins {

@@ -8,7 +8,7 @@ use bevy_ecs::prelude::World;
 use bevy_ecs::schedule::MainThreadExecutor;
 use bevy_ecs::system::Resource;
 use bevy_tasks::ComputeTaskPool;
-use tracing::{debug, info_span};
+use tracing::debug;
 
 /// This plugin manages the pipelined rendering.
 ///
@@ -80,7 +80,7 @@ impl Plugin for PipelinedRenderingPlugin {
             .name("Render Thread".to_string())
             .spawn(move || {
                 #[cfg(feature = "trace")]
-                let _span = info_span!("render thread").entered();
+                let _span = tracing::info_span!("render thread").entered();
 
                 let compute_task_pool = ComputeTaskPool::get();
                 loop {
@@ -98,7 +98,7 @@ impl Plugin for PipelinedRenderingPlugin {
                     // Runs the render schedules
                     {
                         #[cfg(feature = "trace")]
-                        let _sub_app_span = info_span!("sub app", name = ?RenderSubApp).entered();
+                        let _sub_app_span = tracing::info_span!("sub app", name = ?RenderSubApp).entered();
                         render_app.app.update();
                     }
 

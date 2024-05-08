@@ -2,7 +2,7 @@
 
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Component;
-use vuxt_macros::ExtractComponent;
+use smve_macros::ExtractComponent;
 use wgpu::Color;
 
 /// A component representing a camera and its settings.

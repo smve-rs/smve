@@ -1,9 +1,9 @@
 [package]
-name = "vuxt"
+name = "smve"
 authors = ["ItsSunnyMonster"]
 description = "A voxel engine written in Rust."
 readme = "README.md"
-repository = "https://github.com/ItsSunnyMonster/vuxt"
+repository = "https://github.com/ItsSunnyMonster/smve"
 keywords = ["voxel", "engine", "rust", "game", "open-source"]
 categories = ["game-development", "graphics", "game-engines"]
 version = "0.1.0"
@@ -39,7 +39,7 @@ tracing-panic = "0.1.2"
 tracing-log = "0.2.0"
 humantime = "2.1.0"
 async-channel = "2.2.1"
-vuxt_macros = { path = "crates/vuxt_macros", version = "0.1.0" }
+smve_macros = { path = "crates/smve_macros", version = "0.1.0" }
 
 # Dependencies for file logging
 chrono = { version = "0.4.38", optional = true }
@@ -49,7 +49,7 @@ flate2 = { version = "1.0.30", optional = true }
 tracing-chrome = { version = "0.7.2", optional = true }
 
 [features]
-default = ["log-to-console", "trace"]
+default = ["log-to-console"]
 log-to-file = ["dep:flate2", "dep:chrono"]
 log-to-console = []
 trace = ["dep:tracing-chrome", "dep:chrono", "bevy_app/trace", "bevy_ecs/trace"]
