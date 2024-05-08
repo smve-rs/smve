@@ -15,11 +15,12 @@
 
 <p align="center">
   <a href="https://github.com/ItsSunnyMonster/smve/stargazers"><img src="https://img.shields.io/github/stars/ItsSunnyMonster/smve?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
-  <a href="https://github.com/ItsSunnyMonster/smve#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
-  <a href="https://github.com/ItsSunnyMonster/smve/actions"><img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/smve_ci.json" alt="CI"></a>
   <a href="https://github.com/ItsSunnyMonster/smve/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/smve?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
   <a href="https://github.com/ItsSunnyMonster/smve/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/smve?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
+  <br>
+  <a href="https://github.com/ItsSunnyMonster/smve#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
   <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/smve_loc.json" alt="Line of Code">
+  <a href="https://github.com/ItsSunnyMonster/smve/actions"><img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ItsSunnyMonster/a488eb0391a5fc6a2918d13184cd0a26/raw/smve_ci.json" alt="CI"></a>
 </p>
 
 ### ➜ Plans

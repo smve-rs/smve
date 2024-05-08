@@ -9,30 +9,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0ce35c84-bee7-489d-997e-c91484afa70c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/smve.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/ci.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/report_ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/report_ci.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/discord.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/discord.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.rs" beforeDir="false" afterPath="$PROJECT_DIR$/build.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crates/vuxt_macros/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/crates/smve_macros/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crates/vuxt_macros/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/crates/smve_macros/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crates/vuxt_macros/src/graphics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/crates/smve_macros/src/graphics.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crates/vuxt_macros/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/crates/smve_macros/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/title_logo_dark.svg" beforeDir="false" afterPath="$PROJECT_DIR$/images/title_logo_dark.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/title_logo_light.svg" beforeDir="false" afterPath="$PROJECT_DIR$/images/title_logo_light.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/core/graphics/camera/components.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/core/graphics/camera/components.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/core/graphics/pipelined_rendering/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/core/graphics/pipelined_rendering/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/core/window/components.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/core/window/components.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/common/trace.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/trace.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plugins/client.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/plugins/client.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +79,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1715156589030</updated>
-      <workItem from="1715156590826" duration="939000" />
+      <workItem from="1715156590826" duration="1277000" />
     </task>
     <servers />
   </component>
