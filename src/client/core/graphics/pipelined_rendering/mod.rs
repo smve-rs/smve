@@ -98,7 +98,8 @@ impl Plugin for PipelinedRenderingPlugin {
                     // Runs the render schedules
                     {
                         #[cfg(feature = "trace")]
-                        let _sub_app_span = tracing::info_span!("sub app", name = ?RenderSubApp).entered();
+                        let _sub_app_span =
+                            tracing::info_span!("sub app", name = ?RenderSubApp).entered();
                         render_app.app.update();
                     }
 
