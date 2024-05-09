@@ -38,9 +38,9 @@ COMMENT_LINES=$((COMMENT_LINES - DUMB_COMMENTS))
 # Print all results if no arguments are given.
 if [[ $# -eq 0 ]] ; then
   awk -v a="$LINES_OF_CODE" \
-      'BEGIN {printf "Lines of source code: %6.0f\n", a}'
+      'BEGIN {printf "Lines of source code: %6.1fk\n", a/1000}'
   awk -v a=$COMMENT_LINES \
-      'BEGIN {printf "Lines of comments:    %6.0f\n", a}'
+      'BEGIN {printf "Lines of comments:    %6.1fk\n", a/1000}'
   awk -v a=$COMMENT_LINES -v b="$LINES_OF_CODE" \
       'BEGIN {printf "Comment Percentage:   %6.2f%%\n", 100*a/(a+b)}'
   exit 0
@@ -50,14 +50,14 @@ fi
 if [[ $* == *--loc* ]]
 then
   awk -v a="$LINES_OF_CODE" \
-      'BEGIN {printf "%.0f\n", a}'
+      'BEGIN {printf "%.1fk\n", a/1000}'
 fi
 
 # Show lines of comments if --comments is given.
 if [[ $* == *--comments* ]]
 then
   awk -v a=$COMMENT_LINES \
-      'BEGIN {printf "%.0f\n", a}'
+      'BEGIN {printf "%.1fk\n", a}'
 fi
 
 # Show percentage of comments if --percentage is given.
