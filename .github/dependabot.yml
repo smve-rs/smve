@@ -7,7 +7,9 @@ updates:
       commit-message:
         prefix: "ci"
     - package-ecosystem: cargo
-      directory: /
+      directories:
+        - /
+        - /crates/smve_macros
       schedule:
         interval: daily
     - package-ecosystem: npm
