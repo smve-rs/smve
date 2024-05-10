@@ -139,7 +139,6 @@ fn renderer_extract(world: &mut World, _app: &mut App) {
                 // Send render app back to render world after extraction.
                 render_channels.send_blocking(render_app);
             } else {
-                // TODO: Make event more specific about exit codes
                 // Render thread has panicked.
                 world.send_event(AppExit);
             }

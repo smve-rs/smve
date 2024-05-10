@@ -89,9 +89,6 @@ pub fn cond_surface_needs_configuration(
     false
 }
 
-// TODO: Merge surface systems together
-// TODO: Handle vsync change
-
 /// Applies commands added from the extract schedule
 ///
 /// Called on `ExtractCommands` to allow it to run in parallel with the main world
