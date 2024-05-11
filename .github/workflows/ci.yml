@@ -50,7 +50,7 @@ jobs:
 
       - name: README IF FAILED
         if: failure()
-        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/ItsSunnyMonster/smve/blob/master/CONTRIBUTING.md#commits for more information.'
+        run: echo 'Your commit message(s) does not conform to convention. See https://github.com/smve-rs/smve/blob/master/CONTRIBUTING.md#commits for more information.'
 
   clippy_skip_check:
     needs: commitlint
