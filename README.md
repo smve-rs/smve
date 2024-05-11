@@ -18,7 +18,7 @@
   <a href="https://github.com/ItsSunnyMonster/smve/issues"><img src="https://img.shields.io/github/issues/ItsSunnyMonster/smve?style=for-the-badge&amp;logo=gitbook&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f5c2e7" alt="Issues"></a>
   <a href="https://github.com/ItsSunnyMonster/smve/pulls"><img src="https://img.shields.io/github/issues-pr/ItsSunnyMonster/smve?style=for-the-badge&amp;logo=git&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=fab387&amp;label=PRs" alt="PRs"></a>
   <br>
-  <object data="https://img.shields.io/badge/github-smve--rs%2Fsmve-74c7ec?style=for-the-badge&logo=github&logoColor=cdd6f4&labelColor=313244&link=https%3A%2F%2Fgithub.com%2Fsmve-rs%2Fsmve"></object>
+  <a href="https://github.com/smve-rs/smve"><img alt="Static Badge" src="https://img.shields.io/badge/github-smve--rs%2Fsmve-74c7ec?style=for-the-badge&logo=github&logoColor=cdd6f4&labelColor=313244"></a>
   <a href="https://crates.io/crates/smve"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/smve?style=for-the-badge&logo=rust&logoColor=cdd6f4&labelColor=313244&color=f38ba8"></a>
   <br>
   <a href="https://github.com/ItsSunnyMonster/smve#license"><img src="https://img.shields.io/badge/license-MIT%2FApache-b4befe.svg?style=for-the-badge&amp;labelColor=313244&amp;logo=googleforms&amp;logoColor=cdd6f4" alt="License"></a>
