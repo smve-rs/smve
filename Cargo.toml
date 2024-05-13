@@ -43,7 +43,7 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-panic = "0.1.2"
 tracing-log = "0.2.0"
 humantime = "2.1.0"
-async-channel = "2.2.1"
+async-channel = "2.3.0"
 smve_macros = { path = "crates/smve_macros", version = "0.1.1" }
 
 # Dependencies for file logging
