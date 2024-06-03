@@ -1,5 +1,5 @@
 [package]
-name = "smve"
+name = "SMve"
 authors = ["ItsSunnyMonster"]
 description = "A voxel engine written in Rust."
 readme = "README.md"
@@ -10,16 +10,16 @@ version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 exclude = [
-    ".github/*",
-    ".husky/*",
-    ".vscode/*",
-    ".idea/*",
-    "images/*",
-    "icon/*",
-    "scripts/*",
-    "commitlint.config.js",
-    "package.json",
-    "package-lock.json"
+  ".github/*",
+  ".husky/*",
+  ".vscode/*",
+  ".idea/*",
+  "images/*",
+  "icon/*",
+  "scripts/*",
+  "commitlint.config.js",
+  "package.json",
+  "package-lock.json",
 ]
 
 [[bin]]
@@ -78,3 +78,7 @@ winres = "0.1.12"
 inherits = "release"
 strip = true
 lto = true
+
+[package.metadata.bundle]
+identifier = "co.sunnymonster.smve"
+icon = ["images/icon.icns"]

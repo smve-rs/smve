@@ -3,6 +3,31 @@
 version = 3
 
 [[package]]
+name = "SMve"
+version = "0.1.1"
+dependencies = [
+ "async-channel",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_tasks",
+ "cfg-if",
+ "chrono",
+ "flate2",
+ "humantime",
+ "pollster",
+ "raw-window-handle",
+ "smve_macros",
+ "tracing",
+ "tracing-chrome",
+ "tracing-log",
+ "tracing-panic",
+ "tracing-subscriber",
+ "wgpu",
+ "winit",
+ "winres",
+]
+
+[[package]]
 name = "ab_glyph"
 version = "0.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1743,31 +1768,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "smve"
-version = "0.1.1"
-dependencies = [
- "async-channel",
- "bevy_app",
- "bevy_ecs",
- "bevy_tasks",
- "cfg-if",
- "chrono",
- "flate2",
- "humantime",
- "pollster",
- "raw-window-handle",
- "smve_macros",
- "tracing",
- "tracing-chrome",
- "tracing-log",
- "tracing-panic",
- "tracing-subscriber",
- "wgpu",
- "winit",
- "winres",
 ]
 
 [[package]]
