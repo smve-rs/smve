@@ -1,7 +1,7 @@
 ***
 
 <h3 align="center" style="line-height: 1">
-  <img alt="SMve" width="200" src="./images/title_logo.png">
+  <img alt="SMve" width="300" src="./images/title_logo.png">
 </h3>
 
 <p align="center"><strong>S</strong>unny<strong>M</strong>onster's <strong>V</strong>oxel <strong>E</strong>ngine</p>
