@@ -1,5 +1,5 @@
 [package]
-name = "SMve"
+name = "smve"
 authors = ["ItsSunnyMonster"]
 description = "A voxel engine written in Rust."
 readme = "README.md"
