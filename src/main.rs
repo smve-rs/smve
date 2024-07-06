@@ -21,6 +21,6 @@ use bevy_app::prelude::*;
 /// The main entry point for the application.
 ///
 /// Initializes the logger and runs the [bevy application](https://docs.rs/bevy_app/latest/bevy_app/).
-pub fn main() {
-    App::new().add_plugins(ClientPlugins).run();
+pub fn main() -> AppExit {
+    App::new().add_plugins(ClientPlugins).run()
 }

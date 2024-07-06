@@ -64,7 +64,7 @@ impl Plugin for WindowPlugin {
 
         // If a primary window is specified, spawn the entity with the window
         if let Some(primary_window) = &self.primary_window {
-            app.world
+            app.world_mut()
                 .spawn(primary_window.clone())
                 .insert(PrimaryWindow);
         }
@@ -122,6 +122,8 @@ struct WinitApp {
     app: App,
     /// For reading [`AppExit`] events
     app_exit_event_reader: ManualEventReader<AppExit>,
+    /// The [`AppExit`] event that caused the event loop to exit
+    app_exit: Option<AppExit>,
 }
 
 impl ApplicationHandler for WinitApp {
@@ -133,13 +135,13 @@ impl ApplicationHandler for WinitApp {
         }
 
         // Close the event loop if there is any app exit events
-        if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
-            if self
+        if let Some(app_exit_events) = self.app.world().get_resource::<Events<AppExit>>() {
+            if let Some(app_exit) = self
                 .app_exit_event_reader
                 .read(app_exit_events)
                 .last()
-                .is_some()
             {
+                self.app_exit = Some(app_exit.clone());
                 event_loop.exit();
                 return;
             }
@@ -148,7 +150,7 @@ impl ApplicationHandler for WinitApp {
         // Create any new windows that were added
         let (commands, query, winit_windows, window_created_event) = self
             .create_windows_system_state
-            .get_mut(&mut self.app.world);
+            .get_mut(self.app.world_mut());
         create_windows(
             commands,
             query,
@@ -156,7 +158,7 @@ impl ApplicationHandler for WinitApp {
             window_created_event,
             event_loop,
         );
-        self.create_windows_system_state.apply(&mut self.app.world);
+        self.create_windows_system_state.apply(self.app.world_mut());
 
         if cause != StartCause::Init {
             return;
@@ -164,7 +166,7 @@ impl ApplicationHandler for WinitApp {
         // Create any new windows
         let (commands, query, winit_windows, window_created_event) = self
             .create_windows_system_state
-            .get_mut(&mut self.app.world);
+            .get_mut(self.app.world_mut());
         create_windows(
             commands,
             query,
@@ -172,7 +174,7 @@ impl ApplicationHandler for WinitApp {
             window_created_event,
             event_loop,
         );
-        self.create_windows_system_state.apply(&mut self.app.world);
+        self.create_windows_system_state.apply(self.app.world_mut());
     }
 
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
@@ -186,7 +188,7 @@ impl ApplicationHandler for WinitApp {
         event: WindowEvent,
     ) {
         let (mut window_resized_event, mut query, winit_windows) =
-            self.window_event_system_state.get_mut(&mut self.app.world);
+            self.window_event_system_state.get_mut(self.app.world_mut());
         let Some(window_entity) = winit_windows.get_window_entity(window_id) else {
             warn!("Skipped event {event:?} for unknown winit window {window_id:?}");
             return;
@@ -199,7 +201,7 @@ impl ApplicationHandler for WinitApp {
         match event {
             WindowEvent::CloseRequested => {
                 // Send a close requested event so systems can drop the Window and despawn windows
-                self.app.world.send_event(CloseRequestedEvent {
+                self.app.world_mut().send_event(CloseRequestedEvent {
                     entity: window_entity,
                 });
             }
@@ -225,13 +227,13 @@ impl ApplicationHandler for WinitApp {
             self.app.update();
 
             // Close event loop if received events
-            if let Some(app_exit_events) = self.app.world.get_resource::<Events<AppExit>>() {
-                if self
+            if let Some(app_exit_events) = self.app.world().get_resource::<Events<AppExit>>() {
+                if let Some(app_exit) = self
                     .app_exit_event_reader
                     .read(app_exit_events)
                     .last()
-                    .is_some()
                 {
+                    self.app_exit = Some(app_exit.clone());
                     event_loop.exit();
                 }
             }
@@ -242,7 +244,7 @@ impl ApplicationHandler for WinitApp {
 /// The custom runner for the app which runs on the winit event loop.
 ///
 /// Handles window creation, window events and the main client loop.
-fn runner(mut app: App) {
+fn runner(mut app: App) -> AppExit {
     // Bevy stuff that I don't understand
     // Apparently if plugin loading is ready, we need to call finish and cleanup
     if app.plugins_state() == PluginsState::Ready {
@@ -252,7 +254,7 @@ fn runner(mut app: App) {
 
     // Get the event loop from resources
     let event_loop = app
-        .world
+        .world_mut()
         .remove_non_send_resource::<EventLoop<()>>()
         .expect("Event loop should be added before runner is called");
 
@@ -263,13 +265,13 @@ fn runner(mut app: App) {
         Query<(Entity, &mut Window), Added<Window>>,
         NonSendMut<WinitWindows>,
         EventWriter<WindowCreatedEvent>,
-    )> = SystemState::from_world(&mut app.world);
+    )> = SystemState::from_world(app.world_mut());
 
     let window_event_system_state: SystemState<(
         EventWriter<WindowResizedEvent>,
         Query<(Entity, &mut Window)>,
         NonSendMut<WinitWindows>,
-    )> = SystemState::from_world(&mut app.world);
+    )> = SystemState::from_world(app.world_mut());
 
     // Event reader to read any app exit events
     let app_exit_event_reader = ManualEventReader::<AppExit>::default();
@@ -279,6 +281,7 @@ fn runner(mut app: App) {
         window_event_system_state,
         app,
         app_exit_event_reader,
+        app_exit: None,
     };
 
     // This ensures that new events will be started whenever possible
@@ -289,6 +292,14 @@ fn runner(mut app: App) {
     info!("Entered event loop");
     if let Err(err) = event_loop.run_app(&mut winit_app) {
         error!("winit event loop error: {err}");
+        return AppExit::error();
+    }
+
+    if let Some(app_exit) = winit_app.app_exit {
+        app_exit
+    } else {
+        warn!("Event loop exited without an AppExit event!");
+        AppExit::Success
     }
 }
 

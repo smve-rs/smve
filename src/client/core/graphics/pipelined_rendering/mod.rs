@@ -28,21 +28,22 @@ pub struct PipelinedRenderingPlugin;
 impl Plugin for PipelinedRenderingPlugin {
     fn build(&self, app: &mut App) {
         // If render app doesn't exist, don't do anything with pipelined rendering
-        if app.get_sub_app(RenderSubApp).is_err() {
+        if app.get_sub_app(RenderSubApp).is_none() {
             return;
         }
 
         // This is used in the extract to receive the render app onto the main thread.
         app.insert_resource(MainThreadExecutor::new());
 
-        let sub_app_inner = App::new();
-        let sub_app = SubApp::new(sub_app_inner, renderer_extract);
+        let mut sub_app = SubApp::new();
+        sub_app.set_extract(renderer_extract);
+
         app.insert_sub_app(PipelinedRenderingApp, sub_app);
     }
 
     fn cleanup(&self, app: &mut App) {
         // Don't continue if render app doesn't exist
-        if app.get_sub_app(RenderSubApp).is_err() {
+        if app.get_sub_app(RenderSubApp).is_none() {
             return;
         }
 
@@ -56,10 +57,10 @@ impl Plugin for PipelinedRenderingPlugin {
 
         // Give the render app a copy of the executor for running some systems on the main thread
         let executor = app
-            .world
+            .world()
             .get_resource::<MainThreadExecutor>()
             .expect("Executor is added in build().");
-        render_app.app.insert_resource(executor.clone());
+        render_app.insert_resource(executor.clone());
 
         // Somewhat unintuitively, we are sending the render app from the main thread to the main thread.
         // This is because when the extract runs, it expects the render sub app from the render thread,
@@ -100,7 +101,7 @@ impl Plugin for PipelinedRenderingPlugin {
                         #[cfg(feature = "trace")]
                         let _sub_app_span =
                             tracing::info_span!("sub app", name = ?RenderSubApp).entered();
-                        render_app.app.update();
+                        render_app.update();
                     }
 
                     // Send it back to the main thread once we have finished rendering
@@ -121,9 +122,9 @@ impl Plugin for PipelinedRenderingPlugin {
 ///
 /// It receives the render app from the render thread, runs its extract and sends it back to
 /// the render thread.
-fn renderer_extract(world: &mut World, _app: &mut App) {
+fn renderer_extract(main_world: &mut World, _pipelined_render_world: &mut World) {
     // Get both the executor and the channels from the main world
-    world.resource_scope(|world, main_thread_executor: Mut<MainThreadExecutor>| {
+    main_world.resource_scope(|world, main_thread_executor: Mut<MainThreadExecutor>| {
         world.resource_scope(|world, mut render_channels: Mut<RenderAppChannels>| {
             // Receive the render app from the render thread
             if let Some(mut render_app) = ComputeTaskPool::get()
@@ -140,7 +141,7 @@ fn renderer_extract(world: &mut World, _app: &mut App) {
                 render_channels.send_blocking(render_app);
             } else {
                 // Render thread has panicked.
-                world.send_event(AppExit);
+                world.send_event(AppExit::error());
             }
         });
     });

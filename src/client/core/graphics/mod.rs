@@ -67,10 +67,10 @@ impl Plugin for GraphicsPlugin {
         });
         extract_schedule.set_apply_final_deferred(false);
 
-        let mut render_app_inner = App::empty();
+        let mut render_app = SubApp::new();
 
-        render_app_inner.main_schedule_label = Render.intern();
-        render_app_inner
+        render_app.update_schedule = Some(Render.intern());
+        render_app
             .add_schedule(Render::schedule())
             .add_schedule(extract_schedule)
             .insert_resource(pollster::block_on(GraphicsState::new()))
@@ -88,7 +88,8 @@ impl Plugin for GraphicsPlugin {
             )
             .add_plugins(RenderingPlugin);
 
-        let render_app = SubApp::new(render_app_inner, extract);
+        render_app.set_extract(extract);
+
         app.insert_sub_app(RenderSubApp, render_app);
         app.add_plugins(CameraExtractPlugin)
             .add_plugins(WindowExtractPlugin);
@@ -96,22 +97,21 @@ impl Plugin for GraphicsPlugin {
 }
 
 /// Helper function to run the extract schedule on the main world.
-fn extract(world: &mut World, app: &mut App) {
+fn extract(main_world: &mut World, render_world: &mut World) {
     // Move app world into render app and replace app world with empty world
-    let scratch_world = world
+    let scratch_world = main_world
         .remove_resource::<ScratchMainWorld>()
         .expect("ScratchMainWorld should exist");
-    let inserted_world = std::mem::replace(world, scratch_world.0);
-    app.world.insert_resource(MainWorld(inserted_world));
-    app.world.run_schedule(ExtractSchedule);
+    let inserted_world = std::mem::replace(main_world, scratch_world.0);
+    render_world.insert_resource(MainWorld(inserted_world));
+    render_world.run_schedule(ExtractSchedule);
 
     // Move app world back and replace scratch world with empty world.
-    let inserted_world = app
-        .world
+    let inserted_world = render_world
         .remove_resource::<MainWorld>()
         .expect("MainWorld should exist");
-    let scratch_world = std::mem::replace(world, inserted_world.0);
-    world.insert_resource(ScratchMainWorld(scratch_world));
+    let scratch_world = std::mem::replace(main_world, inserted_world.0);
+    main_world.insert_resource(ScratchMainWorld(scratch_world));
 }
 
 /// System sets for the Render schedule

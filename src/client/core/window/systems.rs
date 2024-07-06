@@ -143,7 +143,7 @@ pub fn pu_exit_on_primary_closed(
 ) {
     if windows.is_empty() {
         info!("Primary window closed, exiting");
-        app_exit_event.send(AppExit);
+        app_exit_event.send(AppExit::Success);
     }
 }
 
@@ -157,6 +157,6 @@ pub fn pu_exit_on_all_closed(
 ) {
     if windows.is_empty() {
         info!("All windows closed, exiting");
-        app_exit_event.send(AppExit);
+        app_exit_event.send(AppExit::Success);
     }
 }

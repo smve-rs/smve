@@ -64,7 +64,7 @@ impl<C> Default for ExtractComponentPlugin<C> {
 
 impl<C: ExtractComponent> Plugin for ExtractComponentPlugin<C> {
     fn build(&self, app: &mut App) {
-        if let Ok(render_app) = app.get_sub_app_mut(RenderSubApp) {
+        if let Some(render_app) = app.get_sub_app_mut(RenderSubApp) {
             render_app.add_systems(ExtractSchedule, e_extract_components::<C>);
         }
     }
