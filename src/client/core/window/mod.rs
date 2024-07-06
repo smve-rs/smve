@@ -136,11 +136,7 @@ impl ApplicationHandler for WinitApp {
 
         // Close the event loop if there is any app exit events
         if let Some(app_exit_events) = self.app.world().get_resource::<Events<AppExit>>() {
-            if let Some(app_exit) = self
-                .app_exit_event_reader
-                .read(app_exit_events)
-                .last()
-            {
+            if let Some(app_exit) = self.app_exit_event_reader.read(app_exit_events).last() {
                 self.app_exit = Some(app_exit.clone());
                 event_loop.exit();
                 return;
@@ -228,11 +224,7 @@ impl ApplicationHandler for WinitApp {
 
             // Close event loop if received events
             if let Some(app_exit_events) = self.app.world().get_resource::<Events<AppExit>>() {
-                if let Some(app_exit) = self
-                    .app_exit_event_reader
-                    .read(app_exit_events)
-                    .last()
-                {
+                if let Some(app_exit) = self.app_exit_event_reader.read(app_exit_events).last() {
                     self.app_exit = Some(app_exit.clone());
                     event_loop.exit();
                 }
