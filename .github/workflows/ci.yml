@@ -203,13 +203,17 @@ jobs:
         if: github.event_name == 'push'
         uses: mbrobbel/rustfmt-check@master
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: |
             style: auto format
 
             Automated commit from Github Actions
       - name: Rust format on pull request
         if: github.event_name == 'pull_request'
-        run: cargo fmt --all -- --check
+        uses: mbrobbel/rustfmt-check@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          mode: review
 
   toml_skip_check:
     needs: commitlint
