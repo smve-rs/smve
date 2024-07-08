@@ -117,7 +117,7 @@ jobs:
       - name: Cargo doc
         run: cargo doc --bin smve --document-private-items --no-deps
       - name: Upload docs
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: Docs
           path: target/doc/**/*
@@ -160,7 +160,7 @@ jobs:
     - name: Cargo build
       run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }} ${{ matrix.configuration == 'dist' && '--profile dist --features "dist"' || '' }}
     - name: Upload binary
-      uses: actions/upload-artifact@v4.3.3
+      uses: actions/upload-artifact@v4.3.4
       with:
         name: smve-${{ matrix.os }}-${{ matrix.configuration }}
         path: target/${{ matrix.configuration }}/smve${{ matrix.os == 'windows' && '.exe' || '' }}
