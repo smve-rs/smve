@@ -32,8 +32,14 @@ pub fn rp_configure_surfaces(
 ) {
     for (entity, window) in extracted_windows.iter() {
         if !graphics_state.surface_states.contains_key(entity) {
-            graphics_state
-                .create_surface(window, *entity, &window.raw_handles)
+            // # Safety: 
+            // The function requires the caller to verify that the context where the function is called
+            // is correct, i.e. on macOS and iOS, it should be called on the main thread. This is
+            // ensured by the non-send marker above in the system params.
+            unsafe {
+                graphics_state
+                    .create_surface(window, *entity, &window.raw_handles)
+            }
                 .unwrap_or_else(|err| {
                     panic!(
                         "Failed to create surface for window on {:?} with error {err}",

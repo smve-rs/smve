@@ -91,7 +91,11 @@ impl<'window> GraphicsState<'window> {
     ///
     /// # Returns
     /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
-    pub fn create_surface(
+    /// 
+    /// # Safety
+    /// This function should be called in the right context, i.e. on macOS and iOS, it should be called
+    /// on the main thread.
+    pub unsafe fn create_surface(
         &mut self,
         window_component: &ExtractedWindow,
         entity: Entity,
@@ -107,7 +111,7 @@ impl<'window> GraphicsState<'window> {
         // *           in WinitWindows, it might not drop the window as somebody else might still own it.
         // *           I finally solved the problem by looking at bevy's code and realizing that I could've just passed in a struct
         // *           containing the handles (which could be cloned)
-        let handle = unsafe { raw_handle_wrapper.get_handle() };
+        let handle = raw_handle_wrapper.get_handle();
         let surface = self.instance.create_surface(handle)?;
 
         let surface_caps = surface.get_capabilities(&self.adapter);
