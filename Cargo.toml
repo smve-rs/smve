@@ -6,79 +6,31 @@ readme = "README.md"
 repository = "https://github.com/smve-rs/smve"
 keywords = ["voxel", "engine", "rust", "game", "open-source"]
 categories = ["game-development", "graphics", "game-engines"]
-version = "0.1.1"
+version = "0.2.0-dev"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 exclude = [
-  ".github/*",
-  ".husky/*",
-  ".vscode/*",
-  ".idea/*",
-  "images/*",
-  "icon/*",
-  "scripts/*",
+  ".github/",
+  ".husky/",
+  ".vscode/",
+  ".idea/",
+  "images/",
+  "icon/",
+  "scripts/",
   "commitlint.config.js",
   "package.json",
   "package-lock.json",
+  "crates/"
 ]
 
-[[bin]]
-name = "smve"
-path = "src/main.rs"
-doc = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-bevy_app = "0.14.0"
-bevy_ecs = { version = "0.14.0", features = ["multi_threaded"] }
-bevy_tasks = { version = "0.14.0", features = ["multi_threaded"] }
-pollster = "0.3.0"
-wgpu = "0.20.1"
-winit = "0.30.4"
-raw-window-handle = "0.6.2"
-cfg-if = "1.0.0"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tracing-panic = "0.1.2"
-tracing-log = "0.2.0"
-humantime = "2.1.0"
-async-channel = "2.3.1"
-smve_macros = { path = "crates/smve_macros", version = "0.1.1" }
-
-# Dependencies for file logging
-chrono = { version = "0.4.38", optional = true }
-flate2 = { version = "1.0.30", optional = true }
-
-# Chrome tracing
-tracing-chrome = { version = "0.7.2", optional = true }
-
-[features]
-default = ["log-to-console"]
-log-to-file = ["dep:flate2", "dep:chrono"]
-log-to-console = []
-trace = ["dep:tracing-chrome", "dep:chrono", "bevy_app/trace", "bevy_ecs/trace"]
-windowed = []
-dist = ["log-to-file", "windowed"]
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3
+[workspace]
+members = [
+  "crates/*"
+]
 
 [lints.clippy]
 type_complexity = "allow"
 missing_docs_in_private_items = "deny"
 
-[build-dependencies]
-winres = "0.1.12"
-
-[profile.dist]
-inherits = "release"
-strip = true
-lto = true
-
-[package.metadata.bundle]
-identifier = "co.sunnymonster.smve"
-icon = ["images/icon.icns"]
+[dependencies]
+smve_internal = { path = "crates/smve_internal" }
