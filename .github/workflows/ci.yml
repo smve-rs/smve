@@ -181,6 +181,9 @@ jobs:
 
   format:
     needs: format_skip_check
+    permissions:
+      contents: write
+      pull-requests: write
     if: needs.format_skip_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
