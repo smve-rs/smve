@@ -91,7 +91,7 @@ impl<'window> GraphicsState<'window> {
     ///
     /// # Returns
     /// An empty result if the surface was created successfully, otherwise a [`CreateSurfaceError`] is returned.
-    /// 
+    ///
     /// # Safety
     /// This function should be called in the right context, i.e. on macOS and iOS, it should be called
     /// on the main thread.
