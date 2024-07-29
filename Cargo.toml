@@ -20,13 +20,11 @@ exclude = [
   "commitlint.config.js",
   "package.json",
   "package-lock.json",
-  "crates/"
+  "crates/",
 ]
 
 [workspace]
-members = [
-  "crates/*"
-]
+members = ["crates/*"]
 
 [lints.clippy]
 type_complexity = "allow"
