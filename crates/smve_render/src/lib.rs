@@ -19,7 +19,7 @@ use bevy_render::view::VisibilitySystems;
 use bevy_render::{view, Render, RenderApp, RenderSet};
 
 /// This plugin contains logic to do with rendering voxels.
-/// 
+///
 /// TODO: Improve documentation once functionality is semi-complete.
 pub struct RenderPlugin;
 
