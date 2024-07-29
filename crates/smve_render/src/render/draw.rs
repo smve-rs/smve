@@ -1,6 +1,6 @@
 use crate::components::Triangle;
-use bevy_asset::{AssetId, Assets, AssetServer, Handle};
-use bevy_core_pipeline::core_3d::{CORE_3D_DEPTH_FORMAT, Opaque3d, Opaque3dBinKey};
+use bevy_asset::{AssetId, AssetServer, Assets, Handle};
+use bevy_core_pipeline::core_3d::{Opaque3d, Opaque3dBinKey, CORE_3D_DEPTH_FORMAT};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::World;
 use bevy_ecs::query::{ROQueryItem, With};
@@ -14,11 +14,16 @@ use bevy_render::render_phase::{
     BinnedRenderPhaseType, DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult,
     SetItemPipeline, TrackedRenderPass, ViewBinnedRenderPhases,
 };
-use bevy_render::render_resource::{BufferUsages, ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, FragmentState, IndexFormat, MultisampleState, PipelineCache, RawBufferVec, RenderPipelineDescriptor, SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
+use bevy_render::render_resource::{
+    BufferUsages, ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, FragmentState,
+    IndexFormat, MultisampleState, PipelineCache, RawBufferVec, RenderPipelineDescriptor,
+    SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat, VertexAttribute,
+    VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+};
 use bevy_render::renderer::{RenderDevice, RenderQueue};
+use bevy_render::texture::BevyDefault;
 use bevy_render::view::{ExtractedView, Msaa, VisibleEntities};
 use bytemuck::{Pod, Zeroable};
-use bevy_render::texture::BevyDefault;
 
 #[derive(Resource)]
 pub struct TrianglePipeline {
@@ -205,13 +210,11 @@ impl SpecializedRenderPipeline for TrianglePipeline {
                 shader: self.shader.clone(),
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
-                targets: vec![
-                    Some(ColorTargetState {
-                        format: TextureFormat::bevy_default(),
-                        blend: None,
-                        write_mask: ColorWrites::ALL,
-                    })
-                ],
+                targets: vec![Some(ColorTargetState {
+                    format: TextureFormat::bevy_default(),
+                    blend: None,
+                    write_mask: ColorWrites::ALL,
+                })],
             }),
             primitive: Default::default(),
             depth_stencil: Some(DepthStencilState {
