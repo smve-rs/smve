@@ -1,5 +1,8 @@
 [files]
-extend-exclude = ["CHANGELOG.md"]
+extend-exclude = [
+    "CHANGELOG.md",
+    "crates/smve_asset_pack/tests/resources/assets_full/**" # Asset tests contain lorem ipsum which does not pass test
+]
 
 [default]
 locale = "en-us"
