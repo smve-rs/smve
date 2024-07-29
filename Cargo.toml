@@ -34,3 +34,6 @@ missing_docs_in_private_items = "deny"
 
 [dependencies]
 smve_internal = { path = "crates/smve_internal" }
+
+[dev-dependencies]
+bevy = "0.14.0"
