@@ -1,3 +1,5 @@
+//! A simple application that uses the triangle renderer to render a triangle.
+
 use bevy::math::Vec3A;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;

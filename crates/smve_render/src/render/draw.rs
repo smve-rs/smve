@@ -1,5 +1,5 @@
 use crate::components::Triangle;
-use bevy_asset::{AssetId, AssetServer, Assets, Handle};
+use bevy_asset::{AssetId, AssetServer, Handle};
 use bevy_core_pipeline::core_3d::{Opaque3d, Opaque3dBinKey, CORE_3D_DEPTH_FORMAT};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::World;

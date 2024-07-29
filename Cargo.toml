@@ -26,9 +26,12 @@ exclude = [
 [workspace]
 members = ["crates/*"]
 
-[lints.clippy]
+[workspace.lints.clippy]
 type_complexity = "allow"
-missing_docs_in_private_items = "deny"
+missing_docs_in_private_items = "warn"
+
+[workspace.lints.rust]
+missing_docs = "warn"
 
 [dependencies]
 smve_internal = { path = "crates/smve_internal" }
