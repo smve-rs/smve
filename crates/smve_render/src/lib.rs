@@ -1,3 +1,6 @@
+//! This crate contains all voxel rendering code. It does NOT contain any representations of
+//! voxels like Chunks, allowing for the usage of a different rendering engine.
+
 pub mod components;
 mod render;
 
@@ -15,6 +18,9 @@ use bevy_render::render_resource::SpecializedRenderPipelines;
 use bevy_render::view::VisibilitySystems;
 use bevy_render::{view, Render, RenderApp, RenderSet};
 
+/// This plugin contains logic to do with rendering voxels.
+/// 
+/// TODO: Improve documentation once functionality is semi-complete.
 pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {

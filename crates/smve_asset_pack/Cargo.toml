@@ -3,6 +3,9 @@ name = "smve_asset_pack"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+workspace = true
+
 [dependencies]
 blake3 = "1.5"
 ignore = "0.4"
