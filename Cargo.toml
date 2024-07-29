@@ -28,7 +28,6 @@ members = ["crates/*"]
 
 [workspace.lints.clippy]
 type_complexity = "allow"
-missing_docs_in_private_items = "warn"
 
 [workspace.lints.rust]
 missing_docs = "warn"
