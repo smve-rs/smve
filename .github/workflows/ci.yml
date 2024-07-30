@@ -131,7 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows", "macos", "ubuntu"]
-        configuration: ["debug", "release", "dist"]
+        configuration: ["debug", "release"]
     runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/cache@v4
@@ -158,7 +158,7 @@ jobs:
       run: sudo apt-get install lld
     - uses: actions/checkout@v4
     - name: Cargo build
-      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }} ${{ matrix.configuration == 'dist' && '--profile dist --features "dist"' || '' }}
+      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
     - name: Upload binary
       uses: actions/upload-artifact@v4.3.4
       with:
