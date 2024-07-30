@@ -33,7 +33,7 @@ pub trait AssetUncooker: 'static {
 }
 
 /// Type erased version of [`AssetUncooker`] for storing in a vector.
-pub trait AssetUncookerDyn {
+pub(super) trait AssetUncookerDyn {
     /// Uncooks the asset stored in `buf` with a dyn options parameter.
     ///
     /// # Parameters
@@ -99,7 +99,7 @@ impl_downcast!(UncookerOptions);
 
 /// Stores all the asset uncookers along with ways to look one up, e.g. extensions and type names.
 #[derive(Default)]
-pub struct AssetUncookers {
+pub(super) struct AssetUncookers {
     uncookers: Vec<Box<dyn AssetUncookerDyn>>,
     extension_to_uncookers: HashMap<Box<str>, Vec<usize>>,
     type_name_to_uncooker: HashMap<&'static str, usize>,

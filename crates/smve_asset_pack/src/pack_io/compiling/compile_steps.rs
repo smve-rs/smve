@@ -101,8 +101,17 @@ Available uncookers are: {:#?}",
                     compiler.asset_uncookers.get_uncooker_typenames()
                 );
             }
-
-            Some(uncooker.unwrap())
+            
+            if let Some(extension) = asset_path.extension() {
+                if !uncooker.unwrap().source_extensions().contains(&extension.to_str().unwrap()) {
+                    error!("Asset uncooker specified at {uncooker_path} does not support extension {}!", extension.to_str().unwrap());
+                    None
+                } else {
+                    Some(uncooker.unwrap())
+                }
+            } else {
+                Some(uncooker.unwrap())
+            }
         } else if let Some(extension) = asset_path.extension() {
             //                                             No UTF-8 error will be emitted
             //                                             because we skipped above if path
