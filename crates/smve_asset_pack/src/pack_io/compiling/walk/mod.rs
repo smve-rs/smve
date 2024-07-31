@@ -147,10 +147,9 @@ impl<'a> Iterator for Walk<'a> {
                                                     config
                                                         .as_mut()
                                                         .unwrap()
-                                                        .merge_directory_config(
+                                                        .merge(
                                                             self.configs[self.current_config_index]
                                                                 .clone(),
-                                                            entry.path(),
                                                         );
 
                                                     let new_index = self.configs.len();
