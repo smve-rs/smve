@@ -1,7 +1,7 @@
 pub mod glob_utils;
 mod merge_utils;
 
-use log::error;
+use log::{error, warn};
 use merge::Merge;
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -10,11 +10,13 @@ use std::io::Read;
 use std::path::Path;
 use toml::Table;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Merge)]
 pub struct DirectoryConfiguration<'a> {
     #[serde(flatten)]
+    #[merge(strategy = merge::option::recurse)]
     pub dir_config: Option<Configuration<'a>>,
     #[serde(flatten, borrow, with = "tuple_vec_map")]
+    #[merge(strategy = merge::vec::append)]
     pub glob_configs: Vec<(Cow<'a, str>, Configuration<'a>)>,
 }
 
@@ -102,12 +104,29 @@ pub fn get_dir_config<'de>(dir: impl AsRef<Path>) -> Option<DirectoryConfigurati
     let table = get_config(&config_path)?;
 
     let configs: Result<DirectoryConfiguration, _> = table.try_into();
-
-    if let Err(error) = configs {
-        error!("Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}", config_path.display());
-        None
-    } else {
-        configs.ok()
+    
+    match configs {
+        Ok(mut config) => {
+            let path_string = dir.as_ref().to_str();
+            
+            if path_string.is_none() {
+                warn!("Directory {} contains invalid UTF-8 characters, removing all glob configs.", dir.as_ref().display());
+                
+                config.glob_configs = vec![];
+                
+                return Some(config);
+            }
+            
+            for (ref mut path, _) in &mut config.glob_configs {
+                path.to_mut().insert_str(0, &format!("{}/", path_string.unwrap()));
+            }
+            
+            Some(config)
+        }
+        Err(error) => {
+            error!("Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}", config_path.display());
+            None
+        }
     }
 }
 
