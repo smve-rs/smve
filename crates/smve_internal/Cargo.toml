@@ -8,3 +8,4 @@ workspace = true
 
 [dependencies]
 smve_render = { path = "../smve_render" }
+smve_asset_pack = { path = "../smve_asset_pack" }
