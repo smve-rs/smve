@@ -42,6 +42,20 @@ pub enum ReadError {
     /// The requested directory does not exist in the asset pack.
     #[error("Requested directory at {0} does not exist in the pack file!")]
     DirectoryNotFound(String),
+    /// Errors when deserializing packs.toml located in asset pack group directories
+    #[error("Failed to deserialize packs.toml file. This probably means its format is not correct. {source}")]
+    TomlDeserializeError {
+        /// The toml deserialize error
+        #[from]
+        source: toml::de::Error,
+    },
+    /// Errors encountered when recursively reading asset pack directories
+    #[error("Failed to recursively read asset pack directory! {source}")]
+    WalkDirError {
+        /// The walkdir error
+        #[from]
+        source: walkdir::Error
+    }
 }
 
 /// Shorthand type for [`Result<T, ReadError>`]
