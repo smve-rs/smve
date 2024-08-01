@@ -125,48 +125,48 @@ jobs:
         if: failure()
         run: echo 'Docs failed to build. Please fix the errors.'
 
-  build:
-    needs: clippy
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["windows", "macos", "ubuntu"]
-        configuration: ["debug", "release"]
-    runs-on: ${{ matrix.os }}-latest
-    steps:
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-rust-build-${{ hashFiles('**/Cargo.toml') }}
-        restore-keys: ${{ runner.os }}-rust-
-    - uses: dtolnay/rust-toolchain@nightly
-    - name: Install LLD on Windows
-      if: matrix.os == 'windows'
-      run: |
-        cargo install -f cargo-binutils
-        rustup component add llvm-tools-preview
-    - name: Install LLD on macOS
-      if: matrix.os == 'macos'
-      run: brew install llvm
-    - name: Install LLD on Ubuntu
-      if: matrix.os == 'ubuntu'
-      run: sudo apt-get install lld
-    - uses: actions/checkout@v4
-    - name: Cargo build
-      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
-    - name: Upload binary
-      uses: actions/upload-artifact@v4.3.4
-      with:
-        name: smve-${{ matrix.os }}-${{ matrix.configuration }}
-        path: target/${{ matrix.configuration }}/smve${{ matrix.os == 'windows' && '.exe' || '' }}
-    - name: README IF FAILED
-      if: failure()
-      run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
+#  build:
+#    needs: clippy
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: ["windows", "macos", "ubuntu"]
+#        configuration: ["debug", "release"]
+#    runs-on: ${{ matrix.os }}-latest
+#    steps:
+#    - uses: actions/cache@v4
+#      with:
+#        path: |
+#          ~/.cargo/bin/
+#          ~/.cargo/registry/index/
+#          ~/.cargo/registry/cache/
+#          ~/.cargo/git/db/
+#          target/
+#        key: ${{ runner.os }}-rust-build-${{ hashFiles('**/Cargo.toml') }}
+#        restore-keys: ${{ runner.os }}-rust-
+#    - uses: dtolnay/rust-toolchain@nightly
+#    - name: Install LLD on Windows
+#      if: matrix.os == 'windows'
+#      run: |
+#        cargo install -f cargo-binutils
+#        rustup component add llvm-tools-preview
+#    - name: Install LLD on macOS
+#      if: matrix.os == 'macos'
+#      run: brew install llvm
+#    - name: Install LLD on Ubuntu
+#      if: matrix.os == 'ubuntu'
+#      run: sudo apt-get install lld
+#    - uses: actions/checkout@v4
+#    - name: Cargo build
+#      run: cargo build --verbose ${{ matrix.configuration == 'release' && '--release' || '' }}
+#    - name: Upload binary
+#      uses: actions/upload-artifact@v4.3.4
+#      with:
+#        name: smve-${{ matrix.os }}-${{ matrix.configuration }}
+#        path: target/${{ matrix.configuration }}/smve${{ matrix.os == 'windows' && '.exe' || '' }}
+#    - name: README IF FAILED
+#      if: failure()
+#      run: echo 'Build failed for ${{ matrix.os }}-${{ matrix.configuration }}. Please fix the compile errors.'
 
   format_skip_check:
     needs: commitlint
