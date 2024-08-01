@@ -68,12 +68,10 @@ pub struct AssetPackGroupReaderBuilder {
 impl AssetPackGroupReaderBuilder {
     /// Creates a new builder with the default extension of `.smap`.
     pub fn new() -> Self {
-        let builder = Self {
+        Self {
             available_packs: HashMap::new(),
             pack_extension: "smap",
-        };
-
-        builder
+        }
     }
 
     /// Specify a custom pack extension.
@@ -156,6 +154,7 @@ impl AssetPackGroupReaderBuilder {
         let mut packs_toml = OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(false)
             .open(root_dir.join("packs.toml"))?;
 
         // Check if file is empty
@@ -234,6 +233,12 @@ impl AssetPackGroupReaderBuilder {
         }
 
         Ok(())
+    }
+}
+
+impl Default for AssetPackGroupReaderBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
