@@ -20,6 +20,7 @@ downcast-rs = "1.2"
 merge = { git = "https://github.com/ItsSunnyMonster/merge.git", branch = "versions/0.1.1" }
 glob = "0.3"
 serde-tuple-vec-map = "1.0"
+walkdir = "2.5.0"
 
 [dev-dependencies]
 env_logger = "0.11.5"

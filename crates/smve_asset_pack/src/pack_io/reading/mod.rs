@@ -5,6 +5,7 @@ mod file_reader;
 pub mod flags;
 mod iter_dir;
 mod read_steps;
+pub mod pack_group;
 
 pub use errors::*;
 pub use file_reader::*;
@@ -120,7 +121,7 @@ impl AssetPackReader {
         Ok(self.pack_front_cache.as_ref().unwrap())
     }
 
-    /// Returns a [`DirectFileReader`] for a specified file.
+    /// Returns a [`AssetFileReader`] for a specified file.
     ///
     /// # Parameters
     /// - `path`: The path of the file to be read relative to the original assets directory (without `./`)
