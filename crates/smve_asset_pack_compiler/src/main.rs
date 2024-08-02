@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use clap::{arg, Parser};
 use env_logger::Env;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
-use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

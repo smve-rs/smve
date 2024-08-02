@@ -1,6 +1,5 @@
 //! Utilities for reading an asset pack group.
 
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -235,7 +234,7 @@ impl AssetPackGroupReaderBuilder {
                 continue;
             }
             
-            let rel_path = diff_paths(&file.path(), &self.root_dir).unwrap_or(file.path().into());
+            let rel_path = diff_paths(file.path(), &self.root_dir).unwrap_or(file.path().into());
             
             self.available_packs.insert(rel_path, PackDescriptor {
                 enabled: false,
