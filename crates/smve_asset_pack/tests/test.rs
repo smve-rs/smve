@@ -11,6 +11,50 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+
+macro_rules! test_out {
+    ($fname:expr) => {
+        concat!(env!("CARGO_MANIFEST_DIR"), "/target/test/", $fname)
+    };
+}
+
+macro_rules! test_res {
+    ($fname:expr) => {
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/resources/", $fname)
+    };
+}
+
+#[test]
+fn full_test() -> Result<(), Box<dyn Error>> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    compile(Path::new(test_res!("assets_full")))?;
+    read()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_groups() -> Result<(), Box<dyn Error>> {
+    let mut reader = AssetPackGroupReader::new(test_res!("asset_group_out"))?;
+
+    let mut override_reader = reader.get_file_reader("override.txt")?;
+
+    let mut override_str = String::new();
+    override_reader.read_to_string(&mut override_str)?;
+
+    assert_eq!(override_str, "Override1");
+
+    let mut singular_reader = reader.get_file_reader("singular.txt")?;
+
+    let mut singular_str = String::new();
+    singular_reader.read_to_string(&mut singular_str)?;
+
+    assert_eq!(singular_str, "Singular");
+
+    Ok(())
+}
 
 #[derive(Default)]
 struct EUncooker;
@@ -40,28 +84,6 @@ impl Default for EUncookerOptions {
     fn default() -> Self {
         Self { character: b'e' }
     }
-}
-
-macro_rules! test_out {
-    ($fname:expr) => {
-        concat!(env!("CARGO_MANIFEST_DIR"), "/target/test/", $fname)
-    };
-}
-
-macro_rules! test_res {
-    ($fname:expr) => {
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/resources/", $fname)
-    };
-}
-
-#[test]
-fn full_test() -> Result<(), Box<dyn Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    compile(Path::new(test_res!("assets_full")))?;
-    read()?;
-
-    Ok(())
 }
 
 fn setup() -> std::io::Result<()> {

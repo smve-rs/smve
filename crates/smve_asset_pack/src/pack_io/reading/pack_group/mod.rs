@@ -1,9 +1,11 @@
 //! Utilities for reading an asset pack group.
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
+use pathdiff::diff_paths;
 
 use walkdir::WalkDir;
 
@@ -30,8 +32,8 @@ impl AssetPackGroupReader {
     /// # Panics
     /// This panics when root_dir is not a directory.
     pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
-        AssetPackGroupReaderBuilder::new()
-            .build(root_dir)
+        AssetPackGroupReaderBuilder::new(root_dir)?
+            .build()
     }
     
     /// Returns the list of enabled packs, with the first pack having the most precedence.
@@ -63,15 +65,27 @@ impl AssetPackGroupReader {
 pub struct AssetPackGroupReaderBuilder {
     available_packs: HashMap<PathBuf, PackDescriptor>,
     pack_extension: &'static str,
+    root_dir: PathBuf,
 }
 
 impl AssetPackGroupReaderBuilder {
     /// Creates a new builder with the default extension of `.smap`.
-    pub fn new() -> Self {
-        Self {
+    pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
+        let root_dir = root_dir.as_ref();
+
+        if !root_dir.is_dir() {
+            panic!("{} is not a directory!", root_dir.display());
+        }
+        
+        let mut builder = Self {
             available_packs: HashMap::new(),
             pack_extension: "smap",
-        }
+            root_dir: root_dir.into()
+        };
+        
+        builder.get_packs_from_dir(root_dir)?;
+        
+        Ok(builder)
     }
 
     /// Specify a custom pack extension.
@@ -92,9 +106,11 @@ impl AssetPackGroupReaderBuilder {
         if !pack_path.is_file() {
             panic!("External pack is not a file! If you mean to add a directory, use add_external_pack_dir instead.");
         }
+        
+        let rel_path = diff_paths(pack_path, &self.root_dir).unwrap_or(pack_path.into());
 
         self.available_packs.insert(
-            pack_path.into(),
+            rel_path,
             PackDescriptor {
                 enabled: false,
                 is_external: true,
@@ -142,20 +158,13 @@ impl AssetPackGroupReaderBuilder {
     /// 
     /// # Errors
     /// This will yield an error if encountering IO errors.
-    pub fn build(mut self, root_dir: impl AsRef<Path>) -> ReadResult<AssetPackGroupReader> {
-        let root_dir = root_dir.as_ref();
-
-        if !root_dir.is_dir() {
-            panic!("{} is not a directory!", root_dir.display());
-        }
-
-        self.get_packs_from_dir(root_dir)?;
-
+    pub fn build(mut self) -> ReadResult<AssetPackGroupReader> {
         let mut packs_toml = OpenOptions::new()
             .create(true)
             .write(true)
+            .read(true)
             .truncate(false)
-            .open(root_dir.join("packs.toml"))?;
+            .open(self.root_dir.join("packs.toml"))?;
 
         // Check if file is empty
         packs_toml.seek(SeekFrom::End(0))?;
@@ -189,7 +198,7 @@ impl AssetPackGroupReaderBuilder {
             let absolute_path = if pack.path.is_absolute() {
                 &pack.path
             } else {
-                &root_dir.join(&pack.path)
+                &self.root_dir.join(&pack.path)
             };
 
             pack.pack_reader = Some(AssetPackReader::new(absolute_path)?);
@@ -208,7 +217,7 @@ impl AssetPackGroupReaderBuilder {
         packs_toml.seek(SeekFrom::Start(0))?;
         packs_toml.set_len(0)?;
         packs_toml.write_all(toml::to_string_pretty(&enabled_packs).expect("Format should be correct").as_bytes())?;
-
+        
         Ok(AssetPackGroupReader {
             enabled_packs,
             available_packs: self.available_packs,
@@ -225,8 +234,10 @@ impl AssetPackGroupReaderBuilder {
             {
                 continue;
             }
-
-            self.available_packs.insert(file.path().into(), PackDescriptor {
+            
+            let rel_path = diff_paths(&file.path(), &self.root_dir).unwrap_or(file.path().into());
+            
+            self.available_packs.insert(rel_path, PackDescriptor {
                 enabled: false,
                 is_external: true,
             });
@@ -236,13 +247,8 @@ impl AssetPackGroupReaderBuilder {
     }
 }
 
-impl Default for AssetPackGroupReaderBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Simple struct that stores information about if the pack is enabled, or if it is external.
+#[derive(Debug)]
 pub struct PackDescriptor {
     /// If the pack is enabled
     pub enabled: bool,
