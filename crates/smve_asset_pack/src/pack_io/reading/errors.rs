@@ -54,8 +54,8 @@ pub enum ReadError {
     WalkDirError {
         /// The walkdir error
         #[from]
-        source: walkdir::Error
-    }
+        source: walkdir::Error,
+    },
 }
 
 /// Shorthand type for [`Result<T, ReadError>`]

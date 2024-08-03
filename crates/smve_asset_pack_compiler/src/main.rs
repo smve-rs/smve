@@ -1,9 +1,9 @@
 //! A simple CLI to compile asset packs from asset folders
 
-use std::path::PathBuf;
 use clap::{arg, Parser};
 use env_logger::Env;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -22,8 +22,7 @@ fn main() {
 
     let args = Args::parse();
 
-    let result = AssetPackCompiler::new()
-        .compile(args.assets, args.out);
+    let result = AssetPackCompiler::new().compile(args.assets, args.out);
 
     if let Err(err) = result {
         eprintln!("Failed to compile assets! Error: {err}");

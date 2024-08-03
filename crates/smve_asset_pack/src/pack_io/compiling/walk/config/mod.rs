@@ -104,23 +104,27 @@ pub fn get_dir_config<'de>(dir: impl AsRef<Path>) -> Option<DirectoryConfigurati
     let table = get_config(&config_path)?;
 
     let configs: Result<DirectoryConfiguration, _> = table.try_into();
-    
+
     match configs {
         Ok(mut config) => {
             let path_string = dir.as_ref().to_str();
-            
+
             if path_string.is_none() {
-                warn!("Directory {} contains invalid UTF-8 characters, removing all glob configs.", dir.as_ref().display());
-                
+                warn!(
+                    "Directory {} contains invalid UTF-8 characters, removing all glob configs.",
+                    dir.as_ref().display()
+                );
+
                 config.glob_configs = vec![];
-                
+
                 return Some(config);
             }
-            
+
             for (ref mut path, _) in &mut config.glob_configs {
-                path.to_mut().insert_str(0, &format!("{}/", path_string.unwrap()));
+                path.to_mut()
+                    .insert_str(0, &format!("{}/", path_string.unwrap()));
             }
-            
+
             Some(config)
         }
         Err(error) => {

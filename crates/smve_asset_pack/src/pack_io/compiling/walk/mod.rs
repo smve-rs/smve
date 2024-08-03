@@ -144,13 +144,10 @@ impl<'a> Iterator for Walk<'a> {
 
                                                 // Push new config
                                                 if config.is_some() {
-                                                    config
-                                                        .as_mut()
-                                                        .unwrap()
-                                                        .merge(
-                                                            self.configs[self.current_config_index]
-                                                                .clone(),
-                                                        );
+                                                    config.as_mut().unwrap().merge(
+                                                        self.configs[self.current_config_index]
+                                                            .clone(),
+                                                    );
 
                                                     let new_index = self.configs.len();
                                                     self.configs.push(config.unwrap());

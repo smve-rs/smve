@@ -4,8 +4,8 @@ mod errors;
 mod file_reader;
 pub mod flags;
 mod iter_dir;
-mod read_steps;
 pub mod pack_group;
+mod read_steps;
 
 pub use errors::*;
 pub use file_reader::*;

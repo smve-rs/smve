@@ -1,13 +1,13 @@
+use crate::pack_io::reading::AssetPackReader;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
-use crate::pack_io::reading::AssetPackReader;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct EnabledPacks {
     #[serde(rename = "pack")]
-    pub packs: Vec<EnabledPack>
+    pub packs: Vec<EnabledPack>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -15,7 +15,7 @@ pub struct EnabledPack {
     pub path: PathBuf,
     pub external: bool,
     #[serde(skip)]
-    pub pack_reader: Option<AssetPackReader>
+    pub pack_reader: Option<AssetPackReader>,
 }
 
 impl Debug for EnabledPack {
@@ -28,9 +28,9 @@ impl Debug for EnabledPack {
 }
 
 impl FromIterator<EnabledPack> for EnabledPacks {
-    fn from_iter<T: IntoIterator<Item=EnabledPack>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = EnabledPack>>(iter: T) -> Self {
         Self {
-            packs: iter.into_iter().collect()
+            packs: iter.into_iter().collect(),
         }
     }
 }
@@ -51,8 +51,6 @@ impl DerefMut for EnabledPacks {
 
 impl From<Vec<EnabledPack>> for EnabledPacks {
     fn from(value: Vec<EnabledPack>) -> Self {
-        Self {
-            packs: value,
-        }
+        Self { packs: value }
     }
 }
