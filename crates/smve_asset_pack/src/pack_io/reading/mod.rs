@@ -10,6 +10,7 @@ mod read_steps;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
+use read_steps::validate_header;
 
 use crate::pack_io::reading::read_steps::{
     get_dir_start_indices, read_dl, read_toc, validate_files, validate_version,
@@ -68,6 +69,8 @@ impl AssetPackReader {
 
         let file = File::open(pack_path)?;
         let mut buf_reader = BufReader::new(file);
+
+        validate_header(&mut buf_reader)?;
 
         let version = validate_version(&mut buf_reader)?;
 

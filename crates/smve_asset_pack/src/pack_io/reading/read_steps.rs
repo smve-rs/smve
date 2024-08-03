@@ -9,6 +9,18 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 
+pub fn validate_header(buf_reader: &mut BufReader<File>) -> ReadResult<()> {
+    buf_reader.seek(SeekFrom::Start(0))?;
+
+    let header = read_bytes!(buf_reader, 4)?;
+
+    if &header != b"SMAP" {
+        return Err(ReadError::InvalidPackFile);
+    }
+
+    Ok(())
+}
+
 pub fn validate_version(buf_reader: &mut BufReader<File>) -> ReadResult<u16> {
     buf_reader.seek(SeekFrom::Start(4))?;
     let version = u16::from_be_bytes(read_bytes!(buf_reader, 2)?);
