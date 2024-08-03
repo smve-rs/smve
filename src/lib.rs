@@ -5,4 +5,5 @@
 //!
 //! A voxel engine written in Rust.
 
-pub use smve_internal::*;
+pub use smve_asset_pack as asset_pack;
+pub use smve_render as render;
