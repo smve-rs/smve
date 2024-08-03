@@ -4,6 +4,7 @@ use serde::Deserialize;
 use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
 use smve_asset_pack::pack_io::compiling::raw_assets::AssetUncooker;
 use smve_asset_pack::pack_io::compiling::{AssetPackCompiler, CompileResult};
+use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 use smve_asset_pack::pack_io::reading::AssetPackReader;
 use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
 use std::borrow::Cow;
@@ -11,7 +12,6 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 
 macro_rules! test_out {
     ($fname:expr) => {
@@ -39,12 +39,19 @@ fn full_test() -> Result<(), Box<dyn Error>> {
 fn test_groups() -> Result<(), Box<dyn Error>> {
     let mut reader = AssetPackGroupReader::new(test_res!("asset_group_out"))?;
 
+    reader.set_enabled_packs(&["pack1.smap", "pack2.smap"]);
+    reader.load()?;
     let mut override_reader = reader.get_file_reader("override.txt")?;
-
     let mut override_str = String::new();
     override_reader.read_to_string(&mut override_str)?;
-
     assert_eq!(override_str, "Override1");
+
+    reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
+    reader.load()?;
+    let mut override_reader = reader.get_file_reader("override.txt")?;
+    let mut override_str = String::new();
+    override_reader.read_to_string(&mut override_str)?;
+    assert_eq!(override_str, "Override2");
 
     let mut singular_reader = reader.get_file_reader("singular.txt")?;
 

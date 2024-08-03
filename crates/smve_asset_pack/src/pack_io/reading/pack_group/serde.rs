@@ -48,3 +48,11 @@ impl DerefMut for EnabledPacks {
         &mut self.packs
     }
 }
+
+impl From<Vec<EnabledPack>> for EnabledPacks {
+    fn from(value: Vec<EnabledPack>) -> Self {
+        Self {
+            packs: value,
+        }
+    }
+}
