@@ -4,7 +4,7 @@ use crate::pack_io::reading::{FileMeta, ReadResult};
 use log::warn;
 use std::cmp::min;
 use std::fs::File;
-use std::io::{BufReader, ErrorKind, Read, Seek, SeekFrom};
+use std::io::{ErrorKind, Read, Seek, SeekFrom};
 
 /// A [`Read`] + [`Seek`] struct for reading the data corresponding to a file contained in an asset pack.
 ///
@@ -121,14 +121,17 @@ where
 /// Unlike [`DirectFileReader`], this enum has variants for readers of decompressed files, and normal files.
 /// Always use this instead of the [`DirectFileReader`] unless you need access to the compressed
 /// data.
-pub enum AssetFileReader<'r> {
+pub enum AssetFileReader<'r, R>
+where
+    R: Read + Seek,
+{
     /// The [`DirectFileReader`] for an uncompressed file
-    Normal(DirectFileReader<'r, BufReader<File>>),
+    Normal(DirectFileReader<'r, R>),
     /// The [`File`] pointing to the decompressed temporary file
     Decompressed(File),
 }
 
-impl<'r> AssetFileReader<'r> {
+impl<'r, R: Read + Seek> AssetFileReader<'r, R> {
     /// Create a new [`AssetFileReader`] which decompresses a file if it is stored compressed.
     ///
     /// For most use cases, don't use this constructor. Use [`AssetPackReader::get_file_reader`](super::AssetPackReader::get_file_reader) instead.
@@ -139,10 +142,7 @@ impl<'r> AssetFileReader<'r> {
     ///
     /// # Errors
     /// Can fail if decompression fails, or if rewinding the temporary decompressed file fails.
-    pub fn new(
-        file_reader: DirectFileReader<'r, BufReader<File>>,
-        file_meta: FileMeta,
-    ) -> ReadResult<Self> {
+    pub fn new(file_reader: DirectFileReader<'r, R>, file_meta: FileMeta) -> ReadResult<Self> {
         if is_compressed(file_meta.flags) {
             let mut temp = decompress(file_reader)?;
             temp.rewind()?;
@@ -153,7 +153,7 @@ impl<'r> AssetFileReader<'r> {
     }
 }
 
-impl<'r> Read for AssetFileReader<'r> {
+impl<'r, R: Read + Seek> Read for AssetFileReader<'r, R> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         match self {
             AssetFileReader::Normal(r) => r.read(buf),
@@ -162,7 +162,7 @@ impl<'r> Read for AssetFileReader<'r> {
     }
 }
 
-impl<'r> Seek for AssetFileReader<'r> {
+impl<'r, R: Read + Seek> Seek for AssetFileReader<'r, R> {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         match self {
             AssetFileReader::Normal(s) => s.seek(pos),

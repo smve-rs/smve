@@ -19,7 +19,7 @@ use crate::read_bytes;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
 /// Create an instance of this struct to read an asset pack.
@@ -33,7 +33,7 @@ use std::path::Path;
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
 ///
-/// let mut pack_reader = AssetPackReader::new("./path/to/pack.smap").unwrap();
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").unwrap();
 /// let pack_front = pack_reader.get_pack_front().unwrap();
 /// let toc = &pack_front.toc;
 /// let directories = &pack_front.directory_list;
@@ -43,19 +43,28 @@ use std::path::Path;
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
 ///
-/// let mut pack_reader = AssetPackReader::new("./path/to/pack.smap").unwrap();
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").unwrap();
 /// let file_reader = pack_reader.get_file_reader("path/to/file.txt").unwrap();
 /// ```
-/// See also [`DirectFileReader`].
+///
+/// * Read asset pack from memory:
+/// ```no_run
+/// use smve_asset_pack::pack_io::reading::AssetPackReader;
+/// use std::io::Cursor;
+///
+/// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01...")).unwrap();
+/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt").unwrap();
+/// ```
+/// See also [`AssetFileReader`].
 #[non_exhaustive]
-pub struct AssetPackReader {
-    reader: BufReader<File>,
+pub struct AssetPackReader<R: SeekableBufRead> {
+    reader: R,
     pack_front_cache: Option<PackFront>,
     version: u16,
 }
 
-impl AssetPackReader {
-    /// Create a new [`AssetPackReader`] and verifies it.
+impl AssetPackReader<BufReader<File>> {
+    /// Create a new [`AssetPackReader`] from a path and verifies it.
     ///
     /// # Parameters
     /// - `pack_path`: Path to the asset pack file
@@ -64,18 +73,54 @@ impl AssetPackReader {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
+    pub fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
         let pack_path = pack_path.as_ref();
 
         let file = File::open(pack_path)?;
-        let mut buf_reader = BufReader::new(file);
 
-        validate_header(&mut buf_reader)?;
+        Self::new_from_read(file)
+    }
+}
 
-        let version = validate_version(&mut buf_reader)?;
+impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
+    /// Creates a new [`AssetPackReader`] from a [`Read`] and verifies it.
+    ///
+    /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
+    /// to avoid double buffering.
+    ///
+    /// # Parameters
+    /// - `reader`: A reader containing an asset pack. This will be wrapped in a [`BufReader`].
+    ///
+    /// # Errors
+    /// Will fail if the pack file is invalid or if the version of the format is incompatible.
+    ///
+    /// See [`ReadError`].
+    pub fn new_from_read(reader: R) -> ReadResult<Self> {
+        let buf_reader = BufReader::new(reader);
+
+        Self::new(buf_reader)
+    }
+}
+
+impl<R: SeekableBufRead> AssetPackReader<R> {
+    /// Creates a new [`AssetPackReader`] from a [`BufRead`] and verifies it.
+    ///
+    /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
+    ///
+    /// # Parameters
+    /// - `reader`: A buffered reader containing an asset pack.
+    ///
+    /// # Errors
+    /// Will fail if the pack file is invalid or if the version of the format is incompatible.
+    ///
+    /// See [`ReadError`].
+    pub fn new(mut reader: R) -> ReadResult<Self> {
+        validate_header(&mut reader)?;
+
+        let version = validate_version(&mut reader)?;
 
         Ok(Self {
-            reader: buf_reader,
+            reader,
             pack_front_cache: None,
             version,
         })
@@ -134,7 +179,7 @@ impl AssetPackReader {
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader> {
+    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
         let toc = &self.get_pack_front()?.toc;
         let meta = toc.get(path);
         if meta.is_none() {
@@ -158,7 +203,7 @@ impl AssetPackReader {
     ///
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
-    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader> {
+    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
         let unique_files = &self.get_pack_front()?.unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
@@ -261,3 +306,9 @@ pub struct FileMeta {
     /// Size of the file in bytes.
     pub size: u64,
 }
+
+/// A marker trait automatically implemented for anything that implements both [`BufRead`] and
+/// [`Seek`].
+pub trait SeekableBufRead: Seek + BufRead {}
+
+impl<T: BufRead + Seek> SeekableBufRead for T {}

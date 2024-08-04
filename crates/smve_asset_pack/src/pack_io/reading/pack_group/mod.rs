@@ -3,8 +3,8 @@
 use log::{error, warn};
 use pathdiff::diff_paths;
 use std::collections::HashMap;
-use std::fs::OpenOptions;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use walkdir::WalkDir;
@@ -12,6 +12,8 @@ use walkdir::WalkDir;
 use crate::pack_io::reading::pack_group::serde::{EnabledPack, EnabledPacks};
 use crate::pack_io::reading::ReadError::FileNotFound;
 use crate::pack_io::reading::{AssetFileReader, AssetPackReader, ReadResult};
+
+use super::SeekableBufRead;
 
 mod serde;
 
@@ -50,7 +52,10 @@ impl AssetPackGroupReader {
     }
 
     /// Returns an asset file reader for a specific file.
-    pub fn get_file_reader(&mut self, file_path: &str) -> ReadResult<AssetFileReader> {
+    pub fn get_file_reader(
+        &mut self,
+        file_path: &str,
+    ) -> ReadResult<AssetFileReader<Box<dyn SeekableBufRead>>> {
         let index = self.file_name_to_asset_pack.get(file_path);
         if index.is_none() {
             return Err(FileNotFound(file_path.into()));
@@ -179,7 +184,11 @@ impl AssetPackGroupReader {
                     &self.root_dir.join(&pack.path)
                 };
 
-                pack.pack_reader = Some(AssetPackReader::new(absolute_path)?);
+                let pack_file = File::open(absolute_path)?;
+                let buf_reader = BufReader::new(pack_file);
+                let boxed_buf_reader = Box::new(buf_reader) as Box<dyn SeekableBufRead>;
+
+                pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader)?);
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
                 let pack_front = pack_reader.get_pack_front()?;

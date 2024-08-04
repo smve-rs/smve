@@ -10,7 +10,7 @@ use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
 use std::borrow::Cow;
 use std::error::Error;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::path::Path;
 
 macro_rules! test_out {
@@ -114,14 +114,17 @@ fn compile(assets_path: &Path) -> CompileResult<()> {
 
 fn read() -> Result<(), Box<dyn Error>> {
     let out_path = test_out!("out.smap");
-    let mut reader = AssetPackReader::new(out_path)?;
+    let mut reader = AssetPackReader::new_from_path(out_path)?;
 
     check_files(Path::new(test_res!("assets_full")), &mut reader)?;
 
     Ok(())
 }
 
-fn check_files(dir_path: &Path, reader: &mut AssetPackReader) -> Result<(), Box<dyn Error>> {
+fn check_files(
+    dir_path: &Path,
+    reader: &mut AssetPackReader<BufReader<File>>,
+) -> Result<(), Box<dyn Error>> {
     let walk = Walk::new(dir_path);
 
     for entry in walk {

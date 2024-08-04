@@ -7,9 +7,12 @@ use lz4::Decoder;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
+use std::io::{BufRead, Read, Seek, SeekFrom};
 
-pub fn validate_header(buf_reader: &mut BufReader<File>) -> ReadResult<()> {
+pub fn validate_header<R>(buf_reader: &mut R) -> ReadResult<()>
+where
+    R: Read + Seek,
+{
     buf_reader.seek(SeekFrom::Start(0))?;
 
     let header = read_bytes!(buf_reader, 4)?;
@@ -21,8 +24,7 @@ pub fn validate_header(buf_reader: &mut BufReader<File>) -> ReadResult<()> {
     Ok(())
 }
 
-pub fn validate_version(buf_reader: &mut BufReader<File>) -> ReadResult<u16> {
-    buf_reader.seek(SeekFrom::Start(4))?;
+pub fn validate_version(buf_reader: &mut impl Read) -> ReadResult<u16> {
     let version = u16::from_be_bytes(read_bytes!(buf_reader, 2)?);
 
     if version != 1 {
@@ -32,8 +34,8 @@ pub fn validate_version(buf_reader: &mut BufReader<File>) -> ReadResult<u16> {
     Ok(version)
 }
 
-pub fn read_toc(
-    pack_reader: &mut BufReader<File>,
+pub fn read_toc<R: BufRead>(
+    pack_reader: &mut R,
     expected_toc_hash: &[u8],
 ) -> ReadResult<(IndexMap<String, FileMeta>, HashMap<String, FileMeta>)> {
     let mut toc_hasher = Hasher::new();
@@ -68,8 +70,8 @@ pub fn read_toc(
     Ok((toc, unique_files))
 }
 
-pub fn read_file_name(
-    pack_reader: &mut BufReader<File>,
+pub fn read_file_name<R: BufRead>(
+    pack_reader: &mut R,
     toc_hasher: &mut Hasher,
 ) -> ReadResult<Option<String>> {
     let mut file_name = vec![];
@@ -97,8 +99,8 @@ pub fn read_file_name(
     Ok(Some(file_name))
 }
 
-pub fn read_file_meta(
-    pack_reader: &mut BufReader<File>,
+pub fn read_file_meta<R: Read>(
+    pack_reader: &mut R,
     toc_hasher: &mut Hasher,
 ) -> ReadResult<FileMeta> {
     let file_hash = read_bytes_and_hash!(pack_reader, 32, toc_hasher)?;
@@ -118,8 +120,8 @@ pub fn read_file_meta(
     })
 }
 
-pub fn read_dl(
-    pack_reader: &mut BufReader<File>,
+pub fn read_dl<R: BufRead>(
+    pack_reader: &mut R,
     expected_dl_hash: &[u8],
 ) -> ReadResult<Vec<String>> {
     let mut dl_hasher = Hasher::new();
@@ -142,8 +144,8 @@ pub fn read_dl(
     Ok(dl)
 }
 
-pub fn read_dl_entry(
-    pack_reader: &mut BufReader<File>,
+pub fn read_dl_entry<R: BufRead>(
+    pack_reader: &mut R,
     dl_hasher: &mut Hasher,
 ) -> ReadResult<Option<String>> {
     let mut directory_name = vec![];
@@ -170,8 +172,8 @@ pub fn read_dl_entry(
     Ok(Some(directory_name))
 }
 
-pub fn validate_files(
-    pack_reader: &mut BufReader<File>,
+pub fn validate_files<R: Read + Seek>(
+    pack_reader: &mut R,
     toc: &mut IndexMap<String, FileMeta>,
     unique_files: &mut HashMap<String, FileMeta>,
 ) -> ReadResult<()> {
@@ -188,10 +190,10 @@ pub fn validate_files(
     Ok(())
 }
 
-pub fn validate_file(
+pub fn validate_file<R: Read + Seek>(
     file_meta: &mut FileMeta,
     file_data_start: u64,
-    pack_reader: &mut BufReader<File>,
+    pack_reader: &mut R,
     file_path: &str,
 ) -> ReadResult<()> {
     file_meta.offset += file_data_start;
