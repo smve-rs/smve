@@ -20,6 +20,7 @@ mod serde;
 /// TODO: Add documentation when API is complete
 pub struct AssetPackGroupReader {
     enabled_packs: EnabledPacks,
+    /// This does not include built-in packs
     available_packs: HashMap<PathBuf, PackDescriptor>,
     external_packs: Vec<PathBuf>,
     file_name_to_asset_pack: HashMap<Box<str>, usize>,
@@ -47,6 +48,8 @@ impl AssetPackGroupReader {
     }
 
     /// Returns all packs that can be found in the root directory and any external packs.
+    ///
+    /// **NOTE**: This does NOT include built-in packs.
     pub fn get_available_packs(&self) -> &HashMap<PathBuf, PackDescriptor> {
         &self.available_packs
     }
@@ -75,7 +78,9 @@ impl AssetPackGroupReader {
     /// Sets the order of enabled packs, as well as enabling new packs and disabling them.
     ///
     /// # Parameters
-    /// - `packs`: An ordered slice of the Paths of the pack files.
+    /// - `packs`: An ordered slice of the Paths of the pack files. For built-in asset packs, start
+    ///   the path with "/__built_in" followed by the unique identifier you specified when
+    ///   registering it.
     ///
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
@@ -113,9 +118,66 @@ impl AssetPackGroupReader {
             }
         }
 
+        // Add any left over built-in packs
+        hashmap.retain(|path, _| path.starts_with("/__built_in"));
+        new_packs.extend(hashmap.into_values());
+
         self.enabled_packs = new_packs.into();
 
+        error!("{:?}", self.enabled_packs);
+
         self.packs_changed = true;
+    }
+
+    /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
+    /// disabled. This change will NOT be reflected until [`load`](Self::load) is called.
+    ///
+    /// # Parameters
+    /// - `identifier`: A path (doesn't need to exist) that uniquely identifies this built-in pack.
+    /// - `reader`: Something that implements both [`Seek`] and [`BufRead`](std::io::BufRead) which contains the
+    ///   asset pack data. It is recommended that you directly embed this pack in the binary to
+    ///   make it more difficult for users to change.
+    ///
+    /// # Errors
+    /// This will fail if creating the asset pack reader fails (i.e. if the pack is invalid).
+    pub fn register_built_in_pack<R: 'static + SeekableBufRead>(
+        &mut self,
+        identifier: impl AsRef<Path>,
+        reader: R,
+    ) -> ReadResult<()> {
+        let path = Path::new("/__built_in").join(identifier);
+        self.enabled_packs.push(EnabledPack {
+            path: path.clone(),
+            external: true,
+            pack_reader: Some(AssetPackReader::new(
+                Box::new(reader) as Box<dyn SeekableBufRead>
+            )?),
+        });
+        self.available_packs.insert(
+            path,
+            PackDescriptor {
+                enabled: true,
+                is_external: true,
+                is_built_in: true,
+            },
+        );
+
+        self.packs_changed = true;
+
+        Ok(())
+    }
+
+    /// Remove a built-in asset pack registered through [`register_built_in_pack`](Self::register_built_in_pack).
+    /// This change will not be reflected until [`load`](Self::load) is called.
+    ///
+    /// # Parameters
+    /// - `identifier`: The path that was passed into [`register_built_in_pack`](Self::register_built_in_pack).
+    pub fn remove_built_in_pack(&mut self, identifier: impl AsRef<Path>) {
+        let path = Path::new("/__built_in").join(identifier);
+
+        self.enabled_packs.retain(|p| p.path != path);
+
+        self.available_packs.remove(&path);
     }
 
     /// Rediscovers all available packs, along with rebuilding the index if the enabled packs has
@@ -127,7 +189,8 @@ impl AssetPackGroupReader {
     /// This will return an error when encountering IO errors.
     pub fn load(&mut self) -> ReadResult<()> {
         // Rediscover packs
-        self.available_packs.clear();
+        self.available_packs
+            .retain(|path, _| path.starts_with("/__built_in"));
 
         // Discover root directory packs
         Self::get_packs_from_dir(
@@ -164,6 +227,7 @@ impl AssetPackGroupReader {
                     PackDescriptor {
                         enabled: false,
                         is_external: true,
+                        is_built_in: false,
                     },
                 );
             }
@@ -176,26 +240,29 @@ impl AssetPackGroupReader {
             self.file_name_to_asset_pack.clear();
 
             for (index, pack) in self.enabled_packs.packs.iter_mut().enumerate() {
-                self.available_packs.get_mut(&pack.path).unwrap().enabled = true;
+                if let Some(available_pack) = self.available_packs.get_mut(&pack.path) {
+                    available_pack.enabled = true;
+                }
 
-                let absolute_path = if pack.path.is_absolute() {
-                    &pack.path
-                } else {
-                    &self.root_dir.join(&pack.path)
-                };
+                if pack.pack_reader.is_none() {
+                    let absolute_path = if pack.path.is_absolute() {
+                        &pack.path
+                    } else {
+                        &self.root_dir.join(&pack.path)
+                    };
 
-                let pack_file = File::open(absolute_path)?;
-                let buf_reader = BufReader::new(pack_file);
-                let boxed_buf_reader = Box::new(buf_reader) as Box<dyn SeekableBufRead>;
+                    let pack_file = File::open(absolute_path)?;
+                    let buf_reader = BufReader::new(pack_file);
+                    let boxed_buf_reader = Box::new(buf_reader) as Box<dyn SeekableBufRead>;
 
-                pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader)?);
+                    pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader)?);
+                }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
                 let pack_front = pack_reader.get_pack_front()?;
                 let toc = &pack_front.toc;
 
                 for key in toc.keys() {
-                    println!("{key}");
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
                             .insert(Box::from(key.as_str()), index);
@@ -241,6 +308,7 @@ impl AssetPackGroupReader {
                         PackDescriptor {
                             enabled: false,
                             is_external,
+                            is_built_in: false,
                         },
                     );
                 }
@@ -359,4 +427,6 @@ pub struct PackDescriptor {
     pub enabled: bool,
     /// If the pack is external
     pub is_external: bool,
+    /// If the pack is built in
+    pub is_built_in: bool,
 }

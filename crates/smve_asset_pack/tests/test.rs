@@ -1,4 +1,3 @@
-use env_logger::Env;
 use ignore::Walk;
 use serde::Deserialize;
 use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
@@ -10,8 +9,10 @@ use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
 use std::borrow::Cow;
 use std::error::Error;
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Cursor, Read};
 use std::path::Path;
+
+use test_log::test;
 
 macro_rules! test_out {
     ($fname:expr) => {
@@ -27,8 +28,6 @@ macro_rules! test_res {
 
 #[test]
 fn full_test() -> Result<(), Box<dyn Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
     compile(Path::new(test_res!("assets_full")))?;
     read()?;
 
@@ -39,6 +38,12 @@ fn full_test() -> Result<(), Box<dyn Error>> {
 fn test_groups() -> Result<(), Box<dyn Error>> {
     let mut reader = AssetPackGroupReader::new(test_res!("asset_group_out"))?;
 
+    reader.register_built_in_pack(
+        "builtin",
+        Cursor::new(include_bytes!(test_res!("built_in.smap"))),
+    )?;
+
+    // Test pack1 overriding pack2
     reader.set_enabled_packs(&["pack1.smap", "pack2.smap"]);
     reader.load()?;
     let mut override_reader = reader.get_file_reader("override.txt")?;
@@ -46,6 +51,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     override_reader.read_to_string(&mut override_str)?;
     assert_eq!(override_str, "Override1");
 
+    // Test pack1 overriding builtin
+    let mut builtin_reader = reader.get_file_reader("builtin.txt")?;
+    let mut builtin_str = String::new();
+    builtin_reader.read_to_string(&mut builtin_str)?;
+    assert_eq!(builtin_str, "Overwritten\n");
+
+    // Test pack2 overriding pack1
     reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
     reader.load()?;
     let mut override_reader = reader.get_file_reader("override.txt")?;
@@ -53,12 +65,19 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     override_reader.read_to_string(&mut override_str)?;
     assert_eq!(override_str, "Override2");
 
+    // Test singular file that does not get overwritten
     let mut singular_reader = reader.get_file_reader("singular.txt")?;
-
     let mut singular_str = String::new();
     singular_reader.read_to_string(&mut singular_str)?;
-
     assert_eq!(singular_str, "Singular");
+
+    // Test builtin overriding pack1
+    reader.set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"]);
+    reader.load()?;
+    let mut builtin_reader = reader.get_file_reader("builtin.txt")?;
+    let mut builtin_str = String::new();
+    builtin_reader.read_to_string(&mut builtin_str)?;
+    assert_eq!(builtin_str, "BuiltIn\n");
 
     Ok(())
 }

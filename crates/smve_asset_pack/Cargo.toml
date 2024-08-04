@@ -25,3 +25,4 @@ pathdiff = "0.2.1"
 
 [dev-dependencies]
 env_logger = "0.11.5"
+test-log = "0.2.16"

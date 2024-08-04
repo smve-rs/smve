@@ -1,7 +1,11 @@
 [[pack]]
-path = "pack2.smap"
-external = false
+path = "/__built_in/builtin"
+external = true
 
 [[pack]]
 path = "pack1.smap"
+external = false
+
+[[pack]]
+path = "pack2.smap"
 external = false
