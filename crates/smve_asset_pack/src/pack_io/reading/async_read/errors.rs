@@ -54,7 +54,7 @@ pub enum ReadError {
     WalkDirError {
         /// The walkdir error
         #[from]
-        source: walkdir::Error,
+        source: async_walkdir::Error,
     },
 }
 

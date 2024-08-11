@@ -2,14 +2,14 @@
 
 use async_fs::{File, OpenOptions};
 use futures_lite::io::BufReader;
-use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use log::{error, warn};
 use pathdiff::diff_paths;
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 
-use walkdir::WalkDir;
+use async_walkdir::WalkDir;
 
 use crate::pack_io::reading::async_read::pack_group::serde::{EnabledPack, EnabledPacks};
 use crate::pack_io::reading::async_read::{
@@ -208,7 +208,8 @@ impl AssetPackGroupReader {
             &self.root_dir,
             false,
             self.pack_extension,
-        )?;
+        )
+        .await?;
 
         // Discover external packs
         for path in &self.external_packs {
@@ -227,7 +228,8 @@ impl AssetPackGroupReader {
                     path,
                     true,
                     self.pack_extension,
-                )?;
+                )
+                .await?;
             } else {
                 let rel_path = diff_paths(path, &self.root_dir).unwrap_or(path.clone());
 
@@ -262,7 +264,6 @@ impl AssetPackGroupReader {
                         &self.root_dir.join(&pack.path)
                     };
 
-                    // FIXME: problem here
                     let pack_file = File::open(absolute_path).await?;
                     let buf_reader = BufReader::new(pack_file);
                     let boxed_buf_reader = Box::new(buf_reader) as Box<dyn AsyncSeekableBufRead>;
@@ -303,21 +304,20 @@ impl AssetPackGroupReader {
         Ok(())
     }
 
-    // TODO: Use async walkdir instead
-    fn get_packs_from_dir(
+    async fn get_packs_from_dir(
         available_packs: &mut HashMap<PathBuf, PackDescriptor>,
         root_dir: &Path,
         pack_dir: &Path,
         is_external: bool,
         extension: &str,
     ) -> ReadResult<()> {
-        for entry in WalkDir::new(pack_dir) {
+        let mut entries = WalkDir::new(pack_dir);
+        while let Some(entry) = entries.next().await {
             let entry = entry?;
 
             if let Some(path_extension) = entry.path().extension() {
                 if path_extension == extension {
-                    let rel_path =
-                        diff_paths(entry.path(), root_dir).unwrap_or(entry.path().into());
+                    let rel_path = diff_paths(entry.path(), root_dir).unwrap_or(entry.path());
 
                     available_packs.insert(
                         rel_path,

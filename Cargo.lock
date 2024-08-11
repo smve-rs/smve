@@ -339,6 +339,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
+name = "async-walkdir"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20235b6899dd1cb74a9afac0abf5b4a20c0e500dd6537280f4096e1b9f14da20"
+dependencies = [
+ "async-fs",
+ "futures-lite",
+ "thiserror",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3574,6 +3585,7 @@ version = "0.1.0"
 dependencies = [
  "async-fs",
  "async-io",
+ "async-walkdir",
  "blake3",
  "downcast-rs",
  "env_logger",
