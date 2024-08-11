@@ -17,7 +17,105 @@ use super::SeekableBufRead;
 
 mod serde;
 
-/// TODO: Add documentation when API is complete
+/// A reader for a directory of asset packs.
+///
+/// This is used for games which allow users to specify custom asset packs to override built-in
+/// ones (modding).
+///
+/// # How it works
+/// To create an [`AssetPackGroupReader`], you need to specify a `root_dir`. This is the directory
+/// in which users place their custom pack files, and also where the game stores information about
+/// what packs are enabled and which have higher precedence than others.
+///
+/// If a file appears in two or more packs, the version from the higher precedence pack will
+/// override the lower precedence packs.
+///
+/// ```no_run
+/// use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+///
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # Ok(()) }
+/// ```
+///
+/// Most functions in this struct only registers the changes to happen. They don't actually update
+/// the reader immediately. So trying to read files right now through the reader would yield
+/// errors.
+///
+/// To apply the changes done in functions, call `reader.load()?`.
+///
+/// This is because `reader.load()` is very expensive most of the time, having to recursively
+/// discover files in directories and building the index from file paths to their corresponding
+/// packs. It is way more efficient to queue up multiple changes, and then apply them at the same
+/// time.
+///
+/// You can also specify other locations where asset packs can be found. This might be useful if
+/// you have mods that contain their own asset packs.
+///
+/// ```no_run
+/// use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+///
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// reader.add_external_pack("path/to/folder");
+/// reader.load()?;
+/// # Ok(()) }
+/// ```
+///
+/// To avoid users accidentally (or purposefully) disabling built-in asset packs causing certain
+/// assets to be missing, you can register built-in packs. They can be moved up and down the
+/// precedence stack, but cannot be disabled.
+///
+/// ```no_run
+/// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+/// use smve_asset_pack::pack_io::reading::AssetPackReader;
+/// use std::io::Cursor;
+/// # macro_rules! include_bytes {
+/// #    ($thing:expr) => ("")
+/// # }
+///
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// // It is recommended to embed the built-in packs in the binary itself, making it harder for
+/// // users to modify them and potentially cause problems.
+/// reader.register_built_in_pack(
+///     "identifier",
+///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap")))?.box_reader()
+/// );
+/// reader.load()?;
+/// # Ok(()) }
+/// ```
+///
+/// To stop users from modding certain assets, you can also specify an override pack which cannot be
+/// disabled and is always at the top of the precedence stack.
+///
+/// ```no_run
+/// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+/// # use smve_asset_pack::pack_io::reading::AssetPackReader;
+/// # use std::io::Cursor;
+/// # macro_rules! include_bytes {
+/// #    ($thing:expr) => ("")
+/// # }
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// reader.set_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap")))?.box_reader());
+/// reader.load()?;
+/// # Ok(()) }
+/// ```
+///
+/// To change the order of the enabled packs in the precedence stack or to disable and enable
+/// packs, you can pass in a slice of paths identifying the packs in order. Built-in packs are
+/// referenced by `/__built_in/` followed by the identifier you set earlier when registering the
+/// built-in pack.
+///
+/// ```no_run
+/// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// reader.set_enabled_packs(&["/__built_in/identifier", "pack1.smap", "external/pack2.smap"]);
+/// reader.load()?;
+/// # Ok(()) }
+/// ```
 pub struct AssetPackGroupReader {
     enabled_packs: EnabledPacks,
     /// This does not include built-in packs
@@ -147,9 +245,9 @@ impl AssetPackGroupReader {
     /// Note that this change will not be reflected until [`Self::load`] is called.
     ///
     /// # Parameters
-    /// - `packs`: An ordered slice of the Paths of the pack files. For built-in asset packs, start
-    ///   the path with "/__built_in" followed by the unique identifier you specified when
-    ///   registering it.
+    /// - `packs`: An ordered slice of the Paths of the pack files. The first element of the slice
+    ///   has the most precedence. For built-in asset packs, start the path with "/__built_in" followed
+    ///   by the unique identifier you specified when registering it.
     ///
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
