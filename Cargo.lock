@@ -3580,7 +3580,7 @@ dependencies = [
 
 [[package]]
 name = "smve_asset_pack"
-version = "0.1.0"
+version = "0.2.0-dev"
 dependencies = [
  "async-fs",
  "async-io",
@@ -3616,7 +3616,7 @@ dependencies = [
 
 [[package]]
 name = "smve_internal"
-version = "0.1.0"
+version = "0.2.0-dev"
 dependencies = [
  "smve_asset_pack",
  "smve_render",
