@@ -33,8 +33,7 @@ type_complexity = "allow"
 missing_docs = "warn"
 
 [dependencies]
-smve_asset_pack = { path = "crates/smve_asset_pack" }
-smve_render = { path = "crates/smve_render" }
+smve_internal = { path = "crates/smve_internal" }
 
 [dev-dependencies]
-bevy = "0.14.0"
+bevy = "0.14"

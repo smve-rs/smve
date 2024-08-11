@@ -3575,8 +3575,7 @@ name = "smve"
 version = "0.2.0-dev"
 dependencies = [
  "bevy",
- "smve_asset_pack",
- "smve_render",
+ "smve_internal",
 ]
 
 [[package]]
@@ -3613,6 +3612,14 @@ dependencies = [
  "clap",
  "env_logger",
  "smve_asset_pack",
+]
+
+[[package]]
+name = "smve_internal"
+version = "0.1.0"
+dependencies = [
+ "smve_asset_pack",
+ "smve_render",
 ]
 
 [[package]]
