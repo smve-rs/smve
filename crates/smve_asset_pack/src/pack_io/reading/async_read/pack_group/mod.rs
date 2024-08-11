@@ -387,8 +387,6 @@ impl AssetPackGroupReaderBuilder {
         self
     }
 
-    // TODO: Revise any owned type as keys in hashmaps, convert to box if needed
-
     /// Creates the [`AssetPackGroupReader`], consuming the builder.
     ///
     /// This will also write to the packs.toml file in the root directory to store information about enabled packs.
