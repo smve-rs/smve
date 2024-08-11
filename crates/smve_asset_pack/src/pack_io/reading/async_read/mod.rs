@@ -1,4 +1,6 @@
-//! API for reading asset pack files
+//! Async API for reading asset pack files
+//!
+//! If you need a blocking API, use the API at [`super`] instead.
 
 mod errors;
 mod file_reader;
@@ -101,9 +103,9 @@ impl AssetPackReader<BufReader<File>> {
 }
 
 impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
-    /// Creates a new [`AssetPackReader`] from a [`Read`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`AsyncRead`] and verifies it.
     ///
-    /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
+    /// **NOTE**: If your read type already implements [`AsyncBufRead`], use [`new`](Self::new) instead
     /// to avoid double buffering.
     ///
     /// # Parameters
@@ -121,9 +123,9 @@ impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
 }
 
 impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
-    /// Creates a new [`AssetPackReader`] from a [`BufRead`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`AsyncBufRead`] and verifies it.
     ///
-    /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
+    /// **NOTE**: If your type don't already implement [`AsyncBufRead`], use [`new_from_read`](Self::new_from_read) instead.
     ///
     /// # Parameters
     /// - `reader`: A buffered reader containing an asset pack.
