@@ -1,4 +1,6 @@
-//! API for reading asset pack files
+//! Blocking API for reading asset pack files
+//!
+//! If you are using this in a async context, use the API under [`async_read`] instead.
 
 #[cfg(feature = "async_read")]
 pub mod async_read;
