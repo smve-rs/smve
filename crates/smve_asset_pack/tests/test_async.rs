@@ -49,9 +49,11 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         reader
             .register_built_in_pack(
                 "builtin",
-                Cursor::new(include_bytes!(test_res!("built_in.smap"))),
+                AssetPackReader::new(Cursor::new(include_bytes!(test_res!("built_in.smap"))))
+                    .await?
+                    .box_reader(),
             )
-            .await?;
+            .await;
 
         // Test pack1 overriding pack2
         reader.load().await?;

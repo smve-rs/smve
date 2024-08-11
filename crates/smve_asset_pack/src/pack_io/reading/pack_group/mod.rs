@@ -133,39 +133,35 @@ impl AssetPackGroupReader {
         self.packs_changed = true;
     }
 
-    // TODO: Make this take in an asset pack reader instead
-
     /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
     /// disabled. This change will NOT be reflected until [`load`](Self::load) is called.
     ///
     /// # Parameters
     /// - `identifier`: A path (doesn't need to exist) that uniquely identifies this built-in pack.
-    /// - `reader`: Something that implements both [`Seek`] and [`BufRead`](std::io::BufRead) which contains the
-    ///   asset pack data. It is recommended that you directly embed this pack in the binary to
+    /// - `reader`: The reader for the asset pack. It is recommended that you directly embed this pack in the binary to
     ///   make it more difficult for users to change.
     ///
-    /// # Errors
-    /// This will fail if creating the asset pack reader fails (i.e. if the pack is invalid).
-    pub fn register_built_in_pack<R: 'static + SeekableBufRead>(
+    /// # Returns
+    /// This returns the existing asset pack at the identifier if it already exists.
+    pub fn register_built_in_pack(
         &mut self,
         identifier: impl AsRef<Path>,
-        reader: R,
-    ) -> ReadResult<()> {
+        reader: AssetPackReader<Box<dyn SeekableBufRead>>,
+    ) -> Option<AssetPackReader<Box<dyn SeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
-        if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
-            pack.pack_reader = Some(AssetPackReader::new(
-                Box::new(reader) as Box<dyn SeekableBufRead>
-            )?)
+        let old_pack = if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
+            let old_pack = pack.pack_reader.take();
+            pack.pack_reader = Some(reader);
+            old_pack
         } else {
             self.enabled_packs.push(EnabledPack {
                 path: path.clone(),
                 external: true,
-                pack_reader: Some(AssetPackReader::new(
-                    Box::new(reader) as Box<dyn SeekableBufRead>
-                )?),
+                pack_reader: Some(reader),
             });
-        }
+            None
+        };
         self.available_packs.insert(
             path,
             PackDescriptor {
@@ -177,20 +173,30 @@ impl AssetPackGroupReader {
 
         self.packs_changed = true;
 
-        Ok(())
+        old_pack
     }
 
     /// Remove a built-in asset pack registered through [`register_built_in_pack`](Self::register_built_in_pack).
     /// This change will not be reflected until [`load`](Self::load) is called.
     ///
     /// # Parameters
-    /// - `identifier`: The path that was passed into [`register_built_in_pack`](Self::register_built_in_pack).
-    pub fn remove_built_in_pack(&mut self, identifier: impl AsRef<Path>) {
+    /// - `identifier`: The path that was passed into [`register_built_in_pack`](Self::register_built_in_pack). (Does not begin with "/__built_in")
+    ///
+    /// # Returns
+    /// Returns the removed asset pack if any.
+    pub fn remove_built_in_pack(
+        &mut self,
+        identifier: impl AsRef<Path>,
+    ) -> Option<AssetPackReader<Box<dyn SeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
-        self.enabled_packs.retain(|p| p.path != path);
+        let old_pack_index = self.enabled_packs.iter().position(|p| p.path == path)?;
 
         self.available_packs.remove(&path);
+
+        self.packs_changed = true;
+
+        self.enabled_packs.remove(old_pack_index).pack_reader.take()
     }
 
     /// Register an asset pack that stays at the top of the precedence "ladder" and *cannot* be
