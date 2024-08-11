@@ -349,6 +349,8 @@ impl AssetPackGroupReader {
                 )
                 .await?;
 
+            packs_toml.flush().await?;
+
             self.packs_changed = false;
         }
 
