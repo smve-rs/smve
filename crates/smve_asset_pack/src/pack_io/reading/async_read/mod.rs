@@ -340,8 +340,8 @@ pub struct FileMeta {
     pub size: u64,
 }
 
-/// A marker trait automatically implemented for anything that implements both [`BufRead`] and
-/// [`Seek`].
+/// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+/// [`AsyncSeek`].
 pub trait AsyncSeekableBufRead: AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
 
 impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> AsyncSeekableBufRead for T {}

@@ -35,7 +35,7 @@ impl AssetPackGroupReader {
     ///
     /// # Errors
     /// This will error when encountering IO errors, toml deserialization errors and walkdir errors.
-    /// See [`ReadError`] for more information.
+    /// See [`ReadError`](super::ReadError) for more information.
     ///
     /// # Panics
     /// This panics when root_dir is not a directory.

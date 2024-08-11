@@ -86,7 +86,7 @@ impl AssetPackGroupReader {
     ///
     /// # Parameters
     /// - `packs`: An ordered slice of the Paths of the pack files. For built-in asset packs, start
-    ///   the path with "/__built_in" followed by the unique identifier you specified when
+    ///   the path with `/__built_in` followed by the unique identifier you specified when
     ///   registering it.
     ///
     /// # Information
@@ -141,7 +141,7 @@ impl AssetPackGroupReader {
     ///
     /// # Parameters
     /// - `identifier`: A path (doesn't need to exist) that uniquely identifies this built-in pack.
-    /// - `reader`: Something that implements both [`Seek`] and [`BufRead`](std::io::BufRead) which contains the
+    /// - `reader`: Something that implements both [`AsyncSeek`](futures_lite::AsyncSeek) and [`AsyncBufRead`](futures_lite::AsyncBufRead) which contains the
     ///   asset pack data. It is recommended that you directly embed this pack in the binary to
     ///   make it more difficult for users to change.
     ///
