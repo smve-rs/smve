@@ -1,19 +1,22 @@
 //! Utilities for reading an asset pack group.
 
+use async_fs::{File, OpenOptions};
+use futures_lite::io::BufReader;
+use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use log::{error, warn};
 use pathdiff::diff_paths;
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 
 use walkdir::WalkDir;
 
-use crate::pack_io::reading::pack_group::serde::{EnabledPack, EnabledPacks};
-use crate::pack_io::reading::ReadError::FileNotFound;
-use crate::pack_io::reading::{AssetFileReader, AssetPackReader, ReadResult};
+use crate::pack_io::reading::async_read::pack_group::serde::{EnabledPack, EnabledPacks};
+use crate::pack_io::reading::async_read::{
+    AssetFileReader, AssetPackReader, ReadError, ReadResult,
+};
 
-use super::SeekableBufRead;
+use super::AsyncSeekableBufRead;
 
 mod serde;
 
@@ -38,8 +41,8 @@ impl AssetPackGroupReader {
     ///
     /// # Panics
     /// This panics when root_dir is not a directory.
-    pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
-        AssetPackGroupReaderBuilder::new(root_dir)?.build()
+    pub async fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
+        AssetPackGroupReaderBuilder::new(root_dir)?.build().await
     }
 
     /// Returns the list of enabled packs, with the first pack having the most precedence.
@@ -55,13 +58,13 @@ impl AssetPackGroupReader {
     }
 
     /// Returns an asset file reader for a specific file.
-    pub fn get_file_reader(
+    pub async fn get_file_reader(
         &mut self,
         file_path: &str,
-    ) -> ReadResult<AssetFileReader<Box<dyn SeekableBufRead>>> {
+    ) -> ReadResult<AssetFileReader<Box<dyn AsyncSeekableBufRead>>> {
         let index = self.file_name_to_asset_pack.get(file_path);
         if index.is_none() {
-            return Err(FileNotFound(file_path.into()));
+            return Err(ReadError::FileNotFound(file_path.into()));
         }
 
         let pack_reader = self
@@ -72,7 +75,7 @@ impl AssetPackGroupReader {
             .as_mut()
             .unwrap();
 
-        pack_reader.get_file_reader(file_path)
+        pack_reader.get_file_reader(file_path).await
     }
 
     /// Sets the order of enabled packs, as well as enabling new packs and disabling them.
@@ -140,7 +143,7 @@ impl AssetPackGroupReader {
     ///
     /// # Errors
     /// This will fail if creating the asset pack reader fails (i.e. if the pack is invalid).
-    pub fn register_built_in_pack<R: 'static + SeekableBufRead>(
+    pub async fn register_built_in_pack<R: 'static + AsyncSeekableBufRead>(
         &mut self,
         identifier: impl AsRef<Path>,
         reader: R,
@@ -148,16 +151,15 @@ impl AssetPackGroupReader {
         let path = Path::new("/__built_in").join(identifier);
 
         if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
-            pack.pack_reader = Some(AssetPackReader::new(
-                Box::new(reader) as Box<dyn SeekableBufRead>
-            )?)
+            pack.pack_reader =
+                Some(AssetPackReader::new(Box::new(reader) as Box<dyn AsyncSeekableBufRead>).await?)
         } else {
             self.enabled_packs.push(EnabledPack {
                 path: path.clone(),
                 external: true,
-                pack_reader: Some(AssetPackReader::new(
-                    Box::new(reader) as Box<dyn SeekableBufRead>
-                )?),
+                pack_reader: Some(
+                    AssetPackReader::new(Box::new(reader) as Box<dyn AsyncSeekableBufRead>).await?,
+                ),
             });
         }
         self.available_packs.insert(
@@ -194,7 +196,7 @@ impl AssetPackGroupReader {
     ///
     /// # Errors
     /// This will return an error when encountering IO errors.
-    pub fn load(&mut self) -> ReadResult<()> {
+    pub async fn load(&mut self) -> ReadResult<()> {
         // Rediscover packs
         self.available_packs
             .retain(|path, _| path.starts_with("/__built_in"));
@@ -251,6 +253,8 @@ impl AssetPackGroupReader {
                     available_pack.enabled = true;
                 }
 
+                log::error!("pack: {:?}", pack);
+
                 if pack.pack_reader.is_none() {
                     let absolute_path = if pack.path.is_absolute() {
                         &pack.path
@@ -258,15 +262,16 @@ impl AssetPackGroupReader {
                         &self.root_dir.join(&pack.path)
                     };
 
-                    let pack_file = File::open(absolute_path)?;
+                    // FIXME: problem here
+                    let pack_file = File::open(absolute_path).await?;
                     let buf_reader = BufReader::new(pack_file);
-                    let boxed_buf_reader = Box::new(buf_reader) as Box<dyn SeekableBufRead>;
+                    let boxed_buf_reader = Box::new(buf_reader) as Box<dyn AsyncSeekableBufRead>;
 
-                    pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader)?);
+                    pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader).await?);
                 }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
-                let pack_front = pack_reader.get_pack_front()?;
+                let pack_front = pack_reader.get_pack_front().await?;
                 let toc = &pack_front.toc;
 
                 for key in toc.keys() {
@@ -281,13 +286,16 @@ impl AssetPackGroupReader {
                 .create(true)
                 .write(true)
                 .truncate(true)
-                .open(self.root_dir.join("packs.toml"))?;
+                .open(self.root_dir.join("packs.toml"))
+                .await?;
 
-            packs_toml.write_all(
-                toml::to_string_pretty(&self.enabled_packs)
-                    .unwrap()
-                    .as_bytes(),
-            )?;
+            packs_toml
+                .write_all(
+                    toml::to_string_pretty(&self.enabled_packs)
+                        .unwrap()
+                        .as_bytes(),
+                )
+                .await?;
 
             self.packs_changed = false;
         }
@@ -295,6 +303,7 @@ impl AssetPackGroupReader {
         Ok(())
     }
 
+    // TODO: Use async walkdir instead
     fn get_packs_from_dir(
         available_packs: &mut HashMap<PathBuf, PackDescriptor>,
         root_dir: &Path,
@@ -389,26 +398,27 @@ impl AssetPackGroupReaderBuilder {
     ///
     /// # Errors
     /// This will yield an error if encountering IO errors.
-    pub fn build(self) -> ReadResult<AssetPackGroupReader> {
+    pub async fn build(self) -> ReadResult<AssetPackGroupReader> {
         let mut packs_toml = OpenOptions::new()
             .create(true)
             .write(true)
             .read(true)
             .truncate(false)
-            .open(self.root_dir.join("packs.toml"))?;
+            .open(self.root_dir.join("packs.toml"))
+            .await?;
 
         // Check if file is empty
-        packs_toml.seek(SeekFrom::End(0))?;
-        let enabled_packs = if packs_toml.stream_position()? == 0 {
+        packs_toml.seek(SeekFrom::End(0)).await?;
+        let enabled_packs = if packs_toml.seek(SeekFrom::Current(0)).await? == 0 {
             // File is empty:
             // It does not currently write anything to the file, as that will happen later
             EnabledPacks::default()
         } else {
             // File isn't empty
-            packs_toml.seek(SeekFrom::Start(0))?;
+            packs_toml.seek(SeekFrom::Start(0)).await?;
 
             let mut opened_packs_str = String::new();
-            packs_toml.read_to_string(&mut opened_packs_str)?;
+            packs_toml.read_to_string(&mut opened_packs_str).await?;
 
             let enabled_packs: EnabledPacks = toml::from_str(&opened_packs_str)?;
 

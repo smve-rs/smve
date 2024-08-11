@@ -1,22 +1,23 @@
-use crate::pack_io::reading::flags::is_unique;
-use crate::pack_io::reading::{DirectFileReader, FileMeta, ReadError, ReadResult};
+use crate::pack_io::reading::async_read::flags::is_unique;
+use crate::pack_io::reading::async_read::{DirectFileReader, FileMeta, ReadError, ReadResult};
+use async_fs::File;
 use blake3::{hash, Hasher};
+use futures_lite::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeekExt};
 use indexmap::IndexMap;
 use lz4::Decoder;
 use std::collections::HashMap;
-use std::fs::File;
 use std::io;
-use std::io::{BufRead, Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 use super::utils::{read_bytes, read_bytes_and_hash};
 
-pub fn validate_header<R>(buf_reader: &mut R) -> ReadResult<()>
+pub async fn validate_header<R>(reader: &mut R) -> ReadResult<()>
 where
-    R: Read + Seek,
+    R: AsyncReadExt + AsyncSeekExt + Unpin,
 {
-    buf_reader.seek(SeekFrom::Start(0))?;
+    reader.seek(SeekFrom::Start(0)).await?;
 
-    let header = read_bytes!(buf_reader, 4)?;
+    let header = read_bytes!(reader, 4)?;
 
     if &header != b"SMAP" {
         return Err(ReadError::InvalidPackFile);
@@ -25,7 +26,10 @@ where
     Ok(())
 }
 
-pub fn validate_version(buf_reader: &mut impl Read) -> ReadResult<u16> {
+pub async fn validate_version<R>(buf_reader: &mut R) -> ReadResult<u16>
+where
+    R: AsyncReadExt + AsyncSeekExt + Unpin,
+{
     let version = u16::from_be_bytes(read_bytes!(buf_reader, 2)?);
 
     if version != 1 {
@@ -35,7 +39,7 @@ pub fn validate_version(buf_reader: &mut impl Read) -> ReadResult<u16> {
     Ok(version)
 }
 
-pub fn read_toc<R: BufRead>(
+pub async fn read_toc<R: AsyncBufReadExt + Unpin>(
     pack_reader: &mut R,
     expected_toc_hash: &[u8],
 ) -> ReadResult<(IndexMap<String, FileMeta>, HashMap<String, FileMeta>)> {
@@ -45,12 +49,12 @@ pub fn read_toc<R: BufRead>(
     let mut unique_files = HashMap::new();
 
     loop {
-        let file_name = read_file_name(pack_reader, &mut toc_hasher)?;
+        let file_name = read_file_name(pack_reader, &mut toc_hasher).await?;
         if file_name.is_none() {
             break;
         }
 
-        let file_meta = read_file_meta(pack_reader, &mut toc_hasher)?;
+        let file_meta = read_file_meta(pack_reader, &mut toc_hasher).await?;
 
         if is_unique(file_meta.flags) {
             let file_name = file_name.unwrap();
@@ -71,12 +75,12 @@ pub fn read_toc<R: BufRead>(
     Ok((toc, unique_files))
 }
 
-pub fn read_file_name<R: BufRead>(
+pub async fn read_file_name<R: AsyncBufReadExt + Unpin>(
     pack_reader: &mut R,
     toc_hasher: &mut Hasher,
 ) -> ReadResult<Option<String>> {
     let mut file_name = vec![];
-    pack_reader.read_until(b'\x00', &mut file_name)?;
+    pack_reader.read_until(b'\x00', &mut file_name).await?;
     toc_hasher.update(&file_name);
 
     if file_name.last() == Some(&0) {
@@ -100,7 +104,7 @@ pub fn read_file_name<R: BufRead>(
     Ok(Some(file_name))
 }
 
-pub fn read_file_meta<R: Read>(
+pub async fn read_file_meta<R: AsyncReadExt + Unpin>(
     pack_reader: &mut R,
     toc_hasher: &mut Hasher,
 ) -> ReadResult<FileMeta> {
@@ -121,7 +125,7 @@ pub fn read_file_meta<R: Read>(
     })
 }
 
-pub fn read_dl<R: BufRead>(
+pub async fn read_dl<R: AsyncBufReadExt + Unpin>(
     pack_reader: &mut R,
     expected_dl_hash: &[u8],
 ) -> ReadResult<Vec<String>> {
@@ -129,7 +133,7 @@ pub fn read_dl<R: BufRead>(
     let mut dl = vec![];
 
     loop {
-        let directory_name = read_dl_entry(pack_reader, &mut dl_hasher)?;
+        let directory_name = read_dl_entry(pack_reader, &mut dl_hasher).await?;
         if directory_name.is_none() {
             break;
         }
@@ -145,12 +149,12 @@ pub fn read_dl<R: BufRead>(
     Ok(dl)
 }
 
-pub fn read_dl_entry<R: BufRead>(
+pub async fn read_dl_entry<R: AsyncBufReadExt + Unpin>(
     pack_reader: &mut R,
     dl_hasher: &mut Hasher,
 ) -> ReadResult<Option<String>> {
     let mut directory_name = vec![];
-    pack_reader.read_until(b'\x00', &mut directory_name)?;
+    pack_reader.read_until(b'\x00', &mut directory_name).await?;
     dl_hasher.update(&directory_name);
     if directory_name.last() == Some(&0) {
         directory_name.pop();
@@ -173,25 +177,25 @@ pub fn read_dl_entry<R: BufRead>(
     Ok(Some(directory_name))
 }
 
-pub fn validate_files<R: Read + Seek>(
+pub async fn validate_files<R: AsyncReadExt + AsyncSeekExt + Unpin>(
     pack_reader: &mut R,
     toc: &mut IndexMap<String, FileMeta>,
     unique_files: &mut HashMap<String, FileMeta>,
 ) -> ReadResult<()> {
-    let file_data_start = pack_reader.stream_position()?;
+    let file_data_start = pack_reader.seek(SeekFrom::Current(0)).await?;
 
     for (path, meta) in toc {
-        validate_file(meta, file_data_start, pack_reader, path)?;
+        validate_file(meta, file_data_start, pack_reader, path).await?;
     }
 
     for (path, meta) in unique_files {
-        validate_file(meta, file_data_start, pack_reader, path)?;
+        validate_file(meta, file_data_start, pack_reader, path).await?;
     }
 
     Ok(())
 }
 
-pub fn validate_file<R: Read + Seek>(
+pub async fn validate_file<R: AsyncReadExt + AsyncSeekExt + Unpin>(
     file_meta: &mut FileMeta,
     file_data_start: u64,
     pack_reader: &mut R,
@@ -199,12 +203,12 @@ pub fn validate_file<R: Read + Seek>(
 ) -> ReadResult<()> {
     file_meta.offset += file_data_start;
 
-    let mut reader = DirectFileReader::new(pack_reader, *file_meta)?;
+    let mut reader = DirectFileReader::new(pack_reader, *file_meta).await?;
 
-    reader.rewind()?;
+    reader.seek(SeekFrom::Start(0)).await?;
 
     let mut file_data = vec![];
-    reader.read_to_end(&mut file_data)?;
+    reader.read_to_end(&mut file_data).await?;
 
     let hash = hash(file_data.as_slice());
 
@@ -235,13 +239,16 @@ pub fn get_dir_start_indices(
     dir_start_indices
 }
 
-pub fn decompress<R>(file_reader: R) -> io::Result<File>
+pub async fn decompress<R>(mut file_reader: R) -> io::Result<File>
 where
-    R: Read,
+    R: AsyncRead + Unpin,
 {
-    let mut decoder = Decoder::new(file_reader)?;
+    let mut buf = vec![];
+    file_reader.read_to_end(&mut buf).await?;
+
+    let mut decoder = Decoder::new(buf.as_slice())?;
     let mut output_file = tempfile::tempfile()?;
     io::copy(&mut decoder, &mut output_file)?;
 
-    Ok(output_file)
+    Ok(output_file.into())
 }

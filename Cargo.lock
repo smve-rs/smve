@@ -303,6 +303,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-io"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d6baa8f0178795da0e71bc42c9e5d13261aac7ee549853162e66a241ba17964"
+dependencies = [
+ "async-lock",
+ "cfg-if",
+ "concurrent-queue",
+ "futures-io",
+ "futures-lite",
+ "parking",
+ "polling",
+ "rustix",
+ "slab",
+ "tracing",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "async-lock"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3553,9 +3572,12 @@ dependencies = [
 name = "smve_asset_pack"
 version = "0.1.0"
 dependencies = [
+ "async-fs",
+ "async-io",
  "blake3",
  "downcast-rs",
  "env_logger",
+ "futures-lite",
  "glob",
  "ignore",
  "indexmap",

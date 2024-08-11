@@ -1,7 +1,5 @@
 //! API for reading asset pack files
 
-#[cfg(feature = "async_read")]
-pub mod async_read;
 mod errors;
 mod file_reader;
 pub mod flags;
@@ -13,20 +11,22 @@ mod utils;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
-use read_steps::validate_header;
-use utils::read_bytes;
 
-use crate::pack_io::reading::read_steps::{
-    get_dir_start_indices, read_dl, read_toc, validate_files, validate_version,
+use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
+use futures_lite::{AsyncRead, AsyncReadExt, AsyncSeekExt};
+use read_steps::{
+    get_dir_start_indices, read_dl, read_toc, validate_files, validate_header, validate_version,
 };
+
+use async_fs::File;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 use std::path::Path;
+use utils::read_bytes;
 
-/// Create an instance of this struct to read an asset pack.
+/// Create an instance of this struct to asynchronously read an asset pack.
 ///
 /// **Note that**: many functions from this struct automatically loads the pack front if it hasn't
 /// been loaded yet. So when these functions are called for the first time, they will take more
@@ -35,45 +35,45 @@ use std::path::Path;
 /// # Examples
 /// * Read the pack front from the asset pack:
 /// ```no_run
-/// use smve_asset_pack::pack_io::reading::AssetPackReader;
+/// use smve_asset_pack::pack_io::reading::async_read::AssetPackReader;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let pack_front = pack_reader.get_pack_front()?;
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").await?;
+/// let pack_front = pack_reader.get_pack_front().await?;
 /// let toc = &pack_front.toc;
 /// let directories = &pack_front.directory_list;
-/// # Ok(()) }
+/// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
 /// ```
 ///
 /// * Read a file from the asset pack:
 /// ```no_run
-/// use smve_asset_pack::pack_io::reading::AssetPackReader;
+/// use smve_asset_pack::pack_io::reading::async_read::AssetPackReader;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let file_reader = pack_reader.get_file_reader("path/to/file.txt")?;
-/// # Ok(()) }
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").await?;
+/// let file_reader = pack_reader.get_file_reader("path/to/file.txt").await?;
+/// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
 /// ```
 ///
 /// * Read asset pack from memory:
 /// ```no_run
-/// use smve_asset_pack::pack_io::reading::AssetPackReader;
-/// use std::io::Cursor;
+/// use smve_asset_pack::pack_io::reading::async_read::AssetPackReader;
+/// use futures_lite::io::Cursor;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01..."))?;
-/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt")?;
-/// # Ok(()) }
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01...")).await?;
+/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt").await?;
+/// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
 /// ```
 /// See also [`AssetFileReader`].
 #[non_exhaustive]
-pub struct AssetPackReader<R: SeekableBufRead> {
+pub struct AssetPackReader<R: AsyncSeekableBufRead> {
     reader: R,
     pack_front_cache: Option<PackFront>,
     version: u16,
 }
 
-impl<R: SeekableBufRead> Debug for AssetPackReader<R> {
+impl<R: AsyncSeekableBufRead> Debug for AssetPackReader<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AssetPackReader")
             .field("version", &self.version)
@@ -91,16 +91,16 @@ impl AssetPackReader<BufReader<File>> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
+    pub async fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
         let pack_path = pack_path.as_ref();
 
-        let file = File::open(pack_path)?;
+        let file = File::open(pack_path).await?;
 
-        Self::new_from_read(file)
+        Self::new_from_read(file).await
     }
 }
 
-impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
+impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
     /// Creates a new [`AssetPackReader`] from a [`Read`] and verifies it.
     ///
     /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
@@ -113,14 +113,14 @@ impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new_from_read(reader: R) -> ReadResult<Self> {
+    pub async fn new_from_read(reader: R) -> ReadResult<Self> {
         let buf_reader = BufReader::new(reader);
 
-        Self::new(buf_reader)
+        Self::new(buf_reader).await
     }
 }
 
-impl<R: SeekableBufRead> AssetPackReader<R> {
+impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     /// Creates a new [`AssetPackReader`] from a [`BufRead`] and verifies it.
     ///
     /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
@@ -132,10 +132,10 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new(mut reader: R) -> ReadResult<Self> {
-        validate_header(&mut reader)?;
+    pub async fn new(mut reader: R) -> ReadResult<Self> {
+        validate_header(&mut reader).await?;
 
-        let version = validate_version(&mut reader)?;
+        let version = validate_version(&mut reader).await?;
 
         Ok(Self {
             reader,
@@ -159,20 +159,20 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See also
     /// [`PackFront`]
-    pub fn get_pack_front(&mut self) -> ReadResult<&PackFront> {
+    pub async fn get_pack_front(&mut self) -> ReadResult<&PackFront> {
         if self.pack_front_cache.is_some() {
             return Ok(self.pack_front_cache.as_ref().unwrap());
         }
 
-        self.reader.seek(SeekFrom::Start(6))?;
+        self.reader.seek(SeekFrom::Start(6)).await?;
 
         let expected_toc_hash = read_bytes!(self.reader, 32)?;
         let expected_dl_hash = read_bytes!(self.reader, 32)?;
 
-        let (mut toc, mut unique_files) = read_toc(&mut self.reader, &expected_toc_hash)?;
-        let dl = read_dl(&mut self.reader, &expected_dl_hash)?;
+        let (mut toc, mut unique_files) = read_toc(&mut self.reader, &expected_toc_hash).await?;
+        let dl = read_dl(&mut self.reader, &expected_dl_hash).await?;
 
-        validate_files(&mut self.reader, &mut toc, &mut unique_files)?;
+        validate_files(&mut self.reader, &mut toc, &mut unique_files).await?;
 
         let dl = get_dir_start_indices(&dl, &toc);
 
@@ -197,17 +197,17 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
-        let toc = &self.get_pack_front()?.toc;
+    pub async fn get_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
+        let toc = &self.get_pack_front().await?.toc;
         let meta = toc.get(path);
         if meta.is_none() {
             return Err(ReadError::FileNotFound(path.into()));
         }
         let meta = *meta.unwrap();
 
-        let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
+        let file_reader = DirectFileReader::new(&mut self.reader, meta).await?;
 
-        AssetFileReader::new(file_reader, meta)
+        AssetFileReader::new(file_reader, meta).await
     }
 
     /// Returns a [`DirectFileReader`] for a specified pack-unique file.
@@ -221,17 +221,17 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
-    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
-        let unique_files = &self.get_pack_front()?.unique_files;
+    pub async fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
+        let unique_files = &self.get_pack_front().await?.unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
             return Err(ReadError::UniqueFileNotFound(path.into()));
         }
         let meta = *meta.unwrap();
 
-        let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
+        let file_reader = DirectFileReader::new(&mut self.reader, meta).await?;
 
-        AssetFileReader::new(file_reader, meta)
+        AssetFileReader::new(file_reader, meta).await
     }
 
     /// Checks if a file exists in the asset pack.
@@ -242,8 +242,8 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// # Errors
     /// Returns an error if it fails to read the pack front.
     /// See also [`ReadError`].
-    pub fn has_file(&mut self, path: &str) -> ReadResult<bool> {
-        let toc = &self.get_pack_front()?.toc;
+    pub async fn has_file(&mut self, path: &str) -> ReadResult<bool> {
+        let toc = &self.get_pack_front().await?.toc;
         let meta = toc.get(path);
         Ok(meta.is_some())
     }
@@ -259,8 +259,8 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub fn get_flags(&mut self, path: &str) -> ReadResult<u8> {
-        let toc = &self.get_pack_front()?.toc;
+    pub async fn get_flags(&mut self, path: &str) -> ReadResult<u8> {
+        let toc = &self.get_pack_front().await?.toc;
         let meta = toc.get(path);
         if meta.is_none() {
             return Err(ReadError::FileNotFound(path.into()));
@@ -281,8 +281,8 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// # Errors
     /// Returns an error if getting the pack_front fails.
     /// See also [`ReadError`]
-    pub fn has_directory(&mut self, path: &str) -> ReadResult<bool> {
-        let pack_front = self.get_pack_front()?;
+    pub async fn has_directory(&mut self, path: &str) -> ReadResult<bool> {
+        let pack_front = self.get_pack_front().await?;
 
         Ok(pack_front.directory_list.contains_key(path))
     }
@@ -327,6 +327,6 @@ pub struct FileMeta {
 
 /// A marker trait automatically implemented for anything that implements both [`BufRead`] and
 /// [`Seek`].
-pub trait SeekableBufRead: Seek + BufRead {}
+pub trait AsyncSeekableBufRead: AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
 
-impl<T: BufRead + Seek> SeekableBufRead for T {}
+impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> AsyncSeekableBufRead for T {}

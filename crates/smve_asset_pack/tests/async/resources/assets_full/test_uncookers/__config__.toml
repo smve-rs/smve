@@ -1,0 +1,5 @@
+["custom/**/*.txt".uncooker]
+uncooker_path = "test_async::common::EUncooker"
+
+["normal/*.txt".uncooker]
+uncooker_path = "smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker"

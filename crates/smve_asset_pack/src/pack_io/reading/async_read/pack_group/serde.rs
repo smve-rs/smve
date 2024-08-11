@@ -1,4 +1,4 @@
-use crate::pack_io::reading::{AssetPackReader, SeekableBufRead};
+use crate::pack_io::reading::async_read::{AssetPackReader, AsyncSeekableBufRead};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
@@ -15,7 +15,7 @@ pub struct EnabledPack {
     pub path: PathBuf,
     pub external: bool,
     #[serde(skip)]
-    pub pack_reader: Option<AssetPackReader<Box<dyn SeekableBufRead>>>,
+    pub pack_reader: Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>>,
 }
 
 impl FromIterator<EnabledPack> for EnabledPacks {
