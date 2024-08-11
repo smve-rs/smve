@@ -290,6 +290,19 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     }
 }
 
+impl<R: AsyncSeekableBufRead + 'static> AssetPackReader<R> {
+    /// Converts the inner reader of an asset pack to a boxed generic reader.
+    pub fn box_reader(self) -> AssetPackReader<Box<dyn AsyncSeekableBufRead>> {
+        let boxed_reader = Box::new(self.reader) as Box<dyn AsyncSeekableBufRead>;
+
+        AssetPackReader {
+            reader: boxed_reader,
+            pack_front_cache: self.pack_front_cache,
+            version: self.version,
+        }
+    }
+}
+
 /// Stores the sections making up the Pack Front.
 ///
 /// The Pack Front consists of the Table of Contents, Directory List, and the Metadata.

@@ -23,10 +23,11 @@ pub struct AssetPackGroupReader {
     /// This does not include built-in packs
     available_packs: HashMap<PathBuf, PackDescriptor>,
     external_packs: Vec<PathBuf>,
-    file_name_to_asset_pack: HashMap<Box<str>, usize>,
+    file_name_to_asset_pack: HashMap<Box<str>, PackIndex>,
     packs_changed: bool,
     pack_extension: &'static str,
     root_dir: PathBuf,
+    override_pack: Option<AssetPackReader<Box<dyn SeekableBufRead>>>,
 }
 
 impl AssetPackGroupReader {
@@ -64,13 +65,16 @@ impl AssetPackGroupReader {
             return Err(FileNotFound(file_path.into()));
         }
 
-        let pack_reader = self
-            .enabled_packs
-            .get_mut(*index.unwrap())
-            .unwrap()
-            .pack_reader
-            .as_mut()
-            .unwrap();
+        let pack_reader = match index.unwrap() {
+            PackIndex::Enabled(i) => self
+                .enabled_packs
+                .get_mut(*i)
+                .unwrap()
+                .pack_reader
+                .as_mut()
+                .unwrap(),
+            PackIndex::OverridePack => self.override_pack.as_mut().unwrap(),
+        };
 
         pack_reader.get_file_reader(file_path)
     }
@@ -129,6 +133,8 @@ impl AssetPackGroupReader {
         self.packs_changed = true;
     }
 
+    // TODO: Make this take in an asset pack reader instead
+
     /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
     /// disabled. This change will NOT be reflected until [`load`](Self::load) is called.
     ///
@@ -185,6 +191,42 @@ impl AssetPackGroupReader {
         self.enabled_packs.retain(|p| p.path != path);
 
         self.available_packs.remove(&path);
+    }
+
+    /// Register an asset pack that stays at the top of the precedence "ladder" and *cannot* be
+    /// disabled.
+    ///
+    /// This is useful for assets which you don't want users to mod.
+    ///
+    /// These changes will **NOT** be reflected until [`load`](Self::load) is called.
+    ///
+    /// # Parameters
+    /// - `reader`: An asset pack reader reading the override pack.
+    ///
+    /// # Returns
+    /// The old override pack if it already exists, [`None`] otherwise.
+    pub fn set_override_pack(
+        &mut self,
+        reader: AssetPackReader<Box<dyn SeekableBufRead>>,
+    ) -> Option<AssetPackReader<Box<dyn SeekableBufRead>>> {
+        let existing = self.override_pack.take();
+
+        self.override_pack = Some(reader);
+
+        self.packs_changed = true;
+
+        existing
+    }
+
+    /// Removes the registered override pack.
+    pub fn remove_override_pack(&mut self) -> Option<AssetPackReader<Box<dyn SeekableBufRead>>> {
+        let old = self.override_pack.take();
+
+        if old.is_some() {
+            self.packs_changed = true;
+        }
+
+        old
     }
 
     /// Rediscovers all available packs, along with rebuilding the index if the enabled packs has
@@ -246,6 +288,15 @@ impl AssetPackGroupReader {
         if self.packs_changed {
             self.file_name_to_asset_pack.clear();
 
+            // Add override files
+            if let Some(ref mut override_pack) = self.override_pack {
+                let toc = &override_pack.get_pack_front()?.toc;
+                for key in toc.keys() {
+                    self.file_name_to_asset_pack
+                        .insert(Box::from(key.as_str()), PackIndex::OverridePack);
+                }
+            }
+
             for (index, pack) in self.enabled_packs.packs.iter_mut().enumerate() {
                 if let Some(available_pack) = self.available_packs.get_mut(&pack.path) {
                     available_pack.enabled = true;
@@ -272,7 +323,7 @@ impl AssetPackGroupReader {
                 for key in toc.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
-                            .insert(Box::from(key.as_str()), index);
+                            .insert(Box::from(key.as_str()), PackIndex::Enabled(index));
                     }
                 }
             }
@@ -325,6 +376,8 @@ impl AssetPackGroupReader {
         Ok(())
     }
 }
+
+// TODO: Add builder logic directly to the reader
 
 /// A builder for [`AssetPackGroupReader`].
 ///
@@ -421,6 +474,7 @@ impl AssetPackGroupReaderBuilder {
             packs_changed: true,
             pack_extension: self.pack_extension,
             root_dir: self.root_dir,
+            override_pack: None,
         })
     }
 }
@@ -434,4 +488,9 @@ pub struct PackDescriptor {
     pub is_external: bool,
     /// If the pack is built in
     pub is_built_in: bool,
+}
+
+enum PackIndex {
+    Enabled(usize),
+    OverridePack,
 }
