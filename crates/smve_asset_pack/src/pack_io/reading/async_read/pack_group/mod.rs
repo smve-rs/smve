@@ -43,7 +43,71 @@ impl AssetPackGroupReader {
     /// # Panics
     /// This panics when root_dir is not a directory.
     pub async fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
-        AssetPackGroupReaderBuilder::new(root_dir)?.build().await
+        let root_dir = root_dir.as_ref();
+
+        if !root_dir.is_dir() {
+            panic!("{} is not a directory!", root_dir.display());
+        }
+
+        let mut packs_toml = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .read(true)
+            .truncate(false)
+            .open(root_dir.join("packs.toml"))
+            .await?;
+
+        // Check if file is empty
+        packs_toml.seek(SeekFrom::End(0)).await?;
+        let enabled_packs = if packs_toml.seek(SeekFrom::Current(0)).await? == 0 {
+            // File is empty:
+            // It does not currently write anything to the file, as that will happen later
+            EnabledPacks::default()
+        } else {
+            // File isn't empty
+            packs_toml.seek(SeekFrom::Start(0)).await?;
+
+            let mut opened_packs_str = String::new();
+            packs_toml.read_to_string(&mut opened_packs_str).await?;
+
+            let enabled_packs: EnabledPacks = toml::from_str(&opened_packs_str)?;
+
+            enabled_packs
+        };
+
+        Ok(Self {
+            enabled_packs,
+            external_packs: vec![],
+            available_packs: HashMap::new(),
+            file_name_to_asset_pack: HashMap::new(),
+            packs_changed: true,
+            pack_extension: "smap",
+            root_dir: root_dir.into(),
+            override_pack: None,
+        })
+    }
+
+    /// Sets the extension of pack files to look for.
+    ///
+    /// Note that this change will not be reflected until [`Self::load`] is called.
+    pub fn set_pack_extension(&mut self, ext: &'static str) {
+        self.pack_extension = ext;
+    }
+
+    /// Adds an external pack source to the reader.
+    ///
+    /// Note that this function simply registers the path as an external pack source. It does not
+    /// check the validity of the path. The path will only be processed after
+    /// [`load`](AssetPackGroupReader::load) is called on the reader.
+    ///
+    /// # Parameters
+    /// - `path`: **This needs to be relative to the working directory of the application.**
+    ///   Can be either a directory or a file. If it is a directory, when
+    ///   [`load`](AssetPackGroupReader::load) is called, any file in the directory with the
+    ///   correct extension will be marked as an available pack. If it is a file, it will be read
+    ///   as a pack file regardless of the extension.
+    pub fn add_external_pack(&mut self, path: impl AsRef<Path>) {
+        self.external_packs.push(path.as_ref().into());
     }
 
     /// Returns the list of enabled packs, with the first pack having the most precedence.
@@ -83,6 +147,8 @@ impl AssetPackGroupReader {
     }
 
     /// Sets the order of enabled packs, as well as enabling new packs and disabling them.
+    ///
+    /// Note that this change will not be reflected until [`Self::load`] is called.
     ///
     /// # Parameters
     /// - `packs`: An ordered slice of the Paths of the pack files. For built-in asset packs, start
@@ -228,6 +294,8 @@ impl AssetPackGroupReader {
     }
 
     /// Removes the registered override pack.
+    ///
+    /// Note that these changes will not be reflected until [`Self::load`] is called.
     pub fn remove_override_pack(
         &mut self,
     ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
@@ -394,107 +462,6 @@ impl AssetPackGroupReader {
         }
 
         Ok(())
-    }
-}
-
-/// A builder for [`AssetPackGroupReader`].
-///
-/// It allows specifying a custom pack extension, and other packs that are not part of the root directory.
-pub struct AssetPackGroupReaderBuilder {
-    external_packs: Vec<PathBuf>,
-    pack_extension: &'static str,
-    root_dir: PathBuf,
-}
-
-impl AssetPackGroupReaderBuilder {
-    /// Creates a new builder with the default extension of `.smap`.
-    pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
-        let root_dir = root_dir.as_ref();
-
-        if !root_dir.is_dir() {
-            panic!("{} is not a directory!", root_dir.display());
-        }
-
-        Ok(Self {
-            external_packs: vec![],
-            pack_extension: "smap",
-            root_dir: root_dir.into(),
-        })
-    }
-
-    /// Specify a custom pack extension.
-    pub fn with_extension(&mut self, extension: &'static str) -> &mut Self {
-        self.pack_extension = extension;
-
-        self
-    }
-
-    /// Adds an external pack source to the reader.
-    ///
-    /// Note that this function simply registers the path as an external pack source. It does not
-    /// check the validity of the path. The path will only be processed after
-    /// [`load`](AssetPackGroupReader::load) is called on the built reader.
-    ///
-    /// # Parameters
-    /// - `path`: **This needs to be relative to the working directory of the application.**
-    ///   Can be either a directory or a file. If it is a directory, when
-    ///   [`load`](AssetPackGroupReader::load) is called, any file in the directory with the
-    ///   correct extension will be marked as an available pack. If it is a file, it will be read
-    ///   as a pack file regardless of the extension.
-    pub fn add_external_pack(&mut self, path: impl AsRef<Path>) -> &mut Self {
-        let path = path.as_ref();
-
-        self.external_packs.push(path.into());
-
-        self
-    }
-
-    /// Creates the [`AssetPackGroupReader`], consuming the builder.
-    ///
-    /// This will also write to the packs.toml file in the root directory to store information about enabled packs.
-    ///
-    /// # Panics
-    /// This will panic if root_dir is not a directory.
-    ///
-    /// # Errors
-    /// This will yield an error if encountering IO errors.
-    pub async fn build(self) -> ReadResult<AssetPackGroupReader> {
-        let mut packs_toml = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .read(true)
-            .truncate(false)
-            .open(self.root_dir.join("packs.toml"))
-            .await?;
-
-        // Check if file is empty
-        packs_toml.seek(SeekFrom::End(0)).await?;
-        let enabled_packs = if packs_toml.seek(SeekFrom::Current(0)).await? == 0 {
-            // File is empty:
-            // It does not currently write anything to the file, as that will happen later
-            EnabledPacks::default()
-        } else {
-            // File isn't empty
-            packs_toml.seek(SeekFrom::Start(0)).await?;
-
-            let mut opened_packs_str = String::new();
-            packs_toml.read_to_string(&mut opened_packs_str).await?;
-
-            let enabled_packs: EnabledPacks = toml::from_str(&opened_packs_str)?;
-
-            enabled_packs
-        };
-
-        Ok(AssetPackGroupReader {
-            enabled_packs,
-            external_packs: vec![],
-            available_packs: HashMap::new(),
-            file_name_to_asset_pack: HashMap::new(),
-            packs_changed: true,
-            pack_extension: self.pack_extension,
-            root_dir: self.root_dir,
-            override_pack: None,
-        })
     }
 }
 
