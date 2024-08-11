@@ -7,10 +7,10 @@ edition = "2021"
 workspace = true
 
 [dependencies]
-bevy_app = "0.14.0"
-bevy_ecs = "0.14.0"
-bevy_render = "0.14.0"
-bytemuck = "1.16.1"
-bevy_math = "0.14.0"
-bevy_asset = "0.14.0"
-bevy_core_pipeline = "0.14.0"
+bevy_app = "0.14"
+bevy_ecs = "0.14"
+bevy_render = "0.14"
+bytemuck = "1.16"
+bevy_math = "0.14"
+bevy_asset = "0.14"
+bevy_core_pipeline = "0.14"

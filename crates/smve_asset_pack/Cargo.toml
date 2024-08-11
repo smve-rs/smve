@@ -20,11 +20,11 @@ downcast-rs = "1.2"
 merge = { git = "https://github.com/ItsSunnyMonster/merge.git", branch = "versions/0.1.1" }
 glob = "0.3"
 serde-tuple-vec-map = "1.0"
-walkdir = "2.5.0"
-pathdiff = "0.2.1"
-async-fs = { version = "2.1.2", optional = true }
-futures-lite = { version = "2.3.0", optional = true }
-async-walkdir = { version = "2.0.0", optional = true }
+walkdir = "2.5"
+pathdiff = "0.2"
+async-fs = { version = "2.1", optional = true }
+futures-lite = { version = "2.3", optional = true }
+async-walkdir = { version = "2.0", optional = true }
 
 [dev-dependencies]
 env_logger = "0.11.5"

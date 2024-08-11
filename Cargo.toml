@@ -36,4 +36,4 @@ missing_docs = "warn"
 smve_internal = { path = "crates/smve_internal" }
 
 [dev-dependencies]
-bevy = "0.14"
+bevy = "0.14.1"
