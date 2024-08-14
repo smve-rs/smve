@@ -12,7 +12,7 @@ ignore = "0.4"
 tempfile = "3.12"
 log = "0.4"
 thiserror = "1.0"
-indexmap = "2.3"
+indexmap = "2.4"
 lz4 = "1.26"
 toml = { version = "0.8", features = ["preserve_order"] }
 serde = { version = "1.0", features = ["derive"] }
