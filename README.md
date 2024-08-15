@@ -5,7 +5,7 @@
 </h3>
 
 <p align="center"><strong>S</strong>unny<strong>M</strong>onster's <strong>V</strong>oxel <strong>E</strong>ngine</p>
-<p align="center"><a href="http://ipa-reader.xyz/?text=%CB%88s%C9%9Bmvej">SEM-vay /ˈsɛmvej/</a></p>
+<p align="center"><a href="http://ipa-reader.xyz/?text=%CB%88s%C9%9Bmvej">SEM-vee /ˈsɛmviː/</a></p>
 
 ***
 
