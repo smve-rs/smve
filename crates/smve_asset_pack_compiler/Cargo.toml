@@ -5,7 +5,7 @@ edition = "2021"
 description = "A simple CLI used to compiling assets into an asset pack file."
 
 [dependencies]
-clap = { version = "4.5.15", features = ["derive"] }
+clap = { version = "4.5.16", features = ["derive"] }
 smve_asset_pack = { path = "../smve_asset_pack" }
 env_logger = "0.11.5"
 
