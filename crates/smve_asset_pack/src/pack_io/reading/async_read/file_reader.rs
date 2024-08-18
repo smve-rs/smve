@@ -1,12 +1,14 @@
 use crate::pack_io::reading::async_read::flags::is_compressed;
 use crate::pack_io::reading::async_read::read_steps::decompress;
-use crate::pack_io::reading::async_read::{FileMeta, ReadResult};
+use crate::pack_io::reading::async_read::{FileMeta, ReadResult, ReadStep};
 use async_fs::File;
 use futures_lite::{AsyncRead, AsyncSeek, AsyncSeekExt};
 use std::cmp::min;
 use std::io::{ErrorKind, SeekFrom};
 use std::pin::Pin;
 use std::task::Poll;
+
+use super::utils::io;
 
 /// A [`AsyncRead`] + [`AsyncSeek`] struct for reading the data corresponding to a file contained in an asset pack.
 ///
@@ -34,7 +36,10 @@ where
     /// # Errors
     /// [`ReadError::IoError`](super::errors::ReadError::IoError) if seeking fails.
     pub async fn new(pack: &'r mut R, meta: FileMeta) -> ReadResult<Self> {
-        pack.seek(SeekFrom::Start(meta.offset)).await?;
+        io!(
+            pack.seek(SeekFrom::Start(meta.offset)).await,
+            ReadStep::CreateDirectFileReader(meta)
+        )?;
         Ok(Self {
             pack_file: pack,
             file_meta: meta,
@@ -154,8 +159,14 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
         file_meta: FileMeta,
     ) -> ReadResult<Self> {
         if is_compressed(file_meta.flags) {
-            let mut temp = decompress(file_reader).await?;
-            temp.seek(SeekFrom::Start(0)).await?;
+            let mut temp = io!(
+                decompress(file_reader).await,
+                ReadStep::DecompressFile(file_meta)
+            )?;
+            io!(
+                temp.seek(SeekFrom::Start(0)).await,
+                ReadStep::DecompressFile(file_meta)
+            )?;
             Ok(AssetFileReader::Decompressed(temp))
         } else {
             Ok(AssetFileReader::Normal(file_reader))

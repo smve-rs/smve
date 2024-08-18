@@ -1,23 +1,35 @@
-use thiserror::Error;
+use std::{fmt::Display, path::PathBuf};
+
+use snafu::{Location, Snafu};
+
+use super::FileMeta;
 
 /// Error raised from reading the asset pack.
-#[derive(Error, Debug)]
+#[derive(Snafu, Debug)]
+#[snafu(context(suffix(Ctx)), visibility(pub(super)))]
 pub enum ReadError {
     /// IO error from file operations
-    #[error("IO Error: {source}")]
+    #[snafu(display("Encountered IO Error: {source} while {step}. Error occured at {location}"))]
     IoError {
-        #[from]
         /// The [`std::io::Error`].
         source: std::io::Error,
+        /// The read step at which the error occured.
+        step: ReadStep,
+        /// The source code location where the error occured.
+        #[snafu(implicit)]
+        location: Location,
     },
     /// The pack file does not start with the magic byte sequence.
-    #[error("Invalid pack file!")]
+    #[snafu(display("Invalid pack file!"))]
     InvalidPackFile,
     /// The pack file is encoded in a version that this version of the library does not support.
-    #[error("Version {0} is not supported! This version of the reader only supports version 1 and below.")]
-    IncompatibleVersion(u16),
+    #[snafu(display("Version {version} is not supported! This version of the reader only supports version 1 and below."))]
+    IncompatibleVersion {
+        /// The version specified in the pack file.
+        version: u16,
+    },
     /// Errors during conversion of the stored file path into a rust UTF-8 string.
-    #[error("File path {path:?} could not be converted to UTF-8! {source}")]
+    #[snafu(display("File path {path:?} could not be converted to UTF-8! {source}"))]
     Utf8Error {
         /// The origin error
         source: std::str::Utf8Error,
@@ -25,37 +37,104 @@ pub enum ReadError {
         path: Box<[u8]>,
     },
     /// The TOC has been modified or damaged.
-    #[error("Table of contents does not match the stored hash! This probably means it was damaged or modified.")]
+    #[snafu(display("Table of contents does not match the stored hash! This probably means it was damaged or modified."))]
     DamagedTOC,
     /// The Directory List has been modified or damaged.
-    #[error("Directory list does not match the stored hash! This probably means it was damaged or modified.")]
+    #[snafu(display("Directory list does not match the stored hash! This probably means it was damaged or modified."))]
     DamagedDirectoryList,
     /// The file data has been modified or damaged.
-    #[error("File at {0} does not match its stored hash! This probably means that it was damaged or modified.")]
-    DamagedFile(String),
-    /// The requested file does not exist in the asset pack.
-    #[error("Requested file at {0} does not exist in the pack file!")]
-    FileNotFound(String),
-    /// The requested pack-unique file does not exist in the asset pack.
-    #[error("Requested pack-unique file at {0} does not exist in the pack file!")]
-    UniqueFileNotFound(String),
-    /// The requested directory does not exist in the asset pack.
-    #[error("Requested directory at {0} does not exist in the pack file!")]
-    DirectoryNotFound(String),
+    #[snafu(display("File at {path} does not match its stored hash! This probably means that it was damaged or modified."))]
+    DamagedFile {
+        /// The path of the file that has been damaged.
+        path: String,
+    },
     /// Errors when deserializing packs.toml located in asset pack group directories
-    #[error("Failed to deserialize packs.toml file. This probably means its format is not correct. {source}")]
+    #[snafu(display("Failed to deserialize packs.toml file at root directory {}. This probably means its format is not correct. {source}", path.display()))]
     TomlDeserializeError {
         /// The toml deserialize error
-        #[from]
         source: toml::de::Error,
+        /// The root directory where the packs.toml file is.
+        path: PathBuf,
     },
     /// Errors encountered when recursively reading asset pack directories
-    #[error("Failed to recursively read asset pack directory! {source}")]
+    #[snafu(display("Failed to recursively read asset pack directory! {source}"))]
     WalkDirError {
         /// The walkdir error
-        #[from]
         source: walkdir::Error,
     },
+}
+
+#[derive(Debug)]
+/// A representation of the read steps.
+pub enum ReadStep {
+    /// Opening an asset pack. Stores the path of the asset pack.
+    OpenPack(PathBuf),
+    /// Reading the pack front of the asset pack.
+    ReadPackFront,
+    /// Validating the asset pack header.
+    ValidateHeader,
+    /// Reading TOC entry for an asset. Stores the path to the asset file.
+    ReadTOC(String),
+    /// Reading DL entry for an asset. Stores the path to the directory.
+    ReadDirectoryList(String),
+    /// Validating file hashes.
+    ValidateFiles,
+    /// Validate the hash of one file. Stores the path to the file.
+    ValidateFile(String),
+    /// Creating a direct file reader for an asset. Stores the metadata of the asset.
+    CreateDirectFileReader(FileMeta),
+    /// Decompressing an asset file. Stores the metadata of the asset.
+    DecompressFile(FileMeta),
+    /// Reading packs.toml. Stores the root directory where the packs.toml file is located.
+    ReadPacksToml(PathBuf),
+    /// Opening an asset pack while loading an asset pack group. Stores the path to the pack file
+    /// being opened.
+    LoadGroupOpenPack(PathBuf),
+    /// Writing to packs.toml while loading an asset pack group. Stores the root directory where
+    /// packs.toml is located.
+    LoadGroupWritePacksToml(PathBuf),
+}
+
+impl Display for ReadStep {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ReadStep::OpenPack(path) => write!(f, "opening asset pack at {}", path.display()),
+            ReadStep::ReadPackFront => write!(f, "reading the pack front of the asset pack"),
+            ReadStep::ValidateHeader => write!(f, "validating asset pack header"),
+            ReadStep::ReadTOC(path) => {
+                write!(f, "reading table of contents entry for asset at {path}")
+            }
+            ReadStep::ReadDirectoryList(path) => {
+                write!(f, "reading directory list entry for directory at {path}")
+            }
+            ReadStep::ValidateFiles => write!(f, "validating file hashes"),
+            ReadStep::ValidateFile(path) => {
+                write!(f, "validating file hash for asset file at {path}")
+            }
+            ReadStep::CreateDirectFileReader(meta) => write!(
+                f,
+                "creating a direct file reader for asset file with meta {meta:#?}"
+            ),
+            ReadStep::DecompressFile(meta) => {
+                write!(f, "decompressing asset file with meta {meta:#?}")
+            }
+            ReadStep::ReadPacksToml(root_dir) => write!(
+                f,
+                "reading the packs.toml file at root directory {}",
+                root_dir.display()
+            ),
+            ReadStep::LoadGroupOpenPack(path) => write!(
+                f,
+                "opening asset pack at {} when loading pack group",
+                path.display()
+            ),
+            ReadStep::LoadGroupWritePacksToml(root_dir) => write!(
+                f,
+                "writing packs.toml at root directory {} when loading pack group",
+                root_dir.display()
+            ),
+        }
+    }
 }
 
 /// Shorthand type for [`Result<T, ReadError>`]

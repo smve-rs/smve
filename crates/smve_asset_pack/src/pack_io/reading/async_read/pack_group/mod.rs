@@ -5,6 +5,7 @@ use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use log::{error, warn};
 use pathdiff::diff_paths;
+use snafu::ResultExt;
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
@@ -12,11 +13,10 @@ use std::path::{Path, PathBuf};
 use async_walkdir::WalkDir;
 
 use crate::pack_io::reading::async_read::pack_group::serde::{EnabledPack, EnabledPacks};
-use crate::pack_io::reading::async_read::{
-    AssetFileReader, AssetPackReader, ReadError, ReadResult,
-};
+use crate::pack_io::reading::async_read::{AssetFileReader, AssetPackReader, ReadResult, ReadStep};
 
-use super::AsyncSeekableBufRead;
+use super::utils::io;
+use super::{AsyncSeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
 
 mod serde;
 
@@ -147,28 +147,49 @@ impl AssetPackGroupReader {
             panic!("{} is not a directory!", root_dir.display());
         }
 
-        let mut packs_toml = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .read(true)
-            .truncate(false)
-            .open(root_dir.join("packs.toml"))
-            .await?;
+        let mut packs_toml = io!(
+            OpenOptions::new()
+                .create(true)
+                .write(true)
+                .read(true)
+                .truncate(false)
+                .open(root_dir.join("packs.toml"))
+                .await,
+            ReadStep::ReadPacksToml(root_dir.to_path_buf())
+        )?;
 
         // Check if file is empty
-        packs_toml.seek(SeekFrom::End(0)).await?;
-        let enabled_packs = if packs_toml.seek(SeekFrom::Current(0)).await? == 0 {
+        io!(
+            packs_toml.seek(SeekFrom::End(0)).await,
+            ReadStep::ReadPacksToml(root_dir.to_path_buf())
+        )?;
+
+        let position = io!(
+            packs_toml.seek(SeekFrom::Current(0)).await,
+            ReadStep::ReadPacksToml(root_dir.to_path_buf())
+        )?;
+
+        let enabled_packs = if position == 0 {
             // File is empty:
             // It does not currently write anything to the file, as that will happen later
             EnabledPacks::default()
         } else {
             // File isn't empty
-            packs_toml.seek(SeekFrom::Start(0)).await?;
+            io!(
+                packs_toml.seek(SeekFrom::Start(0)).await,
+                ReadStep::ReadPacksToml(root_dir.to_path_buf())
+            )?;
 
             let mut opened_packs_str = String::new();
-            packs_toml.read_to_string(&mut opened_packs_str).await?;
+            io!(
+                packs_toml.read_to_string(&mut opened_packs_str).await,
+                ReadStep::ReadPacksToml(root_dir.to_path_buf())
+            )?;
 
-            let enabled_packs: EnabledPacks = toml::from_str(&opened_packs_str)?;
+            let enabled_packs: EnabledPacks =
+                toml::from_str(&opened_packs_str).with_context(|_| TomlDeserializeCtx {
+                    path: root_dir.to_path_buf(),
+                })?;
 
             enabled_packs
         };
@@ -224,10 +245,10 @@ impl AssetPackGroupReader {
     pub async fn get_file_reader(
         &mut self,
         file_path: &str,
-    ) -> ReadResult<AssetFileReader<Box<dyn AsyncSeekableBufRead>>> {
+    ) -> ReadResult<Option<AssetFileReader<Box<dyn AsyncSeekableBufRead>>>> {
         let index = self.file_name_to_asset_pack.get(file_path);
         if index.is_none() {
-            return Err(ReadError::FileNotFound(file_path.into()));
+            return Ok(None);
         }
 
         let pack_reader = match index.unwrap() {
@@ -490,7 +511,10 @@ impl AssetPackGroupReader {
                         &self.root_dir.join(&pack.path)
                     };
 
-                    let pack_file = File::open(absolute_path).await?;
+                    let pack_file = io!(
+                        File::open(absolute_path).await,
+                        ReadStep::LoadGroupOpenPack(pack.path.clone())
+                    )?;
                     let buf_reader = BufReader::new(pack_file);
                     let boxed_buf_reader = Box::new(buf_reader) as Box<dyn AsyncSeekableBufRead>;
 
@@ -509,30 +533,42 @@ impl AssetPackGroupReader {
                 }
             }
 
-            let mut packs_toml = OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(self.root_dir.join("packs.toml"))
-                .await?;
+            let mut packs_toml = io!(
+                OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(self.root_dir.join("packs.toml"))
+                    .await,
+                ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
+            )?;
 
-            packs_toml
-                .write_all(
-                    "# This file was generated automatically by SMve asset pack.
+            io!(
+                packs_toml
+                    .write_all(
+                        "# This file was generated automatically by SMve asset pack.
 # Do NOT modify this file manually as doing so may cause unwanted behaviour.\n\n"
-                        .as_bytes(),
-                )
-                .await?;
+                            .as_bytes(),
+                    )
+                    .await,
+                ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
+            )?;
 
-            packs_toml
-                .write_all(
-                    toml::to_string_pretty(&self.enabled_packs)
-                        .unwrap()
-                        .as_bytes(),
-                )
-                .await?;
+            io!(
+                packs_toml
+                    .write_all(
+                        toml::to_string_pretty(&self.enabled_packs)
+                            .unwrap()
+                            .as_bytes(),
+                    )
+                    .await,
+                ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
+            )?;
 
-            packs_toml.flush().await?;
+            io!(
+                packs_toml.flush().await,
+                ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
+            )?;
 
             self.packs_changed = false;
         }
@@ -549,7 +585,7 @@ impl AssetPackGroupReader {
     ) -> ReadResult<()> {
         let mut entries = WalkDir::new(pack_dir);
         while let Some(entry) = entries.next().await {
-            let entry = entry?;
+            let entry = entry.context(WalkDirCtx)?;
 
             if let Some(path_extension) = entry.path().extension() {
                 if path_extension == extension {

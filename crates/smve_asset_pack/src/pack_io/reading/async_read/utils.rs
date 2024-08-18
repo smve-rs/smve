@@ -40,5 +40,15 @@ macro_rules! read_bytes_and_hash {
     }};
 }
 
+/// Wraps something that returns an IO result and calls `with_context` on it with the provided read
+/// step.
+macro_rules! io {
+    ($io:expr, $step:expr) => {{
+        use snafu::ResultExt;
+        $io.with_context(|_| crate::pack_io::reading::async_read::IoCtx { step: $step })
+    }};
+}
+
+pub(crate) use io;
 pub(crate) use read_bytes;
 pub(crate) use read_bytes_and_hash;

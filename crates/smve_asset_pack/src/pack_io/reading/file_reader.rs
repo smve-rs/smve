@@ -6,6 +6,9 @@ use std::cmp::min;
 use std::fs::File;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
 
+use super::utils::io;
+use super::ReadStep;
+
 /// A [`Read`] + [`Seek`] struct for reading the data corresponding to a file contained in an asset pack.
 ///
 /// This does not account for compressed files. The returned reader will still read the compressed
@@ -31,7 +34,10 @@ where
     /// # Errors
     /// [`ReadError::IoError`](super::errors::ReadError::IoError) if seeking fails.
     pub fn new(pack: &'r mut R, meta: FileMeta) -> ReadResult<Self> {
-        pack.seek(SeekFrom::Start(meta.offset))?;
+        io!(
+            pack.seek(SeekFrom::Start(meta.offset)),
+            ReadStep::CreateDirectFileReader(meta)
+        )?;
         Ok(Self {
             pack_file: pack,
             file_meta: meta,
@@ -144,8 +150,8 @@ impl<'r, R: Read + Seek> AssetFileReader<'r, R> {
     /// Can fail if decompression fails, or if rewinding the temporary decompressed file fails.
     pub fn new(file_reader: DirectFileReader<'r, R>, file_meta: FileMeta) -> ReadResult<Self> {
         if is_compressed(file_meta.flags) {
-            let mut temp = decompress(file_reader)?;
-            temp.rewind()?;
+            let mut temp = io!(decompress(file_reader), ReadStep::DecompressFile(file_meta))?;
+            io!(temp.rewind(), ReadStep::DecompressFile(file_meta))?;
             Ok(AssetFileReader::Decompressed(temp))
         } else {
             Ok(AssetFileReader::Normal(file_reader))

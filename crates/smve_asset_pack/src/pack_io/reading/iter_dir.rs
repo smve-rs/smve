@@ -1,6 +1,6 @@
 use std::io::{BufRead, Seek};
 
-use crate::pack_io::reading::{AssetPackReader, FileMeta, PackFront, ReadError, ReadResult};
+use crate::pack_io::reading::{AssetPackReader, FileMeta, PackFront, ReadResult};
 
 /// An iterator that yields all the files (recursive) of a directory in an asset pack.
 pub struct IterDir<'a> {
@@ -30,20 +30,20 @@ impl<R: BufRead + Seek> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub fn iter_directory(&mut self, path: &str) -> ReadResult<IterDir> {
+    pub fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir>> {
         if !self.has_directory(path)? {
-            return Err(ReadError::DirectoryNotFound(path.into()));
+            return Ok(None);
         }
 
         let pack_front = self.get_pack_front()?;
 
-        Ok(IterDir {
+        Ok(Some(IterDir {
             pack_front,
             index: *pack_front
                 .directory_list
                 .get(path)
                 .expect("Existence has been checked before."),
             dir_name_with_slash: path.to_owned() + "/",
-        })
+        }))
     }
 }

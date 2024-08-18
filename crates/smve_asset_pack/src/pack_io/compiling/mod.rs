@@ -3,9 +3,11 @@
 mod compile_steps;
 mod errors;
 pub mod raw_assets;
+mod utils;
 mod walk;
 
 pub use errors::*;
+use utils::io;
 
 use crate::pack_io::compiling::compile_steps::{
     validate_asset_dir, write_assets, write_directory_list, write_hashes, write_header, write_toc,
@@ -69,11 +71,14 @@ impl AssetPackCompiler {
 
         validate_asset_dir(asset_dir)?;
 
-        let mut output_file = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(pack_output)?;
+        let mut output_file = io!(
+            OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(pack_output),
+            CompileStep::OpenOutputFile(pack_output.to_path_buf())
+        )?;
 
         write_header(&mut output_file)?;
 

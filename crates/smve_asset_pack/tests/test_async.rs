@@ -4,7 +4,7 @@ use common::EUncooker;
 use futures_lite::io::{AsyncReadExt, BufReader, Cursor};
 use ignore::Walk;
 use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
-use smve_asset_pack::pack_io::compiling::{AssetPackCompiler, CompileResult};
+use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
 use smve_asset_pack::pack_io::reading::async_read::pack_group::AssetPackGroupReader;
 use smve_asset_pack::pack_io::reading::async_read::AssetPackReader;
 use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
@@ -59,13 +59,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         reader.load().await?;
         reader.set_enabled_packs(&["pack1.smap", "pack2.smap"]);
         reader.load().await?;
-        let mut override_reader = reader.get_file_reader("override.txt").await?;
+        let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
         let mut override_str = String::new();
         override_reader.read_to_string(&mut override_str).await?;
         assert_eq!(override_str, "Override1");
 
         // Test pack1 overriding builtin
-        let mut builtin_reader = reader.get_file_reader("builtin.txt").await?;
+        let mut builtin_reader = reader.get_file_reader("builtin.txt").await?.unwrap();
         let mut builtin_str = String::new();
         builtin_reader.read_to_string(&mut builtin_str).await?;
         assert_eq!(builtin_str, "Overwritten\n");
@@ -73,13 +73,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         // Test pack2 overriding pack1
         reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
         reader.load().await?;
-        let mut override_reader = reader.get_file_reader("override.txt").await?;
+        let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
         let mut override_str = String::new();
         override_reader.read_to_string(&mut override_str).await?;
         assert_eq!(override_str, "Override2");
 
         // Test singular file that does not get overwritten
-        let mut singular_reader = reader.get_file_reader("singular.txt").await?;
+        let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
         assert_eq!(singular_str, "Singular");
@@ -87,7 +87,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         // Test builtin overriding pack1
         reader.set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"]);
         reader.load().await?;
-        let mut builtin_reader = reader.get_file_reader("builtin.txt").await?;
+        let mut builtin_reader = reader.get_file_reader("builtin.txt").await?.unwrap();
         let mut builtin_str = String::new();
         builtin_reader.read_to_string(&mut builtin_str).await?;
         assert_eq!(builtin_str, "BuiltIn\n");
@@ -99,7 +99,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
                 .box_reader(),
         );
         reader.load().await?;
-        let mut singular_reader = reader.get_file_reader("singular.txt").await?;
+        let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
         assert_eq!(singular_str, "Overridden!\n");
@@ -120,7 +120,7 @@ fn setup() -> std::io::Result<()> {
     Ok(())
 }
 
-fn compile(assets_path: &Path) -> CompileResult<()> {
+fn compile(assets_path: &Path) -> Result<(), Box<dyn Error>> {
     setup()?;
 
     let out_path = test_out!("out.smap");
@@ -206,7 +206,8 @@ async fn check_files(
             reader.get_unique_file_reader(&rel_path_str).await?
         } else {
             reader.get_file_reader(&rel_path_str).await?
-        };
+        }
+        .unwrap();
 
         let mut data_in_pack = vec![];
         file_in_pack.read_to_end(&mut data_in_pack).await?;

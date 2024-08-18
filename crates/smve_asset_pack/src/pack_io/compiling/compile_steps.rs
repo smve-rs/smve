@@ -1,10 +1,14 @@
+use crate::pack_io::compiling::utils::io;
 use crate::pack_io::compiling::walk::config::Configuration;
 use crate::pack_io::compiling::walk::Walk;
-use crate::pack_io::compiling::{AssetPackCompiler, CompileError, CompileResult};
+use crate::pack_io::compiling::{
+    AssetPackCompiler, CompileResult, CompileStep, EmptyDirectoryCtx, IoCtx, NotADirectoryCtx,
+};
 use crate::pack_io::utils::WriteExt;
 use blake3::{Hash, Hasher};
 use log::error;
 use lz4::EncoderBuilder;
+use snafu::{ensure, ResultExt};
 use std::borrow::Cow;
 use std::fs::{read, DirEntry, File};
 use std::io;
@@ -12,14 +16,27 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 use tempfile::tempfile;
 
-pub fn validate_asset_dir(asset_dir: &Path) -> CompileResult<()> {
-    if !asset_dir.is_dir() {
-        return Err(CompileError::NotADirectory(asset_dir.to_path_buf()));
-    }
+use super::WalkDirCtx;
 
-    if std::fs::read_dir(asset_dir)?.next().is_none() {
-        return Err(CompileError::EmptyDirectory(asset_dir.to_path_buf()));
-    }
+pub fn validate_asset_dir(asset_dir: &Path) -> CompileResult<()> {
+    ensure!(
+        asset_dir.is_dir(),
+        NotADirectoryCtx {
+            path: asset_dir.to_path_buf()
+        }
+    );
+
+    ensure!(
+        io!(
+            std::fs::read_dir(asset_dir),
+            CompileStep::ValidateAssetDir(asset_dir.to_path_buf())
+        )?
+        .next()
+        .is_some(),
+        EmptyDirectoryCtx {
+            path: asset_dir.to_path_buf()
+        }
+    );
 
     Ok(())
 }
@@ -27,13 +44,16 @@ pub fn validate_asset_dir(asset_dir: &Path) -> CompileResult<()> {
 pub fn write_header(output_file: &mut File) -> CompileResult<()> {
     // # Header
     // ## Magic
-    output_file.write_all(b"SMAP")?;
+    io!(output_file.write_all(b"SMAP"), CompileStep::WriteHeader)?;
     // ## Version
-    output_file.write_all(&1_u16.to_be_bytes())?;
+    io!(
+        output_file.write_all(&1_u16.to_be_bytes()),
+        CompileStep::WriteHeader
+    )?;
     // ## TOC Hash (placeholder)
-    output_file.write_all(&[0u8; 32])?;
+    io!(output_file.write_all(&[0u8; 32]), CompileStep::WriteHeader)?;
     // ## Directory List Hash (placeholder)
-    output_file.write_all(&[0u8; 32])?;
+    io!(output_file.write_all(&[0u8; 32]), CompileStep::WriteHeader)?;
 
     Ok(())
 }
@@ -82,7 +102,10 @@ pub fn process_asset(
     }
 
     // Data of the current asset file
-    let mut file_data = read(asset.path())?;
+    let mut file_data = io!(
+        read(asset.path()),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
 
     let mut flags = 0u8;
 
@@ -154,30 +177,57 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), un
 
     // Compress the file if needed
     if config.compression.as_ref().unwrap().enabled.unwrap() {
-        file_data = compress_asset(&file_data, config.compression.unwrap().level.unwrap())?;
+        file_data = io!(
+            compress_asset(&file_data, config.compression.unwrap().level.unwrap()),
+            CompileStep::CompressAsset(asset_path.clone())
+        )?;
         flags |= 0x04;
     }
 
-    let file_offset = binary_glob.stream_position()?;
+    let file_offset = io!(
+        binary_glob.stream_position(),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
 
     // Hasher for the file data
     let mut file_hasher = Hasher::new();
 
     // Write and hash the file
-    binary_glob.write_all_and_hash(&file_data, &mut file_hasher)?;
+    io!(
+        binary_glob.write_all_and_hash(&file_data, &mut file_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     let file_hash = file_hasher.finalize();
     // ## File path
-    output_file.write_all_and_hash(path_str.as_bytes(), toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(path_str.as_bytes(), toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     // ### Null termination
-    output_file.write_all_and_hash(b"\x00", toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(b"\x00", toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     // ## File hash
-    output_file.write_all_and_hash(file_hash.as_bytes(), toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(file_hash.as_bytes(), toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     // ## Flags
-    output_file.write_all_and_hash(&[flags], toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(&[flags], toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     // ## File offset
-    output_file.write_all_and_hash(&file_offset.to_be_bytes(), toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(&file_offset.to_be_bytes(), toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
     // ## File size
-    output_file.write_all_and_hash(&(file_data.len() as u64).to_be_bytes(), toc_hasher)?;
+    io!(
+        output_file.write_all_and_hash(&(file_data.len() as u64).to_be_bytes(), toc_hasher),
+        CompileStep::PreliminaryWrite(asset_path.clone())
+    )?;
 
     Ok(())
 }
@@ -202,7 +252,9 @@ pub fn write_toc(
 ) -> CompileResult<(Vec<String>, Hash, File)> {
     // # Table of Contents
     // Temporary file to append the file data to
-    let mut file_glob = tempfile()?;
+    let mut file_glob = tempfile().context(IoCtx {
+        step: CompileStep::WriteTOC,
+    })?;
 
     // Temporary list of directories
     let mut directories = vec![];
@@ -210,11 +262,13 @@ pub fn write_toc(
     // Hasher for the TOC
     let mut toc_hasher = Hasher::new();
 
-    let assets = Walk::new(asset_dir)?;
+    let assets = Walk::new(asset_dir).context(WalkDirCtx)?;
 
     // Read every file
     for asset in assets {
-        let (asset, config) = asset?;
+        let (asset, config) = asset.context(IoCtx {
+            step: CompileStep::WriteTOC,
+        })?;
 
         process_asset(
             &asset,
@@ -229,7 +283,11 @@ pub fn write_toc(
     }
 
     // ## End of TOC marker
-    output_file.write_all_and_hash(b"\xff\x07\xff\x00", &mut toc_hasher)?;
+    output_file
+        .write_all_and_hash(b"\xff\x07\xff\x00", &mut toc_hasher)
+        .context(IoCtx {
+            step: CompileStep::WriteTOC,
+        })?;
 
     Ok((directories, toc_hasher.finalize(), file_glob))
 }
@@ -240,31 +298,48 @@ pub fn write_directory_list(
 ) -> CompileResult<Hash> {
     // # Directory List
     let mut directory_list_hasher = Hasher::new();
-    for dir in directories {
-        output_file.write_all_and_hash(dir.as_bytes(), &mut directory_list_hasher)?;
-        output_file.write_all_and_hash(b"\x00", &mut directory_list_hasher)?;
-    }
-    // ## End of DL marker
-    output_file.write_all_and_hash(b"\xff\x10\xff\x00", &mut directory_list_hasher)?;
+
+    (|| -> io::Result<()> {
+        for dir in directories {
+            output_file.write_all_and_hash(dir.as_bytes(), &mut directory_list_hasher)?;
+            output_file.write_all_and_hash(b"\x00", &mut directory_list_hasher)?;
+        }
+        // ## End of DL marker
+        output_file.write_all_and_hash(b"\xff\x10\xff\x00", &mut directory_list_hasher)?;
+
+        Ok(())
+    })()
+    .context(IoCtx {
+        step: CompileStep::WriteDirectoryList,
+    })?;
 
     Ok(directory_list_hasher.finalize())
 }
 
 pub fn write_assets(file_glob: &mut File, output_file: &mut File) -> CompileResult<()> {
     // ## File glob
-    file_glob.rewind()?;
-    std::io::copy(file_glob, output_file)?;
+    file_glob.rewind().context(IoCtx {
+        step: CompileStep::CopyData,
+    })?;
+    std::io::copy(file_glob, output_file).context(IoCtx {
+        step: CompileStep::CopyData,
+    })?;
 
     Ok(())
 }
 
 pub fn write_hashes(output_file: &mut File, toc_hash: Hash, dl_hash: Hash) -> CompileResult<()> {
     // Write TOC hash
-    output_file.seek(SeekFrom::Start(6))?;
-    output_file.write_all(toc_hash.as_bytes())?;
+    (|| -> io::Result<()> {
+        output_file.seek(SeekFrom::Start(6))?;
+        output_file.write_all(toc_hash.as_bytes())?;
 
-    // Write DL hash
-    output_file.write_all(dl_hash.as_bytes())?;
+        // Write DL hash
+        output_file.write_all(dl_hash.as_bytes())?;
 
-    Ok(())
+        Ok(())
+    })()
+    .context(IoCtx {
+        step: CompileStep::WriteHashes,
+    })
 }

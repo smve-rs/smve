@@ -1,7 +1,7 @@
 use common::EUncooker;
 use ignore::Walk;
 use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
-use smve_asset_pack::pack_io::compiling::{AssetPackCompiler, CompileResult};
+use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
 use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 use smve_asset_pack::pack_io::reading::AssetPackReader;
 use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
@@ -48,13 +48,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     reader.load()?;
     reader.set_enabled_packs(&["pack1.smap", "pack2.smap"]);
     reader.load()?;
-    let mut override_reader = reader.get_file_reader("override.txt")?;
+    let mut override_reader = reader.get_file_reader("override.txt")?.unwrap();
     let mut override_str = String::new();
     override_reader.read_to_string(&mut override_str)?;
     assert_eq!(override_str, "Override1");
 
     // Test pack1 overriding builtin
-    let mut builtin_reader = reader.get_file_reader("builtin.txt")?;
+    let mut builtin_reader = reader.get_file_reader("builtin.txt")?.unwrap();
     let mut builtin_str = String::new();
     builtin_reader.read_to_string(&mut builtin_str)?;
     assert_eq!(builtin_str, "Overwritten\n");
@@ -62,13 +62,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     // Test pack2 overriding pack1
     reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
     reader.load()?;
-    let mut override_reader = reader.get_file_reader("override.txt")?;
+    let mut override_reader = reader.get_file_reader("override.txt")?.unwrap();
     let mut override_str = String::new();
     override_reader.read_to_string(&mut override_str)?;
     assert_eq!(override_str, "Override2");
 
     // Test singular file that does not get overwritten
-    let mut singular_reader = reader.get_file_reader("singular.txt")?;
+    let mut singular_reader = reader.get_file_reader("singular.txt")?.unwrap();
     let mut singular_str = String::new();
     singular_reader.read_to_string(&mut singular_str)?;
     assert_eq!(singular_str, "Singular");
@@ -76,7 +76,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     // Test builtin overriding pack1
     reader.set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"]);
     reader.load()?;
-    let mut builtin_reader = reader.get_file_reader("builtin.txt")?;
+    let mut builtin_reader = reader.get_file_reader("builtin.txt")?.unwrap();
     let mut builtin_str = String::new();
     builtin_reader.read_to_string(&mut builtin_str)?;
     assert_eq!(builtin_str, "BuiltIn\n");
@@ -86,7 +86,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override.smap"))))?.box_reader(),
     );
     reader.load()?;
-    let mut singular_reader = reader.get_file_reader("singular.txt")?;
+    let mut singular_reader = reader.get_file_reader("singular.txt")?.unwrap();
     let mut singular_str = String::new();
     singular_reader.read_to_string(&mut singular_str)?;
     assert_eq!(singular_str, "Overridden!\n");
@@ -100,7 +100,7 @@ fn setup() -> std::io::Result<()> {
     Ok(())
 }
 
-fn compile(assets_path: &Path) -> CompileResult<()> {
+fn compile(assets_path: &Path) -> Result<(), Box<dyn Error>> {
     setup()?;
 
     let out_path = test_out!("out.smap");
@@ -186,7 +186,8 @@ fn check_files(
             reader.get_unique_file_reader(&rel_path_str)?
         } else {
             reader.get_file_reader(&rel_path_str)?
-        };
+        }
+        .unwrap();
 
         let mut data_in_pack = vec![];
         file_in_pack.read_to_end(&mut data_in_pack)?;

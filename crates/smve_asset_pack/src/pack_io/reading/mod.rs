@@ -16,7 +16,7 @@ pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
 use read_steps::validate_header;
-use utils::read_bytes;
+use utils::{io, read_bytes};
 
 use crate::pack_io::reading::read_steps::{
     get_dir_start_indices, read_dl, read_toc, validate_files, validate_version,
@@ -53,7 +53,7 @@ use std::path::Path;
 ///
 /// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let file_reader = pack_reader.get_file_reader("path/to/file.txt")?;
+/// let file_reader = pack_reader.get_file_reader("path/to/file.txt")?.unwrap();
 /// # Ok(()) }
 /// ```
 ///
@@ -64,7 +64,7 @@ use std::path::Path;
 ///
 /// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01..."))?;
-/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt")?;
+/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt")?.unwrap();
 /// # Ok(()) }
 /// ```
 /// See also [`AssetFileReader`].
@@ -96,7 +96,10 @@ impl AssetPackReader<BufReader<File>> {
     pub fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
         let pack_path = pack_path.as_ref();
 
-        let file = File::open(pack_path)?;
+        let file = io!(
+            File::open(pack_path),
+            ReadStep::OpenPack(pack_path.to_path_buf())
+        )?;
 
         Self::new_from_read(file)
     }
@@ -166,10 +169,13 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
             return Ok(self.pack_front_cache.as_ref().unwrap());
         }
 
-        self.reader.seek(SeekFrom::Start(6))?;
+        io!(
+            self.reader.seek(SeekFrom::Start(6)),
+            ReadStep::ReadPackFront
+        )?;
 
-        let expected_toc_hash = read_bytes!(self.reader, 32)?;
-        let expected_dl_hash = read_bytes!(self.reader, 32)?;
+        let expected_toc_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
+        let expected_dl_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
 
         let (mut toc, mut unique_files) = read_toc(&mut self.reader, &expected_toc_hash)?;
         let dl = read_dl(&mut self.reader, &expected_dl_hash)?;
@@ -199,17 +205,17 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
+    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
         let toc = &self.get_pack_front()?.toc;
         let meta = toc.get(path);
         if meta.is_none() {
-            return Err(ReadError::FileNotFound(path.into()));
+            return Ok(None);
         }
         let meta = *meta.unwrap();
 
         let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
 
-        AssetFileReader::new(file_reader, meta)
+        AssetFileReader::new(file_reader, meta).map(Some)
     }
 
     /// Returns a [`DirectFileReader`] for a specified pack-unique file.
@@ -223,17 +229,17 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
-    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<AssetFileReader<R>> {
+    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
         let unique_files = &self.get_pack_front()?.unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
-            return Err(ReadError::UniqueFileNotFound(path.into()));
+            return Ok(None);
         }
         let meta = *meta.unwrap();
 
         let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
 
-        AssetFileReader::new(file_reader, meta)
+        AssetFileReader::new(file_reader, meta).map(Some)
     }
 
     /// Checks if a file exists in the asset pack.
@@ -261,15 +267,15 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub fn get_flags(&mut self, path: &str) -> ReadResult<u8> {
+    pub fn get_flags(&mut self, path: &str) -> ReadResult<Option<u8>> {
         let toc = &self.get_pack_front()?.toc;
         let meta = toc.get(path);
         if meta.is_none() {
-            return Err(ReadError::FileNotFound(path.into()));
+            return Ok(None);
         }
         let meta = *meta.unwrap();
 
-        Ok(meta.flags)
+        Ok(Some(meta.flags))
     }
 
     /// Checks whether a specified path is a directory in the pack file.
