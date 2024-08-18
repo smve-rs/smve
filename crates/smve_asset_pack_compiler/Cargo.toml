@@ -7,8 +7,8 @@ description = "A simple CLI used to compiling assets into an asset pack file."
 [dependencies]
 clap = { version = "4.5.16", features = ["derive"] }
 smve_asset_pack = { path = "../smve_asset_pack" }
-env_logger = "0.11.5"
-log = "0.4.22"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "0.1"
 
 [lints]
 workspace = true

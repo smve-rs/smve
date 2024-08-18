@@ -1,10 +1,10 @@
 //! A simple CLI to compile asset packs from asset folders
 
 use clap::{arg, Parser};
-use env_logger::Env;
-use log::error;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
 use std::path::PathBuf;
+use tracing::{error, level_filters::LevelFilter};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -19,7 +19,14 @@ struct Args {
 }
 
 fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::WARN.into())
+                .from_env_lossy(),
+        )
+        .init();
 
     let args = Args::parse();
 
