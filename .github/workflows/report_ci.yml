@@ -43,3 +43,17 @@ jobs:
           color: a6e3a1
           namedLogo: github
           style: for-the-badge
+
+  discord:
+    name: Report failure to discord
+    if ${{ github.event.workflow_run.conclusion == 'failure }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          message: "[Github actions failed for SMve.](https://github.com/smve-rs/smve/actions)"
+          color: "#f38ba8"
+
