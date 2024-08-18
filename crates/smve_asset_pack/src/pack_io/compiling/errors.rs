@@ -18,13 +18,13 @@ pub enum CompileError {
         path: PathBuf,
     },
     /// IO errors from file operations
-    #[snafu(display("Encountered IO error: {source} while {step}. Error occured at {location}"))]
+    #[snafu(display("Encountered IO error: {source} while {step}. Error occurred at {location}"))]
     IoError {
         /// The IO error itself (See [`std::io::Error`])
         source: std::io::Error,
-        /// The compile step at which the error occured.
+        /// The compile step at which the error occurred.
         step: CompileStep,
-        /// The source code location where the error occured.
+        /// The source code location where the error occurred.
         #[snafu(implicit)]
         location: Location,
     },
@@ -56,7 +56,7 @@ pub enum CompileStep {
     WriteDirectoryList,
     /// Copying asset blob from temporary file to the asset pack.
     CopyData,
-    /// Write generated hashes of various componenets of the pack.
+    /// Write generated hashes of various components of the pack.
     WriteHashes,
     /// Opening the file to output the asset pack to.
     OpenOutputFile(PathBuf),

@@ -15,13 +15,13 @@ pub enum ReadError {
         path: PathBuf,
     },
     /// IO error from file operations
-    #[snafu(display("Encountered IO Error: {source} while {step}. Error occured at {location}"))]
+    #[snafu(display("Encountered IO Error: {source} while {step}. Error occurred at {location}"))]
     IoError {
         /// The [`std::io::Error`].
         source: std::io::Error,
-        /// The read step at which the error occured.
+        /// The read step at which the error occurred.
         step: ReadStep,
-        /// The source code location where the error occured.
+        /// The source code location where the error occurred.
         #[snafu(implicit)]
         location: Location,
     },
