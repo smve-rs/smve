@@ -125,7 +125,7 @@ Available uncookers are: {:#?}",
                 );
             }
 
-            if let Some(extension) = asdfasset_path.extension() {
+            if let Some(extension) = asset_path.extension() {
                 if !uncooker
                     .unwrap()
                     .source_extensions()

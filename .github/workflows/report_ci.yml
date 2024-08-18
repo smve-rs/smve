@@ -54,5 +54,5 @@ jobs:
         with:
           webhook_id: ${{ secrets.WEBHOOK_ID }}
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
-          message: "[Github actions failed for SMve.](https://github.com/smve-rs/smve/actions)"
+          message: "Github actions failed for SMve. https://github.com/smve-rs/smve/actions"
           color: "#f38ba8"
