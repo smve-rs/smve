@@ -2,6 +2,7 @@
 
 use clap::{arg, Parser};
 use env_logger::Env;
+use log::error;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
 use std::path::PathBuf;
 
@@ -25,6 +26,6 @@ fn main() {
     let result = AssetPackCompiler::new().compile(args.assets, args.out);
 
     if let Err(err) = result {
-        eprintln!("Failed to compile assets! Error: {err}");
+        error!("Failed to compile assets! Error: {err}");
     }
 }
