@@ -10,12 +10,12 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 use crate::pack_io::reading::pack_group::serde::{EnabledPack, EnabledPacks};
-use crate::pack_io::reading::{AssetFileReader, AssetPackReader, ReadResult};
+use crate::pack_io::reading::{AssetFileReader, AssetPackReader, NotADirectoryCtx, ReadResult};
 
 use super::utils::io;
 use super::{ReadStep, SeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
 
-use snafu::ResultExt;
+use snafu::{ensure, ResultExt};
 
 mod serde;
 
@@ -136,16 +136,15 @@ impl AssetPackGroupReader {
     /// # Errors
     /// This will error when encountering IO errors, toml deserialization errors and walkdir errors.
     /// See [`ReadError`](super::ReadError) for more information.
-    ///
-    /// # Panics
-    /// This panics when root_dir is not a directory.
     pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
         let root_dir = root_dir.as_ref();
 
-        // TODO: Remove panic
-        if !root_dir.is_dir() {
-            panic!("{} is not a directory!", root_dir.display());
-        }
+        ensure!(
+            root_dir.is_dir(),
+            NotADirectoryCtx {
+                path: root_dir.to_path_buf()
+            }
+        );
 
         let mut packs_toml = io!(
             OpenOptions::new()

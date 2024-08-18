@@ -5,7 +5,7 @@ use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use log::{error, warn};
 use pathdiff::diff_paths;
-use snafu::ResultExt;
+use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 use async_walkdir::WalkDir;
 
 use crate::pack_io::reading::async_read::pack_group::serde::{EnabledPack, EnabledPacks};
-use crate::pack_io::reading::async_read::{AssetFileReader, AssetPackReader, ReadResult, ReadStep};
+use crate::pack_io::reading::async_read::{
+    AssetFileReader, AssetPackReader, NotADirectoryCtx, ReadResult, ReadStep,
+};
 
 use super::utils::io;
 use super::{AsyncSeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
@@ -137,15 +139,15 @@ impl AssetPackGroupReader {
     /// # Errors
     /// This will error when encountering IO errors, toml deserialization errors and walkdir errors.
     /// See [`ReadError`] for more information.
-    ///
-    /// # Panics
-    /// This panics when root_dir is not a directory.
     pub async fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
         let root_dir = root_dir.as_ref();
 
-        if !root_dir.is_dir() {
-            panic!("{} is not a directory!", root_dir.display());
-        }
+        ensure!(
+            root_dir.is_dir(),
+            NotADirectoryCtx {
+                path: root_dir.to_path_buf()
+            }
+        );
 
         let mut packs_toml = io!(
             OpenOptions::new()

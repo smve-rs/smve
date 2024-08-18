@@ -8,6 +8,12 @@ use super::FileMeta;
 #[derive(Snafu, Debug)]
 #[snafu(context(suffix(Ctx)), visibility(pub(super)))]
 pub enum ReadError {
+    /// If a pack group root directory is not a directory.
+    #[snafu(display("Specified pack group root directory at {} is not a directory!", path.display()))]
+    NotADirectory {
+        /// The path to the passed in "root directory".
+        path: PathBuf,
+    },
     /// IO error from file operations
     #[snafu(display("Encountered IO Error: {source} while {step}. Error occured at {location}"))]
     IoError {
