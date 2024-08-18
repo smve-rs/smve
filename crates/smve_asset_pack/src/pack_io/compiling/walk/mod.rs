@@ -7,11 +7,11 @@ use crate::pack_io::compiling::walk::config::{
 };
 use crate::pack_io::compiling::walk::ignore_utils::{get_ignore, get_ignore_with_extra};
 use ignore::gitignore::Gitignore;
-use log::{error, warn};
 use merge::Merge;
 use std::fs;
 use std::fs::{DirEntry, ReadDir};
 use std::path::Path;
+use tracing::{error, warn};
 
 pub struct Walk<'a> {
     process_stack: Vec<ProcessNode>,

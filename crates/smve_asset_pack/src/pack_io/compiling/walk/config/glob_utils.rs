@@ -1,6 +1,6 @@
 use glob::Pattern;
-use log::error;
 use std::path::Path;
+use tracing::error;
 
 pub fn glob_matches(glob_str: &str, path: impl AsRef<Path>) -> bool {
     let pattern = Pattern::new(glob_str);

@@ -11,8 +11,7 @@ use smve_asset_pack::util::text_obfuscation::toggle_obfuscation;
 use std::borrow::Cow;
 use std::error::Error;
 use std::path::Path;
-
-use test_log::test;
+use tracing_test::traced_test;
 
 mod common;
 
@@ -33,6 +32,7 @@ macro_rules! test_res {
 }
 
 #[test]
+#[traced_test]
 fn full_test() -> Result<(), Box<dyn Error>> {
     compile(Path::new(test_res!("assets_full")))?;
 
@@ -42,6 +42,7 @@ fn full_test() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+#[traced_test]
 fn test_groups() -> Result<(), Box<dyn Error>> {
     let result: Result<(), Box<dyn Error>> = block_on(async {
         let mut reader = AssetPackGroupReader::new(test_res!("asset_group_out")).await?;
@@ -106,10 +107,6 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
 
         Ok(())
     });
-
-    if let Err(ref error) = result {
-        log::error!("{error}");
-    }
 
     result
 }

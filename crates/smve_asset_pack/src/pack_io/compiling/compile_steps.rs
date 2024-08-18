@@ -6,7 +6,6 @@ use crate::pack_io::compiling::{
 };
 use crate::pack_io::utils::WriteExt;
 use blake3::{Hash, Hasher};
-use log::error;
 use lz4::EncoderBuilder;
 use snafu::{ensure, ResultExt};
 use std::borrow::Cow;
@@ -15,6 +14,7 @@ use std::io;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 use tempfile::tempfile;
+use tracing::error;
 
 use super::WalkDirCtx;
 

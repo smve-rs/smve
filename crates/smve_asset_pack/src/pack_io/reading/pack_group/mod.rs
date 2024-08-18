@@ -1,11 +1,11 @@
 //! Utilities for reading an asset pack group.
 
-use log::{error, warn};
 use pathdiff::diff_paths;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
+use tracing::{error, warn};
 
 use walkdir::WalkDir;
 

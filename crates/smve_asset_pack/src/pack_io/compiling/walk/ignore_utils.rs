@@ -1,6 +1,6 @@
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use log::error;
 use std::path::Path;
+use tracing::error;
 
 pub fn get_ignore_with_extra(path: impl AsRef<Path>, extra_ignores: &[&str]) -> Option<Gitignore> {
     let ignore_path = path.as_ref().join("__ignore__");

@@ -1,10 +1,10 @@
 use crate::pack_io::reading::flags::is_compressed;
 use crate::pack_io::reading::read_steps::decompress;
 use crate::pack_io::reading::{FileMeta, ReadResult};
-use log::warn;
 use std::cmp::min;
 use std::fs::File;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
+use tracing::warn;
 
 use super::utils::io;
 use super::ReadStep;

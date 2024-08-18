@@ -1,7 +1,6 @@
 pub mod glob_utils;
 mod merge_utils;
 
-use log::{error, warn};
 use merge::Merge;
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -9,6 +8,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use toml::Table;
+use tracing::{error, warn};
 
 #[derive(Deserialize, Clone, Merge)]
 pub struct DirectoryConfiguration<'a> {

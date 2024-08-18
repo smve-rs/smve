@@ -3,12 +3,12 @@
 use async_fs::{File, OpenOptions};
 use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
-use log::{error, warn};
 use pathdiff::diff_paths;
 use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
+use tracing::{error, warn};
 
 use async_walkdir::WalkDir;
 
@@ -503,8 +503,6 @@ impl AssetPackGroupReader {
                 if let Some(available_pack) = self.available_packs.get_mut(&pack.path) {
                     available_pack.enabled = true;
                 }
-
-                log::error!("pack: {:?}", pack);
 
                 if pack.pack_reader.is_none() {
                     let absolute_path = if pack.path.is_absolute() {
