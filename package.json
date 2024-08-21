@@ -3,7 +3,7 @@
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/prompt-cli": "^19.4.0",
-    "husky": "^9.1.4",
+    "husky": "^9.1.5",
     "standard-changelog": "^6.0.0"
   },
   "scripts": {
