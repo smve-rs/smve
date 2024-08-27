@@ -1,5 +1,7 @@
 //! Temporary uncooker for text files which obfuscates them
 
+use std::convert::Infallible;
+
 use crate::pack_io::compiling::raw_assets::AssetUncooker;
 use crate::util::text_obfuscation::toggle_obfuscation;
 
@@ -9,9 +11,15 @@ pub struct TextAssetUncooker;
 
 impl AssetUncooker for TextAssetUncooker {
     type Options = ();
+    type Error = Infallible;
 
-    fn uncook(&self, buf: &[u8], _extension: &str, _settings: &Self::Options) -> Vec<u8> {
-        toggle_obfuscation(buf)
+    fn uncook(
+        &self,
+        buf: &[u8],
+        _extension: &str,
+        _settings: &Self::Options,
+    ) -> Result<Vec<u8>, Self::Error> {
+        Ok(toggle_obfuscation(buf))
     }
 
     fn target_extension(&self) -> &str {

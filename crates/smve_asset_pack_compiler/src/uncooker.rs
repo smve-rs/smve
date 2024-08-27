@@ -57,23 +57,24 @@ impl UserDefinedUncooker {
 
 impl AssetUncooker for UserDefinedUncooker {
     type Options = toml::Table;
+    type Error = mlua::Error;
 
-    // TODO: Add error mechanism to this
-    fn uncook(&self, buf: &[u8], extension: &str, options: &Self::Options) -> Vec<u8> {
-        let uncook: Function = self.lua.globals().get("Uncook").unwrap();
-        uncook.set_environment(self.lua.globals()).unwrap();
+    fn uncook(
+        &self,
+        buf: &[u8],
+        extension: &str,
+        options: &Self::Options,
+    ) -> Result<Vec<u8>, Self::Error> {
+        let uncook: Function = self.lua.globals().get("Uncook")?;
+        uncook.set_environment(self.lua.globals())?;
 
         let options = if options.is_empty() {
-            self.lua.registry_value(&self.default_config).unwrap()
+            self.lua.registry_value(&self.default_config)?
         } else {
-            let table = self.lua.to_value(options).unwrap();
-
-            table
+            self.lua.to_value(options)?
         };
 
-        uncook
-            .call::<_, Vec<u8>>((buf, extension, options))
-            .expect("Uncooking failed!")
+        uncook.call::<_, Vec<u8>>((buf, extension, options))
     }
 
     fn target_extension(&self) -> &str {

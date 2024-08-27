@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use serde::Deserialize;
 use smve_asset_pack::pack_io::compiling::raw_assets::AssetUncooker;
 
@@ -6,9 +8,15 @@ pub struct EUncooker;
 
 impl AssetUncooker for EUncooker {
     type Options = EUncookerOptions;
+    type Error = Infallible;
 
-    fn uncook(&self, buf: &[u8], _extension: &str, options: &Self::Options) -> Vec<u8> {
-        buf.iter().map(|_| options.character).collect()
+    fn uncook(
+        &self,
+        buf: &[u8],
+        _extension: &str,
+        options: &Self::Options,
+    ) -> Result<Vec<u8>, Self::Error> {
+        Ok(buf.iter().map(|_| options.character).collect())
     }
 
     fn target_extension(&self) -> &str {

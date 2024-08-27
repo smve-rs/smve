@@ -4,6 +4,7 @@ use downcast_rs::{impl_downcast, Downcast};
 use serde::Deserialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::error::Error;
 use toml::Table;
 use tracing::warn;
 
@@ -14,6 +15,8 @@ pub trait AssetUncooker {
     /// Settings which the uncooker takes in. It is deserialized from toml config files in the
     /// assets directory.
     type Options: UncookerOptions + for<'de> Deserialize<'de> + Default;
+    /// Errors that may be encountered during uncooking.
+    type Error: Error + 'static;
 
     /// Converts the file stored in `buf` into a vector of bytes as the output
     ///
@@ -21,7 +24,12 @@ pub trait AssetUncooker {
     /// - `buf`: Contains the bytes of the file to be uncooked
     /// - `extension`: The extension of the file to be uncooked
     /// - `options`: An instance of the settings struct
-    fn uncook(&self, buf: &[u8], extension: &str, options: &Self::Options) -> Vec<u8>;
+    fn uncook(
+        &self,
+        buf: &[u8],
+        extension: &str,
+        options: &Self::Options,
+    ) -> Result<Vec<u8>, Self::Error>;
 
     /// The extension without the leading `.` of the raw file to convert to.
     ///
@@ -42,7 +50,12 @@ pub(super) trait AssetUncookerDyn {
     /// - `options`: The upcasted options for the asset uncooker. **Important**: this will panic
     ///   if the passed in uncooker options is not the one expected by the asset uncooker. To ensure
     ///   that doesn't happen, pass the value returned by [`Self::try_deserialize_options`].
-    fn uncook_dyn(&self, buf: &[u8], extension: &str, options: &dyn UncookerOptions) -> Vec<u8>;
+    fn uncook_dyn(
+        &self,
+        buf: &[u8],
+        extension: &str,
+        options: &dyn UncookerOptions,
+    ) -> Result<Vec<u8>, Box<dyn Error>>;
     /// See [`AssetUncooker::target_extension`].
     fn target_extension(&self) -> &str;
     /// See [`AssetUncooker::source_extensions`].
@@ -62,11 +75,16 @@ impl<T> AssetUncookerDyn for T
 where
     T: AssetUncooker,
 {
-    fn uncook_dyn(&self, buf: &[u8], extension: &str, options: &dyn UncookerOptions) -> Vec<u8> {
+    fn uncook_dyn(
+        &self,
+        buf: &[u8],
+        extension: &str,
+        options: &dyn UncookerOptions,
+    ) -> Result<Vec<u8>, Box<dyn Error>> {
         let options = options
             .downcast_ref::<T::Options>()
             .expect("Settings should match AssetUncooker type");
-        T::uncook(self, buf, extension, options)
+        T::uncook(self, buf, extension, options).map_err(|e| Box::new(e) as Box<dyn Error>)
     }
 
     fn target_extension(&self) -> &str {

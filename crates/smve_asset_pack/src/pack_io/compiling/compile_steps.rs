@@ -16,7 +16,7 @@ use std::path::Path;
 use tempfile::tempfile;
 use tracing::error;
 
-use super::WalkDirCtx;
+use super::{UncookingCtx, WalkDirCtx};
 
 pub fn validate_asset_dir(asset_dir: &Path) -> CompileResult<()> {
     ensure!(
@@ -159,11 +159,13 @@ Available uncookers are: {:#?}",
                 error!("Uncooker options for {path_str} does not match options expected by the uncooker for extension {}.
 Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), uncooker_options);
             } else {
-                file_data = uncooker.uncook_dyn(
-                    file_data.as_slice(),
-                    asset_path.extension().unwrap().to_str().unwrap(),
-                    deserialized_uncooker_options.unwrap().as_ref(),
-                );
+                file_data = uncooker
+                    .uncook_dyn(
+                        file_data.as_slice(),
+                        asset_path.extension().unwrap().to_str().unwrap(),
+                        deserialized_uncooker_options.unwrap().as_ref(),
+                    )
+                    .context(UncookingCtx)?;
                 flags |= 0x01;
                 path_str.to_mut().push('.');
                 path_str.to_mut().push_str(uncooker.target_extension());

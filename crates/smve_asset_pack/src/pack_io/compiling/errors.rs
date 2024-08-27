@@ -34,6 +34,12 @@ pub enum CompileError {
         /// The `ignore` error itself (See [`ignore::Error`])
         source: ignore::Error,
     },
+    /// Error encountered when uncooking assets.
+    #[snafu(display("Failed to uncook assets! {source}"))]
+    UncookingError {
+        /// The original uncooker error.
+        source: Box<dyn std::error::Error>,
+    },
 }
 
 #[derive(Debug)]
