@@ -1,4 +1,4 @@
----
+***
 
 <h3 align="center" style="line-height: 1">
   <img alt="SMve" width="300" src="./images/title_logo.png">
@@ -7,7 +7,7 @@
 <p align="center"><strong>S</strong>unny<strong>M</strong>onster's <strong>V</strong>oxel <strong>E</strong>ngine</p>
 <p align="center"><a href="http://ipa-reader.xyz/?text=%CB%88s%C9%9Bmvej">SEM-vee /ˈsɛmviː/</a></p>
 
----
+***
 
 <p align="center">
   <a href="https://github.com/smve-rs/smve/stargazers"><img src="https://img.shields.io/github/stars/smve-rs/smve?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
