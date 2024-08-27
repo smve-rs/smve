@@ -82,7 +82,7 @@ impl<'a> Iterator for Walk<'a> {
                                     let file_name_osstr = entry.file_name();
                                     let file_name = file_name_osstr.to_str();
                                     if file_name.is_none() {
-                                        error!("Failed to convert file name to UTF-8! Unexpected behaviour might happen.")
+                                        error!("Failed to convert file name to UTF-8! Unexpected behavior might happen.")
                                     } else if file_name.unwrap().ends_with("__config__.toml")
                                         || file_name.unwrap() == "__ignore__"
                                     {
