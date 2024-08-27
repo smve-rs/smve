@@ -1,4 +1,4 @@
-***
+---
 
 <h3 align="center" style="line-height: 1">
   <img alt="SMve" width="300" src="./images/title_logo.png">
@@ -7,7 +7,7 @@
 <p align="center"><strong>S</strong>unny<strong>M</strong>onster's <strong>V</strong>oxel <strong>E</strong>ngine</p>
 <p align="center"><a href="http://ipa-reader.xyz/?text=%CB%88s%C9%9Bmvej">SEM-vee /ˈsɛmviː/</a></p>
 
-***
+---
 
 <p align="center">
   <a href="https://github.com/smve-rs/smve/stargazers"><img src="https://img.shields.io/github/stars/smve-rs/smve?style=for-the-badge&amp;logo=starship&amp;logoColor=cdd6f4&amp;labelColor=313244&amp;color=f9e2af" alt="Stars"></a>
@@ -24,22 +24,12 @@
 
 ### ➜ Plans
 
-***This project is still in its infancy so there are very little features, and I mean it.***
-As of now, there is only a pipelined renderer drawing a blue window.
+**_This project is still in its infancy so there are very little features, and I mean it._**
 
-The core engine will be an executable. You will be able to extend the engine with "mods" (they stand for modules, not
-modifications as in Minecraft). Mods will be written in a scripting language like lua or rhai (haven't decided yet) and
-they will subscribe to engine events such as `on_initialise` or `on_register_block` and they can call engine functions
-and interact with the ECS.
-
-You can provide resources that a module uses (such as textures, audio, etc.) with asset packs which are .zip files with
-a specific directory structure.
-
-The engine will provide default modules and asset packs for a minimal infinitely generating sandbox world and a menu
-screen. You can select and enable mods and asset packs from the menu screen, and mods can also modify or completely
-rewrite the menu screen.
-
-Modules hopefully also will be able to be written in normal Rust and compiled into a library.
+This project will be a voxel engine written on top of the excellent Bevy engine.
+It will be a collection of crates that can be used to make voxel games.
+Like Bevy, it will be designed in a modular way such that you can take what you
+need from the engine and build other things yourself.
 
 ### ➜ Contributing
 
@@ -49,9 +39,9 @@ See [CONTRIBUTING.md](https://github.com/smve-rs/smve/blob/master/CONTRIBUTING.m
 
 Unless specifically stated, all code in this repository is dual-licensed under either
 
-* MIT License ([LICENSE-MIT](https://github.com/smve-rs/smve/blob/master/LICENSE-MIT)
+- MIT License ([LICENSE-MIT](https://github.com/smve-rs/smve/blob/master/LICENSE-MIT)
   or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-* Apache License ([LICENSE-APACHE](https://github.com/smve-rs/smve/blob/master/LICENSE-APACHE)
+- Apache License ([LICENSE-APACHE](https://github.com/smve-rs/smve/blob/master/LICENSE-APACHE)
   or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
 
 at your option. This means you can select the license you prefer.
