@@ -129,6 +129,7 @@ Available uncookers are: {:#?}",
                 if !uncooker
                     .unwrap()
                     .source_extensions()
+                    .collect::<Vec<_>>()
                     .contains(&extension.to_str().unwrap())
                 {
                     error!("Asset uncooker specified at {uncooker_path} does not support extension {}!", extension.to_str().unwrap());

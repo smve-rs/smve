@@ -41,7 +41,7 @@ impl AssetPackCompiler {
     /// Register an instance of an asset uncooker for the current compiler.
     pub fn register_asset_uncooker<U>(&mut self, uncooker: U) -> &mut Self
     where
-        U: AssetUncooker,
+        U: AssetUncooker + 'static,
     {
         self.asset_uncookers.register(uncooker);
 
@@ -49,7 +49,7 @@ impl AssetPackCompiler {
     }
 
     /// Initialize an instance of an asset uncooker if it implements [`Default`]
-    pub fn init_asset_uncooker<U: AssetUncooker + Default>(&mut self) -> &mut Self {
+    pub fn init_asset_uncooker<U: AssetUncooker + Default + 'static>(&mut self) -> &mut Self {
         self.register_asset_uncooker(U::default())
     }
 

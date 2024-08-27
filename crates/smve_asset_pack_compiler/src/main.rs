@@ -1,24 +1,29 @@
 //! A simple CLI to compile asset packs from asset folders
 
-use clap::{arg, Parser};
+pub mod uncooker;
+
+use clap::{arg, Parser, ValueHint};
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
-use std::path::PathBuf;
+use std::{error::Error, fs::File, io::Read, path::PathBuf};
 use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use uncooker::UserDefinedUncooker;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// Path to the folder containing the assets.
-    #[arg(short, long)]
+    #[arg(short, long, value_hint = ValueHint::DirPath)]
     assets: PathBuf,
     /// Path to the output pack file.
-    #[arg(short, long)]
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
     out: PathBuf,
-    // TODO: Add custom uncookers with lua scripting
+    /// Paths (wildcards accepted) to custom uncooker lua files.
+    #[arg(short, long, value_hint = ValueHint::FilePath, num_args = 0..)]
+    uncookers: Vec<PathBuf>,
 }
 
-fn main() {
+fn main_inner() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -28,9 +33,27 @@ fn main() {
         )
         .init();
 
-    let args = Args::parse();
+    let args = Args::parse_from(wild::args_os());
 
-    let result = AssetPackCompiler::new().compile(args.assets, args.out);
+    let mut compiler = AssetPackCompiler::new();
+
+    for path in args.uncookers {
+        let mut file_data = String::new();
+
+        let mut file = File::open(path).unwrap();
+        file.read_to_string(&mut file_data).unwrap();
+
+        let uncooker = UserDefinedUncooker::new(&file_data)?;
+        compiler.register_asset_uncooker(uncooker);
+    }
+
+    compiler.compile(args.assets, args.out)?;
+
+    Ok(())
+}
+
+fn main() {
+    let result = main_inner();
 
     if let Err(err) = result {
         error!("Failed to compile assets! Error: {err}");

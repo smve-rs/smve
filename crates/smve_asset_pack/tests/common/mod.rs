@@ -15,8 +15,8 @@ impl AssetUncooker for EUncooker {
         "e"
     }
 
-    fn source_extensions(&self) -> &[&str] {
-        &["txt"]
+    fn source_extensions(&self) -> Box<dyn Iterator<Item = &str> + '_> {
+        Box::new(["txt"].into_iter())
     }
 }
 

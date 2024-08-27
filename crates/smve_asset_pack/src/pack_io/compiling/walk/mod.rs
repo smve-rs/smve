@@ -54,6 +54,7 @@ impl Walk<'_> {
     }
 }
 
+// FIXME: This should also implement FusedIterator
 impl<'a> Iterator for Walk<'a> {
     type Item = std::io::Result<(DirEntry, Configuration<'a>)>;
 

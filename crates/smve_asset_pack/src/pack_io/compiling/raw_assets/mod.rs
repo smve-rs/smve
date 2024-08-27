@@ -10,7 +10,7 @@ use tracing::warn;
 pub mod uncookers;
 
 /// Implement this to define how asset files can be converted to their raw forms.
-pub trait AssetUncooker: 'static {
+pub trait AssetUncooker {
     /// Settings which the uncooker takes in. It is deserialized from toml config files in the
     /// assets directory.
     type Options: UncookerOptions + for<'de> Deserialize<'de> + Default;
@@ -28,8 +28,8 @@ pub trait AssetUncooker: 'static {
     /// TODO: Add range of supported extensions
     fn target_extension(&self) -> &str;
 
-    /// The extensions without the leading `.` of the "cooked" (not-raw) files that can be converted into raw files by this converter.
-    fn source_extensions(&self) -> &[&str];
+    /// A boxed iterator that yields the extensions without the leading `.` of the "cooked" (not-raw) files that can be converted into raw files by this converter.
+    fn source_extensions(&self) -> Box<dyn Iterator<Item = &str> + '_>;
 }
 
 /// Type erased version of [`AssetUncooker`] for storing in a vector.
@@ -46,7 +46,7 @@ pub(super) trait AssetUncookerDyn {
     /// See [`AssetUncooker::target_extension`].
     fn target_extension(&self) -> &str;
     /// See [`AssetUncooker::source_extensions`].
-    fn source_extensions(&self) -> &[&str];
+    fn source_extensions(&self) -> Box<dyn Iterator<Item = &str> + '_>;
     /// Deserializes the passed in value into the options type expected by the uncooker.
     ///
     /// # Parameters
@@ -73,7 +73,7 @@ where
         T::target_extension(self)
     }
 
-    fn source_extensions(&self) -> &[&str] {
+    fn source_extensions(&self) -> Box<dyn Iterator<Item = &str> + '_> {
         T::source_extensions(self)
     }
 
@@ -109,7 +109,7 @@ impl AssetUncookers {
     /// Adds the provided uncooker into the registry.
     pub fn register<U>(&mut self, uncooker: U)
     where
-        U: AssetUncooker,
+        U: AssetUncooker + 'static,
     {
         let uncooker_index = self.uncookers.len();
 
