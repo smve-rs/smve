@@ -537,7 +537,7 @@ impl AssetPackGroupReader {
             io!(
                 packs_toml.write_all(
                     "# This file was generated automatically by SMve asset pack.
-# Do NOT modify this file manually as doing so may cause unwanted behavior.\n\n"
+# Unless you know what you are doing, do NOT modify this file manually as doing so may cause unwanted behavior.\n\n"
                         .as_bytes(),
                 ),
                 ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
