@@ -10,6 +10,7 @@ use ignore::gitignore::Gitignore;
 use merge::Merge;
 use std::fs;
 use std::fs::{DirEntry, ReadDir};
+use std::iter::FusedIterator;
 use std::path::Path;
 use tracing::{error, warn};
 
@@ -54,7 +55,6 @@ impl Walk<'_> {
     }
 }
 
-// FIXME: This should also implement FusedIterator
 impl<'a> Iterator for Walk<'a> {
     type Item = std::io::Result<(DirEntry, Configuration<'a>)>;
 
@@ -248,6 +248,8 @@ impl<'a> Iterator for Walk<'a> {
         None
     }
 }
+
+impl FusedIterator for Walk<'_> {}
 
 pub enum ProcessNode {
     ReadDir(ReadDir),
