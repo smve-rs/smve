@@ -95,7 +95,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
 
         // Test override overriding everything
         reader.add_override_pack(
-            AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override.smap"))))
+            AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override1.smap"))))
                 .await?
                 .box_reader(),
             "override1",
@@ -105,6 +105,19 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
         assert_eq!(singular_str, "Overridden!\n");
+
+        // Test override second
+        reader.add_override_pack(
+            AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override2.smap"))))
+                .await?
+                .box_reader(),
+            "override2",
+        );
+        reader.load().await?;
+        let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
+        let mut singular_str = String::new();
+        singular_reader.read_to_string(&mut singular_str).await?;
+        assert_eq!(singular_str, "Overridden AGAIN\n");
 
         Ok(())
     });
