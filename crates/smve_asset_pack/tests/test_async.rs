@@ -94,10 +94,11 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         assert_eq!(builtin_str, "BuiltIn\n");
 
         // Test override overriding everything
-        reader.set_override_pack(
+        reader.add_override_pack(
             AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override.smap"))))
                 .await?
                 .box_reader(),
+            "override1",
         );
         reader.load().await?;
         let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();

@@ -3,10 +3,12 @@
 use async_fs::{File, OpenOptions};
 use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
+use indexmap::IndexMap;
 use pathdiff::diff_paths;
 use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
 use std::io::SeekFrom;
+use std::mem;
 use std::path::{Path, PathBuf};
 use tracing::{error, warn};
 
@@ -103,10 +105,13 @@ mod serde;
 /// # }
 /// # async fn blah() -> smve_asset_pack::pack_io::reading::async_read::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
-/// reader.set_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader());
+/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader(), "override");
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```
+///
+/// More calls to [`add_override_pack`](Self::add_override_pack) will put the packs above other
+/// pre-existing override packs.
 ///
 /// To change the order of the enabled packs in the precedence stack or to disable and enable
 /// packs, you can pass in a slice of paths identifying the packs in order. Built-in packs are
@@ -121,6 +126,17 @@ mod serde;
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```
+///
+/// You can also do the same with override packs:
+///
+/// ```no_run
+/// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
+/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// reader.rearrange_override_packs(&["override", "override2"]);
+/// reader.load()?;
+/// # Ok(()) }
+/// ```
 pub struct AssetPackGroupReader {
     enabled_packs: EnabledPacks,
     /// This does not include built-in packs
@@ -130,7 +146,7 @@ pub struct AssetPackGroupReader {
     packs_changed: bool,
     pack_extension: &'static str,
     root_dir: PathBuf,
-    override_pack: Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>>,
+    override_packs: IndexMap<Box<str>, AssetPackReader<Box<dyn AsyncSeekableBufRead>>>,
 }
 
 impl AssetPackGroupReader {
@@ -204,7 +220,7 @@ impl AssetPackGroupReader {
             packs_changed: true,
             pack_extension: "smap",
             root_dir: root_dir.into(),
-            override_pack: None,
+            override_packs: IndexMap::new(),
         })
     }
 
@@ -261,7 +277,11 @@ impl AssetPackGroupReader {
                 .pack_reader
                 .as_mut()
                 .unwrap(),
-            PackIndex::OverridePack => self.override_pack.as_mut().unwrap(),
+            PackIndex::OverridePack(i) => self
+                .override_packs
+                .get_index_mut(*i)
+                .map(|(_, reader)| reader)
+                .unwrap(),
         };
 
         pack_reader.get_file_reader(file_path).await
@@ -389,44 +409,89 @@ impl AssetPackGroupReader {
         self.enabled_packs.remove(old_pack_index).pack_reader.take()
     }
 
-    /// Register an asset pack that stays at the top of the precedence "ladder" and *cannot* be
+    /// Adds an asset pack that stays at the top of the precedence "ladder" and *cannot* be
     /// disabled.
     ///
     /// This is useful for assets which you don't want users to mod.
+    ///
+    /// This pack will be added above other override packs already present.
     ///
     /// These changes will **NOT** be reflected until [`load`](Self::load) is called.
     ///
     /// # Parameters
     /// - `reader`: An asset pack reader reading the override pack.
+    /// - `identifier`: A unique string to identify this override pack.
     ///
     /// # Returns
-    /// The old override pack if it already exists, [`None`] otherwise.
-    pub fn set_override_pack(
+    /// If there was already an asset pack reader with the same id, the old one will be returned.
+    pub fn add_override_pack(
         &mut self,
         reader: AssetPackReader<Box<dyn AsyncSeekableBufRead>>,
+        identifier: &str,
     ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
-        let existing = self.override_pack.take();
-
-        self.override_pack = Some(reader);
-
         self.packs_changed = true;
-
-        existing
+        self.override_packs.insert(Box::from(identifier), reader)
     }
 
-    /// Removes the registered override pack.
+    /// Rearranges the override packs.
     ///
-    /// Note that these changes will not be reflected until [`Self::load`] is called.
-    pub fn remove_override_pack(
+    /// If some existing override packs are not provided in the ids, they will be removed and
+    /// returned.
+    ///
+    /// These changes will **NOT** be reflected until [`load`](Self::load) is called.
+    ///
+    /// # Parameters
+    /// - `ids`: A slice of identifiers for the override packs arranged from highest in the
+    ///   precedence stack to lowest in the precedence stack.
+    ///
+    /// # Returns
+    /// [`None`] if no packs were removed, otherwise [`Some`] of all removed readers.
+    pub fn rearrange_override_packs<I>(
         &mut self,
-    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
-        let old = self.override_pack.take();
+        ids: &[I],
+    ) -> Option<Vec<AssetPackReader<Box<dyn AsyncSeekableBufRead>>>>
+    where
+        I: AsRef<str>,
+    {
+        self.packs_changed = true;
 
-        if old.is_some() {
-            self.packs_changed = true;
+        let mut temp_map = IndexMap::new();
+        mem::swap(&mut temp_map, &mut self.override_packs);
+
+        for id in ids.iter().rev() {
+            let id = id.as_ref();
+
+            if let Some((id, reader)) = temp_map.swap_remove_entry(id) {
+                self.override_packs.insert(id, reader);
+            } else {
+                error!("Override pack {id} is not found! Ignoring.");
+            }
         }
 
-        old
+        if temp_map.is_empty() {
+            None
+        } else {
+            Some(temp_map.drain(..).map(|(_, reader)| reader).collect())
+        }
+    }
+
+    /// Removes an override pack and returns the reader.
+    ///
+    /// This operation is O(n)
+    ///
+    /// These changes will **NOT** be reflected until [`load`](Self::load) is called.
+    ///
+    /// # Parameters
+    /// - `ids`: The identifiers for the asset pack to be removed.
+    ///
+    /// # Returns
+    /// [`None`] if the pack does not exist, otherwise [`Some`] of the removed pack.
+    pub fn remove_override_pack(
+        &mut self,
+        id: impl AsRef<str>,
+    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
+        self.packs_changed = true;
+        self.override_packs.shift_remove(id.as_ref())
     }
 
     /// Rediscovers all available packs, along with rebuilding the index if the enabled packs has
@@ -491,11 +556,13 @@ impl AssetPackGroupReader {
             self.file_name_to_asset_pack.clear();
 
             // Add override files
-            if let Some(ref mut override_pack) = self.override_pack {
-                let toc = &override_pack.get_pack_front().await?.toc;
+            for (index, reader) in self.override_packs.values_mut().rev().enumerate() {
+                let toc = &reader.get_pack_front().await?.toc;
                 for key in toc.keys() {
-                    self.file_name_to_asset_pack
-                        .insert(Box::from(key.as_str()), PackIndex::OverridePack);
+                    if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
+                        self.file_name_to_asset_pack
+                            .insert(Box::from(key.as_str()), PackIndex::OverridePack(index));
+                    }
                 }
             }
 
@@ -620,5 +687,5 @@ pub struct PackDescriptor {
 
 enum PackIndex {
     Enabled(usize),
-    OverridePack,
+    OverridePack(usize),
 }
