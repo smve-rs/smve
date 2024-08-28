@@ -15,7 +15,7 @@ use crate::pack_io::reading::pack_group::serde::{EnabledPack, EnabledPacks};
 use crate::pack_io::reading::{AssetFileReader, AssetPackReader, NotADirectoryCtx, ReadResult};
 
 use super::utils::io;
-use super::{ReadStep, SeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
+use super::{LoadNotCalledCtx, ReadStep, SeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
 
 use snafu::{ensure, ResultExt};
 
@@ -261,7 +261,9 @@ impl AssetPackGroupReader {
         &mut self,
         file_path: &str,
     ) -> ReadResult<Option<AssetFileReader<Box<dyn SeekableBufRead>>>> {
-        // FIXME: This should error when packs have been changed.
+        if self.packs_changed {
+            return LoadNotCalledCtx.fail()?;
+        }
 
         let index = self.file_name_to_asset_pack.get(file_path);
         if index.is_none() {
@@ -272,7 +274,7 @@ impl AssetPackGroupReader {
             PackIndex::Enabled(i) => self
                 .enabled_packs
                 .get_mut(*i)
-                .unwrap() // FIXME: This will panic if the user forgets to load
+                .unwrap()
                 .pack_reader
                 .as_mut()
                 .unwrap(),
@@ -280,7 +282,7 @@ impl AssetPackGroupReader {
                 .override_packs
                 .get_index_mut(*i)
                 .map(|(_, reader)| reader)
-                .unwrap(), // FIXME: This will panic if the user forgets to load
+                .unwrap(),
         };
 
         pack_reader.get_file_reader(file_path)

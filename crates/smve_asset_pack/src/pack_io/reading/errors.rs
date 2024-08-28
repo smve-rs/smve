@@ -68,6 +68,9 @@ pub enum ReadError {
         /// The walkdir error
         source: walkdir::Error,
     },
+    /// Thrown when the user hasn't called load after changing the packs.
+    #[snafu(display("Cannot get file reader without calling `load` first!"))]
+    LoadNotCalled,
 }
 
 #[derive(Debug)]

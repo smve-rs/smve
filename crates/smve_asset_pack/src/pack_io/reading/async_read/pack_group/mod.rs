@@ -20,7 +20,7 @@ use crate::pack_io::reading::async_read::{
 };
 
 use super::utils::io;
-use super::{AsyncSeekableBufRead, TomlDeserializeCtx, WalkDirCtx};
+use super::{AsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, WalkDirCtx};
 
 mod serde;
 
@@ -260,10 +260,17 @@ impl AssetPackGroupReader {
     }
 
     /// Returns an asset file reader for a specific file.
+    ///
+    /// Will return an error if there were any operations after the last call to
+    /// [`load`](Self::load).
     pub async fn get_file_reader(
         &mut self,
         file_path: &str,
     ) -> ReadResult<Option<AssetFileReader<Box<dyn AsyncSeekableBufRead>>>> {
+        if self.packs_changed {
+            return LoadNotCalledCtx.fail()?;
+        }
+
         let index = self.file_name_to_asset_pack.get(file_path);
         if index.is_none() {
             return Ok(None);
