@@ -7,6 +7,7 @@ mod utils;
 mod walk;
 
 pub use errors::*;
+use raw_assets::uncookers::text::TextAssetUncooker;
 use utils::io;
 
 use crate::pack_io::compiling::compile_steps::{
@@ -51,6 +52,13 @@ impl AssetPackCompiler {
     /// Initialize an instance of an asset uncooker if it implements [`Default`]
     pub fn init_asset_uncooker<U: AssetUncooker + Default + 'static>(&mut self) -> &mut Self {
         self.register_asset_uncooker(U::default())
+    }
+
+    /// Registers all built-in uncookers.
+    ///
+    /// TODO: Include a list once bevy integration is complete.
+    pub fn register_default_uncookers(&mut self) -> &mut Self {
+        self.init_asset_uncooker::<TextAssetUncooker>()
     }
 
     /// Compile an asset pack file based on the settings set on the creation of [`AssetPackCompiler`]

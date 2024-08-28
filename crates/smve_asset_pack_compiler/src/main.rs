@@ -21,6 +21,9 @@ struct Args {
     /// Paths (wildcards accepted) to custom uncooker lua files.
     #[arg(short, long, value_hint = ValueHint::FilePath, num_args = 0..)]
     uncookers: Vec<PathBuf>,
+    /// Don't include built-in uncookers.
+    #[arg(short, long)]
+    no_default_uncookers: bool,
 }
 
 fn main_inner() -> Result<(), Box<dyn Error>> {
@@ -36,6 +39,10 @@ fn main_inner() -> Result<(), Box<dyn Error>> {
     let args = Args::parse_from(wild::args_os());
 
     let mut compiler = AssetPackCompiler::new();
+
+    if !args.no_default_uncookers {
+        compiler.register_default_uncookers();
+    }
 
     for path in args.uncookers {
         let mut file_data = String::new();
