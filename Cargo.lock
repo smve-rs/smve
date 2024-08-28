@@ -3698,6 +3698,7 @@ dependencies = [
  "mlua",
  "serde",
  "smve_asset_pack",
+ "snafu",
  "toml",
  "tracing",
  "tracing-subscriber",

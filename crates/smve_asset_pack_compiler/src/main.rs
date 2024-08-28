@@ -57,5 +57,6 @@ fn main() {
 
     if let Err(err) = result {
         error!("Failed to compile assets! Error: {err}");
+        eprintln!("Failed to compile assets! Please read error logs above.");
     }
 }

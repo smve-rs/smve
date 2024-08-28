@@ -13,6 +13,7 @@ wild = "2.2.1"
 mlua = { version = "0.9.9", features = ["luajit52", "serialize"] }
 serde = "1.0.209"
 toml = "0.8.19"
+snafu = "0.8.4"
 
 [lints]
 workspace = true
