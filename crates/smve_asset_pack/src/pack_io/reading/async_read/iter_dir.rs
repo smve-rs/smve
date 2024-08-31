@@ -30,12 +30,12 @@ impl<R: AsyncSeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub async fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir>> {
-        if !self.has_directory(path).await? {
+    pub fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir>> {
+        if !self.has_directory(path) {
             return Ok(None);
         }
 
-        let pack_front = self.get_pack_front().await?;
+        let pack_front = self.get_pack_front();
 
         Ok(Some(IterDir {
             pack_front,

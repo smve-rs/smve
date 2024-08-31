@@ -25,14 +25,10 @@ use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
+use std::io::{BufRead, BufReader, Read, Seek};
 use std::path::Path;
 
 /// Create an instance of this struct to read an asset pack.
-///
-/// **Note that**: many functions from this struct automatically loads the pack front if it hasn't
-/// been loaded yet. So when these functions are called for the first time, they will take more
-/// time to execute because it has to check all the files in the pack to check for damages.
 ///
 /// # Examples
 /// * Read the pack front from the asset pack:
@@ -41,7 +37,7 @@ use std::path::Path;
 ///
 /// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let pack_front = pack_reader.get_pack_front()?;
+/// let pack_front = pack_reader.get_pack_front();
 /// let toc = &pack_front.toc;
 /// let directories = &pack_front.directory_list;
 /// # Ok(()) }
@@ -71,7 +67,7 @@ use std::path::Path;
 #[non_exhaustive]
 pub struct AssetPackReader<R: SeekableBufRead> {
     reader: R,
-    pack_front_cache: Option<PackFront>,
+    pack_front: PackFront,
     version: u16,
 }
 
@@ -84,7 +80,7 @@ impl<R: SeekableBufRead> Debug for AssetPackReader<R> {
 }
 
 impl AssetPackReader<BufReader<File>> {
-    /// Create a new [`AssetPackReader`] from a path and verifies it.
+    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads its pack front.
     ///
     /// # Parameters
     /// - `pack_path`: Path to the asset pack file
@@ -106,7 +102,7 @@ impl AssetPackReader<BufReader<File>> {
 }
 
 impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
-    /// Creates a new [`AssetPackReader`] from a [`Read`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`Read`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
     /// to avoid double buffering.
@@ -126,7 +122,7 @@ impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
 }
 
 impl<R: SeekableBufRead> AssetPackReader<R> {
-    /// Creates a new [`AssetPackReader`] from a [`BufRead`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`BufRead`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
     ///
@@ -142,9 +138,25 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
 
         let version = validate_version(&mut reader)?;
 
+        let expected_toc_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
+        let expected_dl_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
+
+        let (mut toc, mut unique_files) = read_toc(&mut reader, &expected_toc_hash)?;
+        let dl = read_dl(&mut reader, &expected_dl_hash)?;
+
+        validate_files(&mut reader, &mut toc, &mut unique_files)?;
+
+        let dl = get_dir_start_indices(&dl, &toc);
+
+        let pack_front = PackFront {
+            toc,
+            directory_list: dl,
+            unique_files,
+        };
+
         Ok(Self {
             reader,
-            pack_front_cache: None,
+            pack_front,
             version,
         })
     }
@@ -156,43 +168,10 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
 
     /// Returns the pack front of the asset pack.
     ///
-    /// The first time the pack front is requested, it will take longer as it needs to verify the hashes
-    /// of every file it contains. Any subsequent calls will be instant because the pack front is cached.
-    ///
-    /// # Errors
-    /// See [`ReadError`].
-    ///
     /// # See also
     /// [`PackFront`]
-    pub fn get_pack_front(&mut self) -> ReadResult<&PackFront> {
-        if self.pack_front_cache.is_some() {
-            return Ok(self.pack_front_cache.as_ref().unwrap());
-        }
-
-        io!(
-            self.reader.seek(SeekFrom::Start(6)),
-            ReadStep::ReadPackFront
-        )?;
-
-        let expected_toc_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
-        let expected_dl_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
-
-        let (mut toc, mut unique_files) = read_toc(&mut self.reader, &expected_toc_hash)?;
-        let dl = read_dl(&mut self.reader, &expected_dl_hash)?;
-
-        validate_files(&mut self.reader, &mut toc, &mut unique_files)?;
-
-        let dl = get_dir_start_indices(&dl, &toc);
-
-        let pack_front = PackFront {
-            toc,
-            directory_list: dl,
-            unique_files,
-        };
-
-        self.pack_front_cache = Some(pack_front);
-
-        Ok(self.pack_front_cache.as_ref().unwrap())
+    pub fn get_pack_front(&mut self) -> &PackFront {
+        &self.pack_front
     }
 
     /// Returns a [`AssetFileReader`] for a specified file.
@@ -206,7 +185,7 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
     pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
-        let toc = &self.get_pack_front()?.toc;
+        let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -230,7 +209,7 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
     pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
-        let unique_files = &self.get_pack_front()?.unique_files;
+        let unique_files = &self.get_pack_front().unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -246,14 +225,10 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the file to check relative to the original assets directory (without `./`)
-    ///
-    /// # Errors
-    /// Returns an error if it fails to read the pack front.
-    /// See also [`ReadError`].
-    pub fn has_file(&mut self, path: &str) -> ReadResult<bool> {
-        let toc = &self.get_pack_front()?.toc;
+    pub fn has_file(&mut self, path: &str) -> bool {
+        let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
-        Ok(meta.is_some())
+        meta.is_some()
     }
 
     /// Returns the flags for a specified file.
@@ -262,20 +237,13 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// - `path`: The path of the file to be read relative to the original assets directory
     ///   (without `./`)
     ///
-    /// # Errors
-    /// Returns errors if getting the TOC fails. See [`ReadError`]
-    ///
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub fn get_flags(&mut self, path: &str) -> ReadResult<Option<u8>> {
-        let toc = &self.get_pack_front()?.toc;
-        let meta = toc.get(path);
-        if meta.is_none() {
-            return Ok(None);
-        }
-        let meta = *meta.unwrap();
+    pub fn get_flags(&mut self, path: &str) -> Option<u8> {
+        let toc = &self.get_pack_front().toc;
+        let meta = toc.get(path)?;
 
-        Ok(Some(meta.flags))
+        Some(meta.flags)
     }
 
     /// Checks whether a specified path is a directory in the pack file.
@@ -284,15 +252,11 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     /// - `path`: The path of the directory relative to the assets directory (without ./)
     ///
     /// # Returns
-    /// `Ok(true)` if the path is a directory, `Ok(false)` if the path is not a directory`
-    ///
-    /// # Errors
-    /// Returns an error if getting the pack_front fails.
-    /// See also [`ReadError`]
-    pub fn has_directory(&mut self, path: &str) -> ReadResult<bool> {
-        let pack_front = self.get_pack_front()?;
+    /// `true` if the path is a directory, `false` if the path is not a directory`
+    pub fn has_directory(&mut self, path: &str) -> bool {
+        let pack_front = self.get_pack_front();
 
-        Ok(pack_front.directory_list.contains_key(path))
+        pack_front.directory_list.contains_key(path)
     }
 }
 
@@ -303,7 +267,7 @@ impl<R: SeekableBufRead + 'static> AssetPackReader<R> {
 
         AssetPackReader {
             reader: boxed_reader,
-            pack_front_cache: self.pack_front_cache,
+            pack_front: self.pack_front,
             version: self.version,
         }
     }

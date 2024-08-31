@@ -183,7 +183,7 @@ async fn check_files(
 
         if not_stored {
             assert!(
-                !reader.has_file(&rel_path_str).await?,
+                !reader.has_file(&rel_path_str),
                 "Ignored file {rel_path_str} was stored in asset pack!"
             );
             continue;
@@ -193,7 +193,7 @@ async fn check_files(
             // Ignore __unique__
             if !rel_path_str.starts_with("__unique__/") && rel_path_str != "__unique__" {
                 assert!(
-                    reader.has_directory(&rel_path_str).await?,
+                    reader.has_directory(&rel_path_str),
                     "Directory not found in pack: {rel_path_str}"
                 );
             }

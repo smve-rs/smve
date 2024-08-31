@@ -15,7 +15,7 @@ pub use file_reader::*;
 pub use iter_dir::*;
 
 use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
-use futures_lite::{AsyncRead, AsyncReadExt, AsyncSeekExt};
+use futures_lite::{AsyncRead, AsyncReadExt};
 use read_steps::{
     get_dir_start_indices, read_dl, read_toc, validate_files, validate_header, validate_version,
 };
@@ -24,15 +24,12 @@ use async_fs::File;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::io::SeekFrom;
 use std::path::Path;
 use utils::{io, read_bytes};
 
+// TODO: Update all documentation to reflect API change surrounding the pack_front
+
 /// Create an instance of this struct to asynchronously read an asset pack.
-///
-/// **Note that**: many functions from this struct automatically loads the pack front if it hasn't
-/// been loaded yet. So when these functions are called for the first time, they will take more
-/// time to execute because it has to check all the files in the pack to check for damages.
 ///
 /// # Examples
 /// * Read the pack front from the asset pack:
@@ -41,7 +38,7 @@ use utils::{io, read_bytes};
 ///
 /// # async_io::block_on(async {
 /// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").await?;
-/// let pack_front = pack_reader.get_pack_front().await?;
+/// let pack_front = pack_reader.get_pack_front();
 /// let toc = &pack_front.toc;
 /// let directories = &pack_front.directory_list;
 /// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
@@ -68,10 +65,9 @@ use utils::{io, read_bytes};
 /// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
 /// ```
 /// See also [`AssetFileReader`].
-#[non_exhaustive]
 pub struct AssetPackReader<R: AsyncSeekableBufRead> {
     reader: R,
-    pack_front_cache: Option<PackFront>,
+    pack_front: PackFront,
     version: u16,
 }
 
@@ -84,7 +80,7 @@ impl<R: AsyncSeekableBufRead> Debug for AssetPackReader<R> {
 }
 
 impl AssetPackReader<BufReader<File>> {
-    /// Create a new [`AssetPackReader`] from a path and verifies it.
+    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads the pack front.
     ///
     /// # Parameters
     /// - `pack_path`: Path to the asset pack file
@@ -106,7 +102,7 @@ impl AssetPackReader<BufReader<File>> {
 }
 
 impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
-    /// Creates a new [`AssetPackReader`] from a [`AsyncRead`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`AsyncRead`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your read type already implements [`AsyncBufRead`], use [`new`](Self::new) instead
     /// to avoid double buffering.
@@ -126,7 +122,8 @@ impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
 }
 
 impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
-    /// Creates a new [`AssetPackReader`] from a [`AsyncBufRead`] and verifies it.
+    /// Creates a new [`AssetPackReader`] from a [`AsyncBufRead`], verifies it, and reads its pack
+    /// front.
     ///
     /// **NOTE**: If your type don't already implement [`AsyncBufRead`], use [`new_from_read`](Self::new_from_read) instead.
     ///
@@ -142,9 +139,25 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
 
         let version = validate_version(&mut reader).await?;
 
+        let expected_toc_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
+        let expected_dl_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
+
+        let (mut toc, mut unique_files) = read_toc(&mut reader, &expected_toc_hash).await?;
+        let dl = read_dl(&mut reader, &expected_dl_hash).await?;
+
+        validate_files(&mut reader, &mut toc, &mut unique_files).await?;
+
+        let dl = get_dir_start_indices(&dl, &toc);
+
+        let pack_front = PackFront {
+            toc,
+            directory_list: dl,
+            unique_files,
+        };
+
         Ok(Self {
             reader,
-            pack_front_cache: None,
+            pack_front,
             version,
         })
     }
@@ -156,43 +169,10 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
 
     /// Returns the pack front of the asset pack.
     ///
-    /// The first time the pack front is requested, it will take longer as it needs to verify the hashes
-    /// of every file it contains. Any subsequent calls will be instant because the pack front is cached.
-    ///
-    /// # Errors
-    /// See [`ReadError`].
-    ///
     /// # See also
     /// [`PackFront`]
-    pub async fn get_pack_front(&mut self) -> ReadResult<&PackFront> {
-        if self.pack_front_cache.is_some() {
-            return Ok(self.pack_front_cache.as_ref().unwrap());
-        }
-
-        io!(
-            self.reader.seek(SeekFrom::Start(6)).await,
-            ReadStep::ReadPackFront
-        )?;
-
-        let expected_toc_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
-        let expected_dl_hash = io!(read_bytes!(self.reader, 32), ReadStep::ReadPackFront)?;
-
-        let (mut toc, mut unique_files) = read_toc(&mut self.reader, &expected_toc_hash).await?;
-        let dl = read_dl(&mut self.reader, &expected_dl_hash).await?;
-
-        validate_files(&mut self.reader, &mut toc, &mut unique_files).await?;
-
-        let dl = get_dir_start_indices(&dl, &toc);
-
-        let pack_front = PackFront {
-            toc,
-            directory_list: dl,
-            unique_files,
-        };
-
-        self.pack_front_cache = Some(pack_front);
-
-        Ok(self.pack_front_cache.as_ref().unwrap())
+    pub fn get_pack_front(&mut self) -> &PackFront {
+        &self.pack_front
     }
 
     /// Returns a [`AssetFileReader`] for a specified file.
@@ -206,7 +186,7 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
     pub async fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
-        let toc = &self.get_pack_front().await?.toc;
+        let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -233,7 +213,7 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
         &mut self,
         path: &str,
     ) -> ReadResult<Option<AssetFileReader<R>>> {
-        let unique_files = &self.get_pack_front().await?.unique_files;
+        let unique_files = &self.get_pack_front().unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -249,14 +229,10 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the file to check relative to the original assets directory (without `./`)
-    ///
-    /// # Errors
-    /// Returns an error if it fails to read the pack front.
-    /// See also [`ReadError`].
-    pub async fn has_file(&mut self, path: &str) -> ReadResult<bool> {
-        let toc = &self.get_pack_front().await?.toc;
+    pub fn has_file(&mut self, path: &str) -> bool {
+        let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
-        Ok(meta.is_some())
+        meta.is_some()
     }
 
     /// Returns the flags for a specified file.
@@ -265,20 +241,13 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     /// - `path`: The path of the file to be read relative to the original assets directory
     ///   (without `./`)
     ///
-    /// # Errors
-    /// Returns errors if getting the TOC fails. See [`ReadError`]
-    ///
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub async fn get_flags(&mut self, path: &str) -> ReadResult<Option<u8>> {
-        let toc = &self.get_pack_front().await?.toc;
-        let meta = toc.get(path);
-        if meta.is_none() {
-            return Ok(None);
-        }
-        let meta = *meta.unwrap();
+    pub fn get_flags(&mut self, path: &str) -> Option<u8> {
+        let toc = &self.get_pack_front().toc;
+        let meta = toc.get(path)?;
 
-        Ok(Some(meta.flags))
+        Some(meta.flags)
     }
 
     /// Checks whether a specified path is a directory in the pack file.
@@ -287,15 +256,11 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     /// - `path`: The path of the directory relative to the assets directory (without ./)
     ///
     /// # Returns
-    /// `Ok(true)` if the path is a directory, `Ok(false)` if the path is not a directory`
-    ///
-    /// # Errors
-    /// Returns an error if getting the pack_front fails.
-    /// See also [`ReadError`]
-    pub async fn has_directory(&mut self, path: &str) -> ReadResult<bool> {
-        let pack_front = self.get_pack_front().await?;
+    /// `true` if the path is a directory, `false` if the path is not a directory`
+    pub fn has_directory(&mut self, path: &str) -> bool {
+        let pack_front = self.get_pack_front();
 
-        Ok(pack_front.directory_list.contains_key(path))
+        pack_front.directory_list.contains_key(path)
     }
 }
 
@@ -306,7 +271,7 @@ impl<R: AsyncSeekableBufRead + 'static> AssetPackReader<R> {
 
         AssetPackReader {
             reader: boxed_reader,
-            pack_front_cache: self.pack_front_cache,
+            pack_front: self.pack_front,
             version: self.version,
         }
     }

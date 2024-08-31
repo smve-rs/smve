@@ -556,7 +556,7 @@ impl AssetPackGroupReader {
 
             // Add override files
             for (index, reader) in self.override_packs.values_mut().enumerate().rev() {
-                let toc = &reader.get_pack_front()?.toc;
+                let toc = &reader.get_pack_front().toc;
                 for key in toc.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
@@ -588,7 +588,7 @@ impl AssetPackGroupReader {
                 }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
-                let pack_front = pack_reader.get_pack_front()?;
+                let pack_front = pack_reader.get_pack_front();
                 let toc = &pack_front.toc;
 
                 for key in toc.keys() {
