@@ -65,7 +65,6 @@ use std::path::Path;
 /// # Ok(()) }
 /// ```
 /// See also [`AssetFileReader`].
-#[non_exhaustive]
 pub struct AssetPackReader<R: ConditionalSendSeekableBufRead> {
     reader: R,
     pack_front: PackFront,
