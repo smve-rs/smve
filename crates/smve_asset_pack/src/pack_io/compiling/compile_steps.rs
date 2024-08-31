@@ -61,7 +61,7 @@ pub fn write_header(output_file: &mut File) -> CompileResult<()> {
 #[allow(clippy::too_many_arguments)] // I don't think there is any way to collapse this further
 pub fn process_asset(
     asset: &DirEntry,
-    config: Configuration,
+    config: Configuration<'_>,
     asset_dir: &Path,
     directories: &mut Vec<String>,
     compiler: &AssetPackCompiler,

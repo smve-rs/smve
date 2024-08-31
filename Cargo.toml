@@ -31,6 +31,7 @@ type_complexity = "allow"
 
 [workspace.lints.rust]
 missing_docs = "warn"
+rust_2018_idioms = "warn"
 
 [dependencies]
 smve_internal = { path = "crates/smve_internal" }

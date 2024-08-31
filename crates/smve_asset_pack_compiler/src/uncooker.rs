@@ -35,7 +35,7 @@ impl UserDefinedUncooker {
         let globals = lua.globals();
 
         uncook!(
-            empty_table.for_each(|key: String, value: Value| {
+            empty_table.for_each(|key: String, value: Value<'_>| {
                 if !globals.contains_key(key.as_str())? {
                     globals.raw_set(key, value)?;
                 }
@@ -47,11 +47,12 @@ impl UserDefinedUncooker {
 
         drop(empty_table);
 
-        let _uncook_function: Function = uncook!(globals.get("Uncook"), UncookerStep::GetGlobals)?;
+        let _uncook_function: Function<'_> =
+            uncook!(globals.get("Uncook"), UncookerStep::GetGlobals)?;
         let target_extension = uncook!(globals.get("TARGET_EXTENSION"), UncookerStep::GetGlobals)?;
         let source_extensions =
             uncook!(globals.get("SOURCE_EXTENSIONS"), UncookerStep::GetGlobals)?;
-        let default_config: Table =
+        let default_config: Table<'_> =
             uncook!(globals.get("DEFAULT_CONFIG"), UncookerStep::GetGlobals)?;
 
         let default_config = uncook!(
@@ -83,7 +84,8 @@ impl AssetUncooker for UserDefinedUncooker {
         extension: &str,
         options: &Self::Options,
     ) -> Result<Vec<u8>, Self::Error> {
-        let uncook: Function = uncook!(self.lua.globals().get("Uncook"), UncookerStep::RunUncook)?;
+        let uncook: Function<'_> =
+            uncook!(self.lua.globals().get("Uncook"), UncookerStep::RunUncook)?;
         uncook!(
             uncook.set_environment(self.lua.globals()),
             UncookerStep::RunUncook

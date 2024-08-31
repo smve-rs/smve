@@ -35,7 +35,7 @@ impl Walk<'_> {
 
         let mut process_stack: Vec<ProcessNode> = vec![];
         let mut ignores: Vec<Gitignore> = vec![];
-        let mut configs: Vec<DirectoryConfiguration> = vec![];
+        let mut configs: Vec<DirectoryConfiguration<'_>> = vec![];
 
         process_stack.push(ProcessNode::ReadDir(fs::read_dir(path)?));
 

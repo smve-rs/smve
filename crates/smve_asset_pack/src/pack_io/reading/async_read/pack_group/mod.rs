@@ -269,7 +269,7 @@ impl AssetPackGroupReader {
     pub async fn get_file_reader(
         &mut self,
         file_path: &str,
-    ) -> ReadResult<Option<AssetFileReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>> {
+    ) -> ReadResult<Option<AssetFileReader<'_, Box<dyn ConditionalSendAsyncSeekableBufRead>>>> {
         if self.packs_changed {
             return LoadNotCalledCtx.fail()?;
         }

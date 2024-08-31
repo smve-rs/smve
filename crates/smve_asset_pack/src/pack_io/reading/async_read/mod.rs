@@ -184,7 +184,10 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub async fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
+    pub async fn get_file_reader(
+        &mut self,
+        path: &str,
+    ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
         let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
         if meta.is_none() {
@@ -211,7 +214,7 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
     pub async fn get_unique_file_reader(
         &mut self,
         path: &str,
-    ) -> ReadResult<Option<AssetFileReader<R>>> {
+    ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
         let unique_files = &self.get_pack_front().unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {

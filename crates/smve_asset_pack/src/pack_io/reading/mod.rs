@@ -185,7 +185,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
+    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<'_, R>>> {
         let toc = &self.get_pack_front().toc;
         let meta = toc.get(path);
         if meta.is_none() {
@@ -209,7 +209,10 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
-    pub fn get_unique_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<R>>> {
+    pub fn get_unique_file_reader(
+        &mut self,
+        path: &str,
+    ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
         let unique_files = &self.get_pack_front().unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {

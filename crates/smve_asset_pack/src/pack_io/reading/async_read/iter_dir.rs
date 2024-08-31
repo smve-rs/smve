@@ -30,7 +30,7 @@ impl<R: ConditionalSendAsyncSeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir>> {
+    pub fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir<'_>>> {
         if !self.has_directory(path) {
             return Ok(None);
         }

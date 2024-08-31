@@ -99,18 +99,18 @@ static VERTICES: [Vertex; 3] = [
     Vertex::new(vec3(0.0, 0.5, 0.5), vec3(0.0, 0.0, 1.0)),
 ];
 
-pub fn prepare_triangle_phase_item_buffers(mut commands: Commands) {
+pub fn prepare_triangle_phase_item_buffers(mut commands: Commands<'_, '_>) {
     commands.init_resource::<TrianglePhaseItemBuffers>();
 }
 
 pub fn queue_triangle_phase_item(
-    pipeline_cache: Res<PipelineCache>,
-    custom_phase_pipeline: Res<TrianglePipeline>,
-    msaa: Res<Msaa>,
-    mut opaque_render_phases: ResMut<ViewBinnedRenderPhases<Opaque3d>>,
-    opaque_draw_functions: Res<DrawFunctions<Opaque3d>>,
-    mut specialized_render_pipelines: ResMut<SpecializedRenderPipelines<TrianglePipeline>>,
-    views: Query<(Entity, &VisibleEntities), With<ExtractedView>>,
+    pipeline_cache: Res<'_, PipelineCache>,
+    custom_phase_pipeline: Res<'_, TrianglePipeline>,
+    msaa: Res<'_, Msaa>,
+    mut opaque_render_phases: ResMut<'_, ViewBinnedRenderPhases<Opaque3d>>,
+    opaque_draw_functions: Res<'_, DrawFunctions<Opaque3d>>,
+    mut specialized_render_pipelines: ResMut<'_, SpecializedRenderPipelines<TrianglePipeline>>,
+    views: Query<'_, '_, (Entity, &VisibleEntities), With<ExtractedView>>,
 ) {
     let draw_triangle_phase_item = opaque_draw_functions.read().id::<DrawTriangleCommands>();
 

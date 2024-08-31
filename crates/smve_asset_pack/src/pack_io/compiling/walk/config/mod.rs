@@ -103,7 +103,7 @@ pub fn get_dir_config<'de>(dir: impl AsRef<Path>) -> Option<DirectoryConfigurati
 
     let table = get_config(&config_path)?;
 
-    let configs: Result<DirectoryConfiguration, _> = table.try_into();
+    let configs: Result<DirectoryConfiguration<'_>, _> = table.try_into();
 
     match configs {
         Ok(mut config) => {
@@ -145,7 +145,7 @@ pub fn get_file_config<'de>(file_path: impl AsRef<Path>) -> Option<Configuration
 
     let table = get_config(config_path)?;
 
-    let config: Result<Configuration, _> = table.try_into();
+    let config: Result<Configuration<'_>, _> = table.try_into();
 
     if let Err(error) = config {
         error!("Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}", config_path.display());
