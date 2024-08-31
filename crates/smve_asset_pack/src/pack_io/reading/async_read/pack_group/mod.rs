@@ -559,10 +559,13 @@ impl AssetPackGroupReader {
             }
         }
 
+        // Used for checking if enabled packs has changed
+        let old_enabled_packs_len = self.enabled_packs.len();
+
         self.enabled_packs
             .retain(|pack| self.available_packs.contains_key(&pack.path));
 
-        if self.packs_changed {
+        if self.packs_changed || old_enabled_packs_len != self.enabled_packs.len() {
             self.file_name_to_asset_pack.clear();
 
             // Add override files
