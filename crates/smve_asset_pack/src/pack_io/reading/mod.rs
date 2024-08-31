@@ -12,6 +12,7 @@ pub mod pack_group;
 mod read_steps;
 mod utils;
 
+use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
@@ -65,13 +66,13 @@ use std::path::Path;
 /// ```
 /// See also [`AssetFileReader`].
 #[non_exhaustive]
-pub struct AssetPackReader<R: SeekableBufRead> {
+pub struct AssetPackReader<R: ConditionalSendSeekableBufRead> {
     reader: R,
     pack_front: PackFront,
     version: u16,
 }
 
-impl<R: SeekableBufRead> Debug for AssetPackReader<R> {
+impl<R: ConditionalSendSeekableBufRead> Debug for AssetPackReader<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AssetPackReader")
             .field("version", &self.version)
@@ -101,7 +102,7 @@ impl AssetPackReader<BufReader<File>> {
     }
 }
 
-impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
+impl<R: ConditionalSendReadAndSeek> AssetPackReader<BufReader<R>> {
     /// Creates a new [`AssetPackReader`] from a [`Read`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
@@ -121,7 +122,7 @@ impl<R: Read + Seek> AssetPackReader<BufReader<R>> {
     }
 }
 
-impl<R: SeekableBufRead> AssetPackReader<R> {
+impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// Creates a new [`AssetPackReader`] from a [`BufRead`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
@@ -260,10 +261,10 @@ impl<R: SeekableBufRead> AssetPackReader<R> {
     }
 }
 
-impl<R: SeekableBufRead + 'static> AssetPackReader<R> {
+impl<R: ConditionalSendSeekableBufRead + 'static> AssetPackReader<R> {
     /// Converts the inner reader of an asset pack to a boxed generic reader.
-    pub fn box_reader(self) -> AssetPackReader<Box<dyn SeekableBufRead>> {
-        let boxed_reader = Box::new(self.reader) as Box<dyn SeekableBufRead>;
+    pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>> {
+        let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendSeekableBufRead>;
 
         AssetPackReader {
             reader: boxed_reader,
@@ -310,8 +311,30 @@ pub struct FileMeta {
     pub size: u64,
 }
 
-/// A marker trait automatically implemented for anything that implements both [`BufRead`] and
-/// [`Seek`].
-pub trait SeekableBufRead: Seek + BufRead {}
+cfg_if! {
+    if #[cfg(feature = "non_send_readers")] {
+        /// A marker trait automatically implemented for anything that implements both [`BufRead`] and
+        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendSeekableBufRead: Seek + BufRead {}
 
-impl<T: BufRead + Seek> SeekableBufRead for T {}
+        impl<T: BufRead + Seek> ConditionalSendSeekableBufRead for T {}
+
+        /// A marker trait automatically implemented for anything that implements both [`Read`] and
+        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendReadAndSeek: Seek + Read {}
+
+        impl<T: Read + Seek> ConditionalSendReadAndSeek for T {}
+    } else {
+        /// A marker trait automatically implemented for anything that implements both [`BufRead`] and
+        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendSeekableBufRead: Seek + BufRead + Send + Sync {}
+
+        impl<T: BufRead + Seek + Send + Sync> ConditionalSendSeekableBufRead for T {}
+
+        /// A marker trait automatically implemented for anything that implements both [`Read`] and
+        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendReadAndSeek: Seek + Read + Send + Sync {}
+
+        impl<T: Read + Seek + Send + Sync> ConditionalSendReadAndSeek for T {}
+    }
+}

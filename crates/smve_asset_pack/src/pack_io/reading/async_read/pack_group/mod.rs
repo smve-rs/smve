@@ -20,7 +20,9 @@ use crate::pack_io::reading::async_read::{
 };
 
 use super::utils::io;
-use super::{AsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, WalkDirCtx};
+use super::{
+    ConditionalSendAsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, WalkDirCtx,
+};
 
 mod serde;
 
@@ -146,7 +148,8 @@ pub struct AssetPackGroupReader {
     packs_changed: bool,
     pack_extension: &'static str,
     root_dir: PathBuf,
-    override_packs: IndexMap<Box<str>, AssetPackReader<Box<dyn AsyncSeekableBufRead>>>,
+    override_packs:
+        IndexMap<Box<str>, AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>,
 }
 
 impl AssetPackGroupReader {
@@ -266,7 +269,7 @@ impl AssetPackGroupReader {
     pub async fn get_file_reader(
         &mut self,
         file_path: &str,
-    ) -> ReadResult<Option<AssetFileReader<Box<dyn AsyncSeekableBufRead>>>> {
+    ) -> ReadResult<Option<AssetFileReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>> {
         if self.packs_changed {
             return LoadNotCalledCtx.fail()?;
         }
@@ -363,8 +366,8 @@ impl AssetPackGroupReader {
     pub async fn register_built_in_pack(
         &mut self,
         identifier: impl AsRef<Path>,
-        reader: AssetPackReader<Box<dyn AsyncSeekableBufRead>>,
-    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
+        reader: AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>,
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
         let old_pack = if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
@@ -404,7 +407,7 @@ impl AssetPackGroupReader {
     pub fn remove_built_in_pack(
         &mut self,
         identifier: impl AsRef<Path>,
-    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
         let old_pack_index = self.enabled_packs.iter().position(|p| p.path == path)?;
@@ -433,9 +436,9 @@ impl AssetPackGroupReader {
     /// If there was already an asset pack reader with the same id, the old one will be returned.
     pub fn add_override_pack(
         &mut self,
-        reader: AssetPackReader<Box<dyn AsyncSeekableBufRead>>,
+        reader: AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>,
         identifier: &str,
-    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         self.packs_changed = true;
         self.override_packs.insert(Box::from(identifier), reader)
     }
@@ -456,7 +459,7 @@ impl AssetPackGroupReader {
     pub fn rearrange_override_packs<I>(
         &mut self,
         ids: &[I],
-    ) -> Option<Vec<AssetPackReader<Box<dyn AsyncSeekableBufRead>>>>
+    ) -> Option<Vec<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>>
     where
         I: AsRef<str>,
     {
@@ -496,7 +499,7 @@ impl AssetPackGroupReader {
     pub fn remove_override_pack(
         &mut self,
         id: impl AsRef<str>,
-    ) -> Option<AssetPackReader<Box<dyn AsyncSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         self.packs_changed = true;
         self.override_packs.shift_remove(id.as_ref())
     }
@@ -590,7 +593,8 @@ impl AssetPackGroupReader {
                         ReadStep::LoadGroupOpenPack(pack.path.clone())
                     )?;
                     let buf_reader = BufReader::new(pack_file);
-                    let boxed_buf_reader = Box::new(buf_reader) as Box<dyn AsyncSeekableBufRead>;
+                    let boxed_buf_reader =
+                        Box::new(buf_reader) as Box<dyn ConditionalSendAsyncSeekableBufRead>;
 
                     pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader).await?);
                 }

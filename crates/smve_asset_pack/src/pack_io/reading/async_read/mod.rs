@@ -10,6 +10,7 @@ pub mod pack_group;
 mod read_steps;
 mod utils;
 
+use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
@@ -26,8 +27,6 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::Path;
 use utils::{io, read_bytes};
-
-// TODO: Update all documentation to reflect API change surrounding the pack_front
 
 /// Create an instance of this struct to asynchronously read an asset pack.
 ///
@@ -65,13 +64,13 @@ use utils::{io, read_bytes};
 /// # smve_asset_pack::pack_io::reading::async_read::ReadResult::Ok(()) });
 /// ```
 /// See also [`AssetFileReader`].
-pub struct AssetPackReader<R: AsyncSeekableBufRead> {
+pub struct AssetPackReader<R: ConditionalSendAsyncSeekableBufRead> {
     reader: R,
     pack_front: PackFront,
     version: u16,
 }
 
-impl<R: AsyncSeekableBufRead> Debug for AssetPackReader<R> {
+impl<R: ConditionalSendAsyncSeekableBufRead> Debug for AssetPackReader<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AssetPackReader")
             .field("version", &self.version)
@@ -101,7 +100,7 @@ impl AssetPackReader<BufReader<File>> {
     }
 }
 
-impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
+impl<R: ConditionalSendAsyncReadAndSeek> AssetPackReader<BufReader<R>> {
     /// Creates a new [`AssetPackReader`] from a [`AsyncRead`], verifies it, and reads its pack front.
     ///
     /// **NOTE**: If your read type already implements [`AsyncBufRead`], use [`new`](Self::new) instead
@@ -121,7 +120,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> AssetPackReader<BufReader<R>> {
     }
 }
 
-impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
+impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPackReader<R> {
     /// Creates a new [`AssetPackReader`] from a [`AsyncBufRead`], verifies it, and reads its pack
     /// front.
     ///
@@ -264,10 +263,10 @@ impl<R: AsyncReadExt + AsyncSeek + AsyncBufRead + Unpin> AssetPackReader<R> {
     }
 }
 
-impl<R: AsyncSeekableBufRead + 'static> AssetPackReader<R> {
+impl<R: ConditionalSendAsyncSeekableBufRead + 'static> AssetPackReader<R> {
     /// Converts the inner reader of an asset pack to a boxed generic reader.
-    pub fn box_reader(self) -> AssetPackReader<Box<dyn AsyncSeekableBufRead>> {
-        let boxed_reader = Box::new(self.reader) as Box<dyn AsyncSeekableBufRead>;
+    pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>> {
+        let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendAsyncSeekableBufRead>;
 
         AssetPackReader {
             reader: boxed_reader,
@@ -314,8 +313,31 @@ pub struct FileMeta {
     pub size: u64,
 }
 
-/// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
-/// [`AsyncSeek`].
-pub trait AsyncSeekableBufRead: AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
+cfg_if! {
+    if #[cfg(feature = "non_send_readers")] {
+        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncSeekableBufRead:
+            AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
 
-impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> AsyncSeekableBufRead for T {}
+        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> ConditionalSendAsyncSeekableBufRead for T {}
+
+        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin {}
+
+        impl<T: AsyncSeek + AsyncRead + Unpin> ConditionalSendAsyncReadAndSeek for T {}
+    } else {
+        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncSeekableBufRead:
+            AsyncSeek + AsyncBufRead + AsyncRead + Unpin + Send + Sync {}
+
+        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin + Send + Sync>
+            ConditionalSendAsyncSeekableBufRead for T {}
+
+        /// A marker trait automatically implemented for anything that implements both [`AsyncRead`] and [`AsyncSeek`]
+        /// which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin + Send + Sync {}
+
+        impl<T: AsyncSeek + AsyncRead + Unpin + Send + Sync> ConditionalSendAsyncReadAndSeek for T {}
+    }
+}

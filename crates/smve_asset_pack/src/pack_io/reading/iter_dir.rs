@@ -1,6 +1,6 @@
-use std::io::{BufRead, Seek};
-
 use crate::pack_io::reading::{AssetPackReader, FileMeta, PackFront, ReadResult};
+
+use super::ConditionalSendSeekableBufRead;
 
 /// An iterator that yields all the files (recursive) of a directory in an asset pack.
 pub struct IterDir<'a> {
@@ -25,7 +25,7 @@ impl<'a> Iterator for IterDir<'a> {
     }
 }
 
-impl<R: BufRead + Seek> AssetPackReader<R> {
+impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// Returns an iterator of all file paths in a directory.
     ///
     /// # Parameters
