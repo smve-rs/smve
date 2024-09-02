@@ -12,7 +12,7 @@ ignore = "0.4"
 tempfile = "3.12"
 tracing = "0.1"
 snafu = "0.8"
-indexmap = "2.4"
+indexmap = "2.5"
 lz4 = "1.26"
 toml = { version = "0.8", features = ["preserve_order"] }
 serde = { version = "1.0", features = ["derive"] }
