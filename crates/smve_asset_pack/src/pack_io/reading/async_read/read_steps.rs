@@ -256,9 +256,9 @@ pub async fn validate_file<R: AsyncReadExt + AsyncSeekExt + Unpin>(
 }
 
 pub fn get_dir_start_indices(
-    directories: &Vec<String>,
-    toc: &IndexMap<String, FileMeta>,
-) -> HashMap<String, usize> {
+    directories: Vec<String>,
+    toc: IndexMap<String, FileMeta>,
+) -> (HashMap<String, usize>, IndexMap<String, FileMeta>) {
     let mut dir_start_indices = HashMap::new();
 
     for directory in directories {
@@ -272,7 +272,7 @@ pub fn get_dir_start_indices(
         }
     }
 
-    dir_start_indices
+    (dir_start_indices, toc)
 }
 
 pub async fn decompress<R>(mut file_reader: R, file_meta: FileMeta) -> ReadResult<Compat<TempFile>>

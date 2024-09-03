@@ -10,6 +10,7 @@ pub mod pack_group;
 mod read_steps;
 mod utils;
 
+use blocking::unblock;
 use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
@@ -146,7 +147,10 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
 
         validate_files(&mut reader, &mut toc, &mut unique_files).await?;
 
-        let dl = get_dir_start_indices(&dl, &toc);
+        // HACK: I'm not sure if this is a recommended thing to do or not.
+        // I have heard in other places that it is not a good idea to mix blocking IO and blocking
+        // operations in general, but I may be completely wrong. Async Rust still escapes me.
+        let (dl, toc) = unblock(move || get_dir_start_indices(dl, toc)).await;
 
         let pack_front = PackFront {
             toc,
