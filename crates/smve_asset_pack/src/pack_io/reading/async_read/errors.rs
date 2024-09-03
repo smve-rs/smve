@@ -71,6 +71,16 @@ pub enum ReadError {
     /// Thrown when the user hasn't called load after changing the packs.
     #[snafu(display("Cannot get file reader without calling `load` first!"))]
     LoadNotCalled,
+    /// Errors from [`async_tempfile`].
+    #[snafu(display(
+        "Failed to create temporary file to decompress asset file into! File meta: {meta:?}"
+    ))]
+    TempFileError {
+        /// The original error
+        source: async_tempfile::Error,
+        /// The metadata of the file being decompressed.
+        meta: FileMeta,
+    },
 }
 
 #[derive(Debug)]

@@ -3,18 +3,19 @@ use crate::pack_io::reading::async_read::{
     DamagedFileCtx, DirectFileReader, FileMeta, IncompatibleVersionCtx, InvalidPackFileCtx,
     ReadError, ReadResult, ReadStep,
 };
-use async_fs::File;
+use async_compat::{Compat, CompatExt};
+use async_tempfile::TempFile;
 use blake3::{hash, Hasher};
-use futures_lite::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeekExt};
+use blocking::Unblock;
+use futures_lite::{io, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeekExt};
 use indexmap::IndexMap;
 use lz4::Decoder;
 use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
-use std::io;
 use std::io::SeekFrom;
 
 use super::utils::{io, read_bytes, read_bytes_and_hash};
-use super::Utf8Ctx;
+use super::{TempFileCtx, Utf8Ctx};
 
 pub async fn validate_header<R>(reader: &mut R) -> ReadResult<()>
 where
@@ -274,16 +275,32 @@ pub fn get_dir_start_indices(
     dir_start_indices
 }
 
-pub async fn decompress<R>(mut file_reader: R) -> io::Result<File>
+pub async fn decompress<R>(mut file_reader: R, file_meta: FileMeta) -> ReadResult<Compat<TempFile>>
 where
     R: AsyncRead + Unpin,
 {
     let mut buf = vec![];
-    file_reader.read_to_end(&mut buf).await?;
+    io!(
+        file_reader.read_to_end(&mut buf).await,
+        ReadStep::DecompressFile(file_meta)
+    )?;
 
-    let mut decoder = Decoder::new(buf.as_slice())?;
-    let mut output_file = tempfile::tempfile()?;
-    io::copy(&mut decoder, &mut output_file)?;
+    let decoder = io!(
+        Decoder::new(std::io::Cursor::new(buf)),
+        ReadStep::DecompressFile(file_meta)
+    )?;
 
-    Ok(output_file.into())
+    let mut decoder = Unblock::new(decoder);
+
+    let mut output_file = TempFile::new()
+        .await
+        .with_context(|_| TempFileCtx { meta: file_meta })?
+        .compat();
+
+    io!(
+        io::copy(&mut decoder, &mut output_file).await,
+        ReadStep::DecompressFile(file_meta)
+    )?;
+
+    Ok(output_file)
 }

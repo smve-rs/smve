@@ -1,7 +1,8 @@
 use crate::pack_io::reading::async_read::flags::is_compressed;
 use crate::pack_io::reading::async_read::read_steps::decompress;
 use crate::pack_io::reading::async_read::{FileMeta, ReadResult, ReadStep};
-use async_fs::File;
+use async_compat::Compat;
+use async_tempfile::TempFile;
 use futures_lite::{AsyncRead, AsyncSeek, AsyncSeekExt};
 use std::cmp::min;
 use std::io::{ErrorKind, SeekFrom};
@@ -140,7 +141,7 @@ where
     /// The [`DirectFileReader`] for an uncompressed file
     Normal(DirectFileReader<'r, R>),
     /// The [`File`] pointing to the decompressed temporary file
-    Decompressed(File),
+    Decompressed(Compat<TempFile>),
 }
 
 impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
@@ -159,10 +160,7 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
         file_meta: FileMeta,
     ) -> ReadResult<Self> {
         if is_compressed(file_meta.flags) {
-            let mut temp = io!(
-                decompress(file_reader).await,
-                ReadStep::DecompressFile(file_meta)
-            )?;
+            let mut temp = decompress(file_reader, file_meta).await?;
             io!(
                 temp.seek(SeekFrom::Start(0)).await,
                 ReadStep::DecompressFile(file_meta)
