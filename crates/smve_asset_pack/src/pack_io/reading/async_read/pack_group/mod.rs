@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::mem;
 use std::path::{Path, PathBuf};
-use std::task::Wake;
-use std::time::Instant;
 use tracing::{error, warn};
 
 use async_walkdir::WalkDir;
