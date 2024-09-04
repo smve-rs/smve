@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::mem;
 use std::path::{Path, PathBuf};
+use std::task::Wake;
+use std::time::Instant;
 use tracing::{error, warn};
 
 use async_walkdir::WalkDir;
@@ -313,6 +315,9 @@ impl AssetPackGroupReader {
     where
         P: AsRef<Path>,
     {
+        // PERFORMANCE: This code may take a long time if there are *many* packs enabled.
+        // This is rarely the case however as most likely there will be less than 15 packs.
+
         let mut hashmap: HashMap<_, _> = self
             .enabled_packs
             .drain(..)
@@ -463,6 +468,8 @@ impl AssetPackGroupReader {
     where
         I: AsRef<str>,
     {
+        // PERFORMANCE: This function might be slow if there are many override packs enabled, which
+        // will rarely be the case as at most there might be a few override packs.
         self.packs_changed = true;
 
         let mut temp_map = IndexMap::new();
