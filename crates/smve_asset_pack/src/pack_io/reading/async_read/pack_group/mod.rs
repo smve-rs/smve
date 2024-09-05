@@ -1,6 +1,7 @@
 //! Utilities for reading an asset pack group.
 
 use async_fs::{File, OpenOptions};
+use blocking::unblock;
 use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use indexmap::IndexMap;
@@ -309,51 +310,59 @@ impl AssetPackGroupReader {
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
     /// new packs to the directories, call [`load`](Self::load) first.
-    pub fn set_enabled_packs<P>(&mut self, packs: &[P])
+    pub async fn set_enabled_packs<P, I>(&mut self, packs: I)
     where
-        P: AsRef<Path>,
+        P: AsRef<Path> + Send + Sync,
+        I: Iterator<Item = P> + ExactSizeIterator + Send + 'static,
     {
-        // PERFORMANCE: This code may take a long time if there are *many* packs enabled.
-        // This is rarely the case however as most likely there will be less than 15 packs.
+        // Steal from self first since we need ownership
+        let mut enabled_packs = mem::take(&mut self.enabled_packs);
+        let mut available_packs = mem::take(&mut self.available_packs);
 
-        let mut hashmap: HashMap<_, _> = self
-            .enabled_packs
-            .drain(..)
-            .map(|p| (p.path.clone(), p))
-            .collect();
+        let (enabled_packs, available_packs) = unblock(move || {
+            let mut hashmap: HashMap<_, _> = enabled_packs
+                .drain(..)
+                .map(|p| (p.path.clone(), p))
+                .collect();
 
-        let mut new_packs = Vec::with_capacity(packs.len());
+            let mut new_packs = Vec::with_capacity(packs.len());
 
-        for pack in packs {
-            let pack = pack.as_ref();
+            for pack in packs {
+                let pack = pack.as_ref();
 
-            if let Some(p) = hashmap.remove(pack) {
-                new_packs.push(p);
-            } else {
-                let pack_descriptor = self.available_packs.get_mut(pack);
-
-                if let Some(pack_descriptor) = pack_descriptor {
-                    new_packs.push(EnabledPack {
-                        path: pack.into(),
-                        external: pack_descriptor.is_external,
-                        pack_reader: None,
-                    });
-                    pack_descriptor.enabled = true;
+                if let Some(p) = hashmap.remove(pack) {
+                    new_packs.push(p);
                 } else {
-                    error!("Pack at {} is not found! Ignoring.", pack.display());
+                    let pack_descriptor = available_packs.get_mut(pack);
+
+                    if let Some(pack_descriptor) = pack_descriptor {
+                        new_packs.push(EnabledPack {
+                            path: pack.into(),
+                            external: pack_descriptor.is_external,
+                            pack_reader: None,
+                        });
+                        pack_descriptor.enabled = true;
+                    } else {
+                        error!("Pack at {} is not found! Ignoring.", pack.display());
+                    }
                 }
             }
-        }
 
-        // Add any left over built-in packs
-        hashmap.retain(|path, _| path.starts_with("/__built_in"));
-        new_packs.extend(hashmap.into_values());
+            // Add any left over built-in packs
+            hashmap.retain(|path, _| path.starts_with("/__built_in"));
+            new_packs.extend(hashmap.into_values());
 
-        self.enabled_packs = new_packs.into();
+            enabled_packs = new_packs.into();
 
-        error!("{:?}", self.enabled_packs);
+            (enabled_packs, available_packs)
+        })
+        .await;
 
         self.packs_changed = true;
+
+        // Give back what belongs to self. We don't want to commit theft.
+        self.enabled_packs = enabled_packs;
+        self.available_packs = available_packs;
     }
 
     /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
