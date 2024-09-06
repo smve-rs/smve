@@ -79,10 +79,9 @@ jobs:
             target/
           key: ${{ runner.os }}-rust-clippy-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
-      - name: Setup Lua/LuaJIT
-        uses: xpol/setup-lua@v0.3
+      - uses: leafo/gh-actions-lua@master
         with:
-          lua-version: "luajit-2.0.5"
+          luaVersion: "luajit-2.0.5"
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -156,6 +155,9 @@ jobs:
             target/
           key: ${{ runner.os }}-rust-test-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
+      - uses: leafo/gh-actions-lua@master
+        with:
+          luaVersion: "luajit-2.0.5"
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo t --workspace
 
