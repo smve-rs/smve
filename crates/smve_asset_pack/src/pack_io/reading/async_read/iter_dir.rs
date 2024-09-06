@@ -36,13 +36,13 @@ impl<R: ConditionalSendAsyncSeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {
+    pub async fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {
         if !path.ends_with('/') {
             warn!("`iter_directory` returned `None` because your path does not end with a trailing slash!");
             return None;
         }
 
-        if let DirectoryInfo::Directory(index) = self.get_directory_info(path) {
+        if let DirectoryInfo::Directory(index) = self.get_directory_info(path).await {
             Some(IterDir {
                 toc: &self.toc,
                 index,

@@ -10,6 +10,7 @@ pub mod pack_group;
 mod read_steps;
 mod utils;
 
+use blocking::unblock;
 use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
@@ -24,6 +25,7 @@ use async_fs::File;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::mem;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use tracing::warn;
@@ -260,29 +262,46 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
     ///
     /// # Returns
     /// `true` if the path is a directory, `false` if the path is not a directory`
-    pub fn has_directory(&mut self, path: &str) -> bool {
+    pub async fn has_directory(&mut self, path: &str) -> bool {
         if !path.ends_with('/') {
             warn!("`has_directory` returned `false` because your path does not end with a trailing slash!");
             return false;
         }
 
-        match self.get_directory_info(path) {
+        match self.get_directory_info(path).await {
             DirectoryInfo::NotADirectory => false,
             DirectoryInfo::Directory(_) => true,
         }
     }
 
-    fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
+    async fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
         let without_slash = &path[0..path.len() - 1];
 
-        *self.directories_cache.get_or_insert_ref(without_slash, || {
-            for (index, (file_name, _)) in self.toc.normal_files.iter().enumerate() {
-                if file_name.starts_with(path) {
-                    return DirectoryInfo::Directory(index);
+        if self.directories_cache.peek(without_slash).is_none() {
+            // Steal from self since we need ownership
+            let normal_files = mem::take(&mut self.toc.normal_files);
+            let mut cache = LruCache::new(NonZeroUsize::new(1).unwrap());
+            mem::swap(&mut cache, &mut self.directories_cache);
+            let owned_path = path.to_string();
+            let owned_without_slash = without_slash.to_string();
+
+            let (normal_files, cache) = unblock(move || {
+                for (index, (file_name, _)) in normal_files.iter().enumerate() {
+                    if file_name.starts_with(owned_path.as_str()) {
+                        cache.put(owned_without_slash, DirectoryInfo::Directory(index));
+                        return (normal_files, cache);
+                    }
                 }
-            }
-            DirectoryInfo::NotADirectory
-        })
+                cache.put(owned_without_slash, DirectoryInfo::NotADirectory);
+                (normal_files, cache)
+            })
+            .await;
+
+            self.toc.normal_files = normal_files;
+            self.directories_cache = cache;
+        }
+
+        *self.directories_cache.get(without_slash).unwrap()
     }
 }
 
