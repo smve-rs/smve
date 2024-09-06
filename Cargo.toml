@@ -36,6 +36,3 @@ rust_2018_idioms = "warn"
 [dependencies]
 smve_asset_pack = { path = "crates/smve_asset_pack" }
 smve_render = { path = "crates/smve_render" }
-
-[dev-dependencies]
-bevy = "0.14.1"
