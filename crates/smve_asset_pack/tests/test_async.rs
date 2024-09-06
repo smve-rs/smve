@@ -200,7 +200,7 @@ async fn check_files(
             if !rel_path_str.starts_with("__unique__/") && rel_path_str != "__unique__" {
                 rel_path_str.to_mut().push('/');
                 assert!(
-                    reader.has_directory(&rel_path_str),
+                    reader.has_directory(&rel_path_str).await,
                     "Directory not found in pack: {rel_path_str}"
                 );
             }

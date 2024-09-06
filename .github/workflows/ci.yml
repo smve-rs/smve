@@ -79,6 +79,10 @@ jobs:
             target/
           key: ${{ runner.os }}-rust-clippy-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
+      - name: Setup Lua/LuaJIT
+        uses: xpol/setup-lua@v0.3
+        with:
+          lua-version: "luajit-2.0.5"
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
