@@ -1,10 +1,12 @@
-use crate::pack_io::reading::async_read::{AssetPackReader, FileMeta, PackFront, ReadResult};
+use tracing::warn;
 
-use super::ConditionalSendAsyncSeekableBufRead;
+use crate::pack_io::reading::async_read::{AssetPackReader, FileMeta, TOC};
+
+use super::{ConditionalSendAsyncSeekableBufRead, DirectoryInfo};
 
 /// An iterator that yields all the files (recursive) of a directory in an asset pack.
 pub struct IterDir<'a> {
-    pack_front: &'a PackFront,
+    toc: &'a TOC,
     index: usize,
     dir_name_with_slash: String,
 }
@@ -15,7 +17,7 @@ impl<'a> Iterator for IterDir<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.index += 1;
 
-        let (path, meta) = self.pack_front.toc.get_index(self.index)?;
+        let (path, meta) = self.toc.normal_files.get_index(self.index)?;
 
         if path.starts_with(&self.dir_name_with_slash) {
             Some((path, meta))
@@ -30,20 +32,20 @@ impl<R: ConditionalSendAsyncSeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub fn iter_directory(&mut self, path: &str) -> ReadResult<Option<IterDir<'_>>> {
-        if !self.has_directory(path) {
-            return Ok(None);
+    pub fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {
+        if !path.ends_with('/') {
+            warn!("`iter_directory` returned `None` because your path does not end with a trailing slash!");
+            return None;
         }
 
-        let pack_front = self.get_pack_front();
-
-        Ok(Some(IterDir {
-            pack_front,
-            index: *pack_front
-                .directory_list
-                .get(path)
-                .expect("Existence has been checked before."),
-            dir_name_with_slash: path.to_owned() + "/",
-        }))
+        if let DirectoryInfo::Directory(index) = self.get_directory_info(path) {
+            Some(IterDir {
+                toc: &self.toc,
+                index,
+                dir_name_with_slash: path.to_string(),
+            })
+        } else {
+            None
+        }
     }
 }

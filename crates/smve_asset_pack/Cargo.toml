@@ -29,6 +29,7 @@ async-tempfile = { version = "0.6", optional = true }
 blocking = { version = "1.6", optional = true }
 async-compat = { version = "0.2", optional = true }
 cfg-if = "1.0"
+lru = "0.12"
 
 [dev-dependencies]
 env_logger = "0.11.5"

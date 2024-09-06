@@ -1,7 +1,7 @@
 use crate::pack_io::reading::flags::is_unique;
 use crate::pack_io::reading::{
-    DamagedDirectoryListCtx, DamagedFileCtx, DamagedTOCCtx, DirectFileReader, FileMeta,
-    IncompatibleVersionCtx, InvalidPackFileCtx, ReadError, ReadResult,
+    DamagedFileCtx, DamagedTOCCtx, DirectFileReader, FileMeta, IncompatibleVersionCtx,
+    InvalidPackFileCtx, ReadError, ReadResult,
 };
 use blake3::{hash, Hasher};
 use indexmap::IndexMap;
@@ -81,7 +81,7 @@ pub fn read_file_name<R: BufRead>(
     let mut file_name = vec![];
     io!(
         pack_reader.read_until(b'\x00', &mut file_name),
-        ReadStep::ReadTOC(format!("index {index}"))
+        ReadStep::ReadTOCEntry(format!("index {index}"))
     )?;
     toc_hasher.update(&file_name);
 
@@ -111,19 +111,19 @@ pub fn read_file_meta<R: Read>(
 ) -> ReadResult<FileMeta> {
     let file_hash = io!(
         read_bytes_and_hash!(pack_reader, 32, toc_hasher),
-        ReadStep::ReadTOC(name.to_string())
+        ReadStep::ReadTOCEntry(name.to_string())
     )?;
     let file_flags = io!(
         read_bytes_and_hash!(pack_reader, 1, toc_hasher),
-        ReadStep::ReadTOC(name.to_string())
+        ReadStep::ReadTOCEntry(name.to_string())
     )?;
     let file_offset = io!(
         read_bytes_and_hash!(pack_reader, 8, toc_hasher),
-        ReadStep::ReadTOC(name.to_string())
+        ReadStep::ReadTOCEntry(name.to_string())
     )?;
     let file_size = io!(
         read_bytes_and_hash!(pack_reader, 8, toc_hasher),
-        ReadStep::ReadTOC(name.to_string())
+        ReadStep::ReadTOCEntry(name.to_string())
     )?;
 
     let file_flags = file_flags[0];
@@ -136,60 +136,6 @@ pub fn read_file_meta<R: Read>(
         offset: file_offset,
         size: file_size,
     })
-}
-
-pub fn read_dl<R: BufRead>(
-    pack_reader: &mut R,
-    expected_dl_hash: &[u8],
-) -> ReadResult<Vec<String>> {
-    let mut dl_hasher = Hasher::new();
-    let mut dl = vec![];
-
-    loop {
-        let directory_name = read_dl_entry(pack_reader, &mut dl_hasher, dl.len())?;
-        if directory_name.is_none() {
-            break;
-        }
-
-        dl.push(directory_name.unwrap());
-    }
-
-    let dl_hash = dl_hasher.finalize();
-    ensure!(&dl_hash == expected_dl_hash, DamagedDirectoryListCtx);
-
-    Ok(dl)
-}
-
-pub fn read_dl_entry<R: BufRead>(
-    pack_reader: &mut R,
-    dl_hasher: &mut Hasher,
-    index: usize,
-) -> ReadResult<Option<String>> {
-    let mut directory_name = vec![];
-    io!(
-        pack_reader.read_until(b'\x00', &mut directory_name),
-        ReadStep::ReadDirectoryList(format!("index {index}"))
-    )?;
-
-    dl_hasher.update(&directory_name);
-    if directory_name.last() == Some(&0) {
-        directory_name.pop();
-    } else {
-        return InvalidPackFileCtx.fail();
-    }
-
-    if directory_name.as_slice() == b"\xFF\x10\xFF" {
-        // End of DL reached
-        return Ok(None);
-    }
-
-    let directory_name =
-        std::str::from_utf8(directory_name.as_slice()).with_context(|_| Utf8Ctx {
-            path: directory_name.clone().into_boxed_slice(),
-        })?;
-    let directory_name = String::from(directory_name);
-
-    Ok(Some(directory_name))
 }
 
 pub fn validate_files<R: Read + Seek>(
@@ -241,26 +187,6 @@ pub fn validate_file<R: Read + Seek>(
     );
 
     Ok(())
-}
-
-pub fn get_dir_start_indices(
-    directories: &Vec<String>,
-    toc: &IndexMap<String, FileMeta>,
-) -> HashMap<String, usize> {
-    let mut dir_start_indices = HashMap::new();
-
-    for directory in directories {
-        for i in 0..toc.len() {
-            let (path, _) = toc.get_index(i).expect("Index should be in range.");
-            let directory = directory.to_owned();
-            if path.starts_with(&(directory.clone() + "/")) {
-                dir_start_indices.insert(directory, i);
-                break;
-            }
-        }
-    }
-
-    dir_start_indices
 }
 
 pub fn decompress<R>(file_reader: R) -> io::Result<File>

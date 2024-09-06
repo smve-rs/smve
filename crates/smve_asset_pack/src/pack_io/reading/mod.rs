@@ -16,31 +16,30 @@ use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
+use lru::LruCache;
 use read_steps::validate_header;
+use tracing::warn;
 use utils::{io, read_bytes};
 
-use crate::pack_io::reading::read_steps::{
-    get_dir_start_indices, read_dl, read_toc, validate_files, validate_version,
-};
+use crate::pack_io::reading::read_steps::{read_toc, validate_files, validate_version};
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek};
+use std::num::NonZeroUsize;
 use std::path::Path;
 
 /// Create an instance of this struct to read an asset pack.
 ///
 /// # Examples
-/// * Read the pack front from the asset pack:
+/// * Read the TOC from the asset pack:
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
 ///
 /// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let pack_front = pack_reader.get_pack_front();
-/// let toc = &pack_front.toc;
-/// let directories = &pack_front.directory_list;
+/// let toc = pack_reader.get_toc();
 /// # Ok(()) }
 /// ```
 ///
@@ -67,7 +66,8 @@ use std::path::Path;
 /// See also [`AssetFileReader`].
 pub struct AssetPackReader<R: ConditionalSendSeekableBufRead> {
     reader: R,
-    pack_front: PackFront,
+    toc: TOC,
+    directories_cache: LruCache<String, DirectoryInfo>,
     version: u16,
 }
 
@@ -80,7 +80,7 @@ impl<R: ConditionalSendSeekableBufRead> Debug for AssetPackReader<R> {
 }
 
 impl AssetPackReader<BufReader<File>> {
-    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads its pack front.
+    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads its TOC.
     ///
     /// # Parameters
     /// - `pack_path`: Path to the asset pack file
@@ -102,7 +102,7 @@ impl AssetPackReader<BufReader<File>> {
 }
 
 impl<R: ConditionalSendReadAndSeek> AssetPackReader<BufReader<R>> {
-    /// Creates a new [`AssetPackReader`] from a [`Read`], verifies it, and reads its pack front.
+    /// Creates a new [`AssetPackReader`] from a [`Read`], verifies it, and reads its TOC.
     ///
     /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
     /// to avoid double buffering.
@@ -122,7 +122,7 @@ impl<R: ConditionalSendReadAndSeek> AssetPackReader<BufReader<R>> {
 }
 
 impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
-    /// Creates a new [`AssetPackReader`] from a [`BufRead`], verifies it, and reads its pack front.
+    /// Creates a new [`AssetPackReader`] from a [`BufRead`], verifies it, and reads its TOC.
     ///
     /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
     ///
@@ -138,25 +138,21 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
 
         let version = validate_version(&mut reader)?;
 
-        let expected_toc_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
-        let expected_dl_hash = io!(read_bytes!(reader, 32), ReadStep::ReadPackFront)?;
+        let expected_toc_hash = io!(read_bytes!(reader, 32), ReadStep::ReadTOC)?;
 
-        let (mut toc, mut unique_files) = read_toc(&mut reader, &expected_toc_hash)?;
-        let dl = read_dl(&mut reader, &expected_dl_hash)?;
+        let (mut normal_files, mut unique_files) = read_toc(&mut reader, &expected_toc_hash)?;
 
-        validate_files(&mut reader, &mut toc, &mut unique_files)?;
+        validate_files(&mut reader, &mut normal_files, &mut unique_files)?;
 
-        let dl = get_dir_start_indices(&dl, &toc);
-
-        let pack_front = PackFront {
-            toc,
-            directory_list: dl,
+        let toc = TOC {
+            normal_files,
             unique_files,
         };
 
         Ok(Self {
             reader,
-            pack_front,
+            toc,
+            directories_cache: LruCache::new(NonZeroUsize::new(16).unwrap()),
             version,
         })
     }
@@ -166,12 +162,12 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
         self.version
     }
 
-    /// Returns the pack front of the asset pack.
+    /// Returns the TOC of the asset pack.
     ///
     /// # See also
-    /// [`PackFront`]
-    pub fn get_pack_front(&mut self) -> &PackFront {
-        &self.pack_front
+    /// [`TOC`]
+    pub fn get_toc(&mut self) -> &TOC {
+        &self.toc
     }
 
     /// Returns a [`AssetFileReader`] for a specified file.
@@ -185,7 +181,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
     pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<'_, R>>> {
-        let toc = &self.get_pack_front().toc;
+        let toc = &self.get_toc().normal_files;
         let meta = toc.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -203,7 +199,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// - `path`: The path of the pack-unique file to be read relative to the `__unique__` directory.
     ///
     /// # Errors
-    /// Returns an error if the file is not found in the pack or if getting the pack front fails.
+    /// Returns an error if creating the file reader fails.
     /// See [`ReadError`].
     ///
     /// # See Also
@@ -212,7 +208,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
         &mut self,
         path: &str,
     ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
-        let unique_files = &self.get_pack_front().unique_files;
+        let unique_files = &self.get_toc().unique_files;
         let meta = unique_files.get(path);
         if meta.is_none() {
             return Ok(None);
@@ -229,7 +225,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// # Parameters
     /// - `path`: The path of the file to check relative to the original assets directory (without `./`)
     pub fn has_file(&mut self, path: &str) -> bool {
-        let toc = &self.get_pack_front().toc;
+        let toc = &self.get_toc().normal_files;
         let meta = toc.get(path);
         meta.is_some()
     }
@@ -243,7 +239,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
     pub fn get_flags(&mut self, path: &str) -> Option<u8> {
-        let toc = &self.get_pack_front().toc;
+        let toc = &self.get_toc().normal_files;
         let meta = toc.get(path)?;
 
         Some(meta.flags)
@@ -257,40 +253,66 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// # Returns
     /// `true` if the path is a directory, `false` if the path is not a directory`
     pub fn has_directory(&mut self, path: &str) -> bool {
-        let pack_front = self.get_pack_front();
+        if !path.ends_with('/') {
+            warn!("`has_directory` returned `false` because your path does not end with a trailing slash!");
+            return false;
+        }
 
-        pack_front.directory_list.contains_key(path)
+        match self.get_directory_info(path) {
+            DirectoryInfo::NotADirectory => false,
+            DirectoryInfo::Directory(_) => true,
+        }
+    }
+
+    fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
+        let without_slash = &path[0..path.len() - 1];
+
+        *self.directories_cache.get_or_insert_ref(without_slash, || {
+            for (index, (file_name, _)) in self.toc.normal_files.iter().enumerate() {
+                if file_name.starts_with(path) {
+                    return DirectoryInfo::Directory(index);
+                }
+            }
+            DirectoryInfo::NotADirectory
+        })
     }
 }
 
 impl<R: ConditionalSendSeekableBufRead + 'static> AssetPackReader<R> {
     /// Converts the inner reader of an asset pack to a boxed generic reader.
+    // TODO: Change this to "erase_inner"
     pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>> {
         let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendSeekableBufRead>;
 
         AssetPackReader {
             reader: boxed_reader,
-            pack_front: self.pack_front,
+            toc: self.toc,
             version: self.version,
+            directories_cache: self.directories_cache,
         }
     }
 }
 
-/// Stores the sections making up the Pack Front.
-///
-/// The Pack Front consists of the Table of Contents, Directory List, and the Metadata.
-pub struct PackFront {
+/// Stores the sections making up the Table of Contents.
+pub struct TOC {
     /// The hashmap with the file path as a key and the [`FileMeta`] associated with the path as
     /// the value.
     ///
     /// This does NOT contain pack-unique files.
-    pub toc: IndexMap<String, FileMeta>,
-    /// A hashmap with all the directories in the pack, along with where the first file in them
-    /// starts in the TOC.
-    pub directory_list: HashMap<String, usize>,
+    pub normal_files: IndexMap<String, FileMeta>,
     /// The hashmap with the path of the pack-unique file (without a leading __unique__/) as a key
     /// and the [`FileMeta`] associated with the path as the value.
     pub unique_files: HashMap<String, FileMeta>,
+}
+
+/// The type that is stored in the directory cache.
+#[derive(Clone, Copy)]
+pub enum DirectoryInfo {
+    /// If the requested path does not exist in the pack as a directory.
+    NotADirectory,
+    /// If the requested path is a directory. It stores the index of the first file in the
+    /// directory in the TOC.
+    Directory(usize),
 }
 
 /// Information about the file stored in the Table of Contents of the asset pack.

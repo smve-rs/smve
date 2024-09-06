@@ -47,7 +47,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
 
     // Test pack1 overriding pack2
     reader.load()?;
-    reader.set_enabled_packs(&["pack1.smap", "pack2.smap"]);
+    reader.set_enabled_packs(["pack1.smap", "pack2.smap"].into_iter());
     reader.load()?;
     let mut override_reader = reader.get_file_reader("override.txt")?.unwrap();
     let mut override_str = String::new();
@@ -61,7 +61,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     assert_eq!(builtin_str, "Overwritten\n");
 
     // Test pack2 overriding pack1
-    reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
+    reader.set_enabled_packs(["pack2.smap", "pack1.smap"].into_iter());
     reader.load()?;
     let mut override_reader = reader.get_file_reader("override.txt")?.unwrap();
     let mut override_str = String::new();
@@ -75,7 +75,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
     assert_eq!(singular_str, "Singular");
 
     // Test builtin overriding pack1
-    reader.set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"]);
+    reader.set_enabled_packs(["/__built_in/builtin", "pack1.smap", "pack2.smap"].into_iter());
     reader.load()?;
     let mut builtin_reader = reader.get_file_reader("builtin.txt")?.unwrap();
     let mut builtin_str = String::new();
@@ -176,6 +176,7 @@ fn check_files(
         if entry.path().is_dir() {
             // Ignore __unique__
             if !rel_path_str.starts_with("__unique__/") && rel_path_str != "__unique__" {
+                rel_path_str.to_mut().push('/');
                 assert!(
                     reader.has_directory(&rel_path_str),
                     "Directory not found in pack: {rel_path_str}"

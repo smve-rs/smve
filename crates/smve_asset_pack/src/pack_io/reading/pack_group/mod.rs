@@ -121,7 +121,11 @@ mod serde;
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 /// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
-/// reader.set_enabled_packs(&["/__built_in/identifier", "pack1.smap", "external/pack2.smap"]);
+/// reader.set_enabled_packs([
+///     "/__built_in/identifier",
+///     "pack1.smap",
+///     "external/pack2.smap"
+/// ].into_iter());
 /// reader.load()?;
 /// # Ok(()) }
 /// ```
@@ -302,9 +306,10 @@ impl AssetPackGroupReader {
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
     /// new packs to the directories, call [`load`](Self::load) first.
-    pub fn set_enabled_packs<P>(&mut self, packs: &[P])
+    pub fn set_enabled_packs<P, I>(&mut self, packs: I)
     where
         P: AsRef<Path>,
+        I: Iterator<Item = P> + ExactSizeIterator,
     {
         let mut hashmap: HashMap<_, _> = self
             .enabled_packs
@@ -561,7 +566,7 @@ impl AssetPackGroupReader {
 
             // Add override files
             for (index, reader) in self.override_packs.values_mut().enumerate().rev() {
-                let toc = &reader.get_pack_front().toc;
+                let toc = &reader.get_toc().normal_files;
                 for key in toc.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
@@ -594,10 +599,10 @@ impl AssetPackGroupReader {
                 }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
-                let pack_front = pack_reader.get_pack_front();
-                let toc = &pack_front.toc;
+                let toc = pack_reader.get_toc();
+                let normal_files = &toc.normal_files;
 
-                for key in toc.keys() {
+                for key in normal_files.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
                             .insert(Box::from(key.as_str()), PackIndex::Enabled(index));

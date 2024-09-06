@@ -125,7 +125,11 @@ mod serde;
 /// # use smve_asset_pack::pack_io::reading::async_read::pack_group::AssetPackGroupReader;
 /// # async fn blah() -> smve_asset_pack::pack_io::reading::async_read::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
-/// reader.set_enabled_packs(&["/__built_in/identifier", "pack1.smap", "external/pack2.smap"]);
+/// reader.set_enabled_packs([
+///     "/__built_in/identifier",
+///     "pack1.smap",
+///     "external/pack2.smap"
+/// ].into_iter());
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```
@@ -584,7 +588,7 @@ impl AssetPackGroupReader {
 
             // Add override files
             for (index, reader) in self.override_packs.values_mut().enumerate().rev() {
-                let toc = &reader.get_pack_front().toc;
+                let toc = &reader.get_toc().normal_files;
                 for key in toc.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
@@ -617,10 +621,10 @@ impl AssetPackGroupReader {
                 }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
-                let pack_front = pack_reader.get_pack_front();
-                let toc = &pack_front.toc;
+                let toc = pack_reader.get_toc();
+                let normal_files = &toc.normal_files;
 
-                for key in toc.keys() {
+                for key in normal_files.keys() {
                     if !self.file_name_to_asset_pack.contains_key(key.as_str()) {
                         self.file_name_to_asset_pack
                             .insert(Box::from(key.as_str()), PackIndex::Enabled(index));

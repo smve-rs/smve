@@ -11,7 +11,7 @@ use raw_assets::uncookers::text::TextAssetUncooker;
 use utils::io;
 
 use crate::pack_io::compiling::compile_steps::{
-    validate_asset_dir, write_assets, write_directory_list, write_hashes, write_header, write_toc,
+    validate_asset_dir, write_assets, write_hashes, write_header, write_toc,
 };
 use crate::pack_io::compiling::raw_assets::{AssetUncooker, AssetUncookers};
 use std::fs::OpenOptions;
@@ -90,13 +90,11 @@ impl AssetPackCompiler {
 
         write_header(&mut output_file)?;
 
-        let (directories, toc_hash, mut file_glob) = write_toc(asset_dir, self, &mut output_file)?;
-
-        let dl_hash = write_directory_list(&directories, &mut output_file)?;
+        let (toc_hash, mut file_glob) = write_toc(asset_dir, self, &mut output_file)?;
 
         write_assets(&mut file_glob, &mut output_file)?;
 
-        write_hashes(&mut output_file, toc_hash, dl_hash)?;
+        write_hashes(&mut output_file, toc_hash)?;
 
         Ok(())
     }

@@ -52,8 +52,6 @@ pub fn write_header(output_file: &mut File) -> CompileResult<()> {
     )?;
     // ## TOC Hash (placeholder)
     io!(output_file.write_all(&[0u8; 32]), CompileStep::WriteHeader)?;
-    // ## Directory List Hash (placeholder)
-    io!(output_file.write_all(&[0u8; 32]), CompileStep::WriteHeader)?;
 
     Ok(())
 }
@@ -63,7 +61,6 @@ pub fn process_asset(
     asset: &DirEntry,
     config: Configuration<'_>,
     asset_dir: &Path,
-    directories: &mut Vec<String>,
     compiler: &AssetPackCompiler,
     binary_glob: &mut File,
     output_file: &mut File,
@@ -94,10 +91,6 @@ pub fn process_asset(
     }
 
     if asset.path().is_dir() {
-        // Ignore __unique__
-        if !path_str.starts_with("__unique__/") && path_str != "__unique__" {
-            directories.push(path_str.to_mut().clone());
-        }
         return Ok(());
     }
 
@@ -252,15 +245,12 @@ pub fn write_toc(
     asset_dir: &Path,
     compiler: &AssetPackCompiler,
     output_file: &mut File,
-) -> CompileResult<(Vec<String>, Hash, File)> {
+) -> CompileResult<(Hash, File)> {
     // # Table of Contents
     // Temporary file to append the file data to
     let mut file_glob = tempfile().context(IoCtx {
         step: CompileStep::WriteTOC,
     })?;
-
-    // Temporary list of directories
-    let mut directories = vec![];
 
     // Hasher for the TOC
     let mut toc_hasher = Hasher::new();
@@ -277,7 +267,6 @@ pub fn write_toc(
             &asset,
             config,
             asset_dir,
-            &mut directories,
             compiler,
             &mut file_glob,
             output_file,
@@ -292,31 +281,7 @@ pub fn write_toc(
             step: CompileStep::WriteTOC,
         })?;
 
-    Ok((directories, toc_hasher.finalize(), file_glob))
-}
-
-pub fn write_directory_list(
-    directories: &Vec<String>,
-    output_file: &mut File,
-) -> CompileResult<Hash> {
-    // # Directory List
-    let mut directory_list_hasher = Hasher::new();
-
-    (|| -> io::Result<()> {
-        for dir in directories {
-            output_file.write_all_and_hash(dir.as_bytes(), &mut directory_list_hasher)?;
-            output_file.write_all_and_hash(b"\x00", &mut directory_list_hasher)?;
-        }
-        // ## End of DL marker
-        output_file.write_all_and_hash(b"\xff\x10\xff\x00", &mut directory_list_hasher)?;
-
-        Ok(())
-    })()
-    .context(IoCtx {
-        step: CompileStep::WriteDirectoryList,
-    })?;
-
-    Ok(directory_list_hasher.finalize())
+    Ok((toc_hasher.finalize(), file_glob))
 }
 
 pub fn write_assets(file_glob: &mut File, output_file: &mut File) -> CompileResult<()> {
@@ -331,14 +296,11 @@ pub fn write_assets(file_glob: &mut File, output_file: &mut File) -> CompileResu
     Ok(())
 }
 
-pub fn write_hashes(output_file: &mut File, toc_hash: Hash, dl_hash: Hash) -> CompileResult<()> {
+pub fn write_hashes(output_file: &mut File, toc_hash: Hash) -> CompileResult<()> {
     // Write TOC hash
     (|| -> io::Result<()> {
         output_file.seek(SeekFrom::Start(6))?;
         output_file.write_all(toc_hash.as_bytes())?;
-
-        // Write DL hash
-        output_file.write_all(dl_hash.as_bytes())?;
 
         Ok(())
     })()

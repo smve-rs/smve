@@ -45,9 +45,6 @@ pub enum ReadError {
     /// The TOC has been modified or damaged.
     #[snafu(display("Table of contents does not match the stored hash! This probably means it was damaged or modified."))]
     DamagedTOC,
-    /// The Directory List has been modified or damaged.
-    #[snafu(display("Directory list does not match the stored hash! This probably means it was damaged or modified."))]
-    DamagedDirectoryList,
     /// The file data has been modified or damaged.
     #[snafu(display("File at {path} does not match its stored hash! This probably means that it was damaged or modified."))]
     DamagedFile {
@@ -78,12 +75,12 @@ pub enum ReadError {
 pub enum ReadStep {
     /// Opening an asset pack. Stores the path of the asset pack.
     OpenPack(PathBuf),
-    /// Reading the pack front of the asset pack.
-    ReadPackFront,
+    /// Reading the TOC of the asset pack.
+    ReadTOC,
     /// Validating the asset pack header.
     ValidateHeader,
     /// Reading TOC entry for an asset. Stores the path to the asset file.
-    ReadTOC(String),
+    ReadTOCEntry(String),
     /// Reading DL entry for an asset. Stores the path to the directory.
     ReadDirectoryList(String),
     /// Validating file hashes.
@@ -108,9 +105,9 @@ impl Display for ReadStep {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ReadStep::OpenPack(path) => write!(f, "opening asset pack at {}", path.display()),
-            ReadStep::ReadPackFront => write!(f, "reading the pack front of the asset pack"),
+            ReadStep::ReadTOC => write!(f, "reading the table of contents of the asset pack"),
             ReadStep::ValidateHeader => write!(f, "validating asset pack header"),
-            ReadStep::ReadTOC(path) => {
+            ReadStep::ReadTOCEntry(path) => {
                 write!(f, "reading table of contents entry for asset at {path}")
             }
             ReadStep::ReadDirectoryList(path) => {
