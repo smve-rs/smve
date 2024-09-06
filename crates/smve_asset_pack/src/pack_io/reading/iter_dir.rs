@@ -34,6 +34,10 @@ impl FusedIterator for IterDir<'_> {}
 impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// Returns an iterator of all file paths in a directory.
     ///
+    /// NOTE: If the directory name is not cached (16 directories will be cached in an LRU cache at any one time),
+    /// this function will iterate through every file in the TOC and checking if they belong to the directory.
+    /// Don't use this unless you absolutely have to.
+    ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
     pub fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {

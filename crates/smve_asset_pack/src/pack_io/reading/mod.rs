@@ -247,8 +247,12 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
 
     /// Checks whether a specified path is a directory in the pack file.
     ///
+    /// NOTE: If the directory name is not cached (16 directories will be cached in an LRU cache at any one time),
+    /// this function will iterate through every file in the TOC and checking if they belong to the directory.
+    /// Don't use this unless you absolutely have to.
+    ///
     /// # Parameters
-    /// - `path`: The path of the directory relative to the assets directory (without ./)
+    /// - `path`: The path of the directory relative to the assets directory. It should have no leading `./` but it SHOULD have a trailing slash.
     ///
     /// # Returns
     /// `true` if the path is a directory, `false` if the path is not a directory`
