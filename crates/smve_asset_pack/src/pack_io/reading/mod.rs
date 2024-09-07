@@ -262,10 +262,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
             return false;
         }
 
-        match self.get_directory_info(path) {
-            DirectoryInfo::NotADirectory => false,
-            DirectoryInfo::Directory(_) => true,
-        }
+        matches!(self.get_directory_info(path), DirectoryInfo::Directory(_))
     }
 
     fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {

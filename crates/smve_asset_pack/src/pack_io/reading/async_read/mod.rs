@@ -268,10 +268,10 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
             return false;
         }
 
-        match self.get_directory_info(path).await {
-            DirectoryInfo::NotADirectory => false,
-            DirectoryInfo::Directory(_) => true,
-        }
+        matches!(
+            self.get_directory_info(path).await,
+            DirectoryInfo::Directory(_)
+        )
     }
 
     async fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
