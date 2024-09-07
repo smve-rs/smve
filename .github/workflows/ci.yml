@@ -79,9 +79,6 @@ jobs:
             target/
           key: ${{ runner.os }}-rust-clippy-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
-      - uses: leafo/gh-actions-lua@master
-        with:
-          luaVersion: "luajit-openresty"
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -155,9 +152,6 @@ jobs:
             target/
           key: ${{ runner.os }}-rust-test-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-rust-
-      - uses: leafo/gh-actions-lua@master
-        with:
-          luaVersion: "luajit-openresty"
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo t --workspace
 
