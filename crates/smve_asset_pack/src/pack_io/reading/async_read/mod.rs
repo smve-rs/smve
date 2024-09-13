@@ -10,14 +10,13 @@ pub mod pack_group;
 mod read_steps;
 mod utils;
 
-use blocking::unblock;
 use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
 
 use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
-use futures_lite::{AsyncRead, AsyncReadExt};
+use futures_lite::{future, AsyncRead, AsyncReadExt};
 use lru::LruCache;
 use read_steps::{read_toc, validate_files, validate_header, validate_version};
 
@@ -25,7 +24,6 @@ use async_fs::File;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::mem;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use tracing::warn;
@@ -278,27 +276,19 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
         let without_slash = &path[0..path.len() - 1];
 
         if self.directories_cache.peek(without_slash).is_none() {
-            // Steal from self since we need ownership
-            let normal_files = mem::take(&mut self.toc.normal_files);
-            let mut cache = LruCache::new(NonZeroUsize::new(1).unwrap());
-            mem::swap(&mut cache, &mut self.directories_cache);
-            let owned_path = path.to_string();
-            let owned_without_slash = without_slash.to_string();
-
-            let (normal_files, cache) = unblock(move || {
-                for (index, (file_name, _)) in normal_files.iter().enumerate() {
-                    if file_name.starts_with(owned_path.as_str()) {
-                        cache.put(owned_without_slash, DirectoryInfo::Directory(index));
-                        return (normal_files, cache);
-                    }
+            for (index, (file_name, _)) in self.toc.normal_files.iter().enumerate() {
+                if file_name.starts_with(path) {
+                    self.directories_cache
+                        .put(without_slash.to_owned(), DirectoryInfo::Directory(index));
+                    break;
                 }
-                cache.put(owned_without_slash, DirectoryInfo::NotADirectory);
-                (normal_files, cache)
-            })
-            .await;
-
-            self.toc.normal_files = normal_files;
-            self.directories_cache = cache;
+                // Yield every 1024 operations (including the first one)
+                if index % 1024 == 0 {
+                    future::yield_now().await;
+                }
+            }
+            self.directories_cache
+                .put(without_slash.to_owned(), DirectoryInfo::NotADirectory);
         }
 
         *self.directories_cache.get(without_slash).unwrap()
