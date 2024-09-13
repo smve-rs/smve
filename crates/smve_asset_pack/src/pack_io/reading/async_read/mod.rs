@@ -280,7 +280,7 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
                 if file_name.starts_with(path) {
                     self.directories_cache
                         .put(without_slash.to_owned(), DirectoryInfo::Directory(index));
-                    break;
+                    return DirectoryInfo::Directory(index);
                 }
                 // Yield every 1024 operations (including the first one)
                 if index % 1024 == 0 {
