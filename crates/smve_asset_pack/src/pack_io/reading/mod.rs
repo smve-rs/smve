@@ -297,7 +297,7 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
 
 impl<R: ConditionalSendAsyncSeekableBufRead + 'static> AssetPackReader<R> {
     /// Converts the inner reader of an asset pack to a boxed generic reader.
-    pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>> {
+    pub fn into_dyn_reader(self) -> AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>> {
         let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendAsyncSeekableBufRead>;
 
         AssetPackReader {

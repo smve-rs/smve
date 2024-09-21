@@ -90,7 +90,7 @@ mod serde;
 /// // users to modify them and potentially cause problems.
 /// reader.register_built_in_pack(
 ///     "identifier",
-///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader()
+///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.into_dyn_reader()
 /// );
 /// reader.load().await?;
 /// # Ok(()) }
@@ -108,7 +108,7 @@ mod serde;
 /// # }
 /// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
-/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader(), "override");
+/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.into_dyn_reader(), "override");
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```

@@ -84,7 +84,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
                 "builtin",
                 AssetPackReader::new(Cursor::new(include_bytes!(test_res!("built_in.smap"))))
                     .await?
-                    .box_reader(),
+                    .into_dyn_reader(),
             )
             .await;
 
@@ -135,7 +135,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         reader.add_override_pack(
             AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override1.smap"))))
                 .await?
-                .box_reader(),
+                .into_dyn_reader(),
             "override1",
         );
         reader.load().await?;
@@ -148,7 +148,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         reader.add_override_pack(
             AssetPackReader::new(Cursor::new(include_bytes!(test_res!("override2.smap"))))
                 .await?
-                .box_reader(),
+                .into_dyn_reader(),
             "override2",
         );
         reader.load().await?;
