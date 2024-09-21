@@ -1,25 +1,29 @@
 //! Utilities for reading an asset pack group.
 
+use async_fs::{File, OpenOptions};
+use blocking::unblock;
+use futures_lite::io::BufReader;
+use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use indexmap::IndexMap;
 use pathdiff::diff_paths;
+use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::SeekFrom;
 use std::mem;
 use std::path::{Path, PathBuf};
 use tracing::{error, warn};
 
-use walkdir::WalkDir;
+use async_walkdir::WalkDir;
 
 use crate::pack_io::reading::pack_group::serde::{EnabledPack, EnabledPacks};
-use crate::pack_io::reading::{AssetFileReader, AssetPackReader, NotADirectoryCtx, ReadResult};
+use crate::pack_io::reading::{
+    AssetFileReader, AssetPackReader, NotADirectoryCtx, ReadResult, ReadStep,
+};
 
 use super::utils::io;
 use super::{
-    ConditionalSendSeekableBufRead, LoadNotCalledCtx, ReadStep, TomlDeserializeCtx, WalkDirCtx,
+    ConditionalSendAsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, WalkDirCtx,
 };
-
-use snafu::{ensure, ResultExt};
 
 mod serde;
 
@@ -39,8 +43,8 @@ mod serde;
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 ///
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// # Ok(()) }
 /// ```
 ///
@@ -48,7 +52,7 @@ mod serde;
 /// the reader immediately. So trying to read files right now through the reader would yield
 /// errors.
 ///
-/// To apply the changes done in functions, call `reader.load()?`.
+/// To apply the changes done in functions, call `reader.load().await?`.
 ///
 /// This is because `reader.load()` is very expensive most of the time, having to recursively
 /// discover files in directories and building the index from file paths to their corresponding
@@ -61,10 +65,10 @@ mod serde;
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 ///
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// reader.add_external_pack("path/to/folder");
-/// reader.load()?;
+/// reader.load().await?;
 /// # Ok(()) }
 /// ```
 ///
@@ -75,37 +79,37 @@ mod serde;
 /// ```no_run
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
-/// use std::io::Cursor;
+/// use futures_lite::io::Cursor;
 /// # macro_rules! include_bytes {
 /// #    ($thing:expr) => ("")
 /// # }
 ///
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// // It is recommended to embed the built-in packs in the binary itself, making it harder for
 /// // users to modify them and potentially cause problems.
 /// reader.register_built_in_pack(
 ///     "identifier",
-///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap")))?.box_reader()
+///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader()
 /// );
-/// reader.load()?;
+/// reader.load().await?;
 /// # Ok(()) }
 /// ```
 ///
-/// To stop users from modding certain assets, you can also specify override packs which cannot be
+/// To stop users from modding certain assets, you can also specify an override pack which cannot be
 /// disabled and is always at the top of the precedence stack.
 ///
 /// ```no_run
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 /// # use smve_asset_pack::pack_io::reading::AssetPackReader;
-/// # use std::io::Cursor;
+/// # use futures_lite::io::Cursor;
 /// # macro_rules! include_bytes {
 /// #    ($thing:expr) => ("")
 /// # }
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
-/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap")))?.box_reader(), "override");
-/// reader.load()?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
+/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.box_reader(), "override");
+/// reader.load().await?;
 /// # Ok(()) }
 /// ```
 ///
@@ -119,14 +123,14 @@ mod serde;
 ///
 /// ```no_run
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// reader.set_enabled_packs([
 ///     "/__built_in/identifier",
 ///     "pack1.smap",
 ///     "external/pack2.smap"
 /// ].into_iter());
-/// reader.load()?;
+/// reader.load().await?;
 /// # Ok(()) }
 /// ```
 ///
@@ -134,10 +138,10 @@ mod serde;
 ///
 /// ```no_run
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
-/// # fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// # let mut reader = AssetPackGroupReader::new("custom_packs")?;
+/// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
+/// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// reader.rearrange_override_packs(&["override", "override2"]);
-/// reader.load()?;
+/// reader.load().await?;
 /// # Ok(()) }
 /// ```
 pub struct AssetPackGroupReader {
@@ -149,8 +153,8 @@ pub struct AssetPackGroupReader {
     packs_changed: bool,
     pack_extension: &'static str,
     root_dir: PathBuf,
-    /// The higher the index, the higher the precedence
-    override_packs: IndexMap<Box<str>, AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>>,
+    override_packs:
+        IndexMap<Box<str>, AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>,
 }
 
 impl AssetPackGroupReader {
@@ -158,8 +162,8 @@ impl AssetPackGroupReader {
     ///
     /// # Errors
     /// This will error when encountering IO errors, toml deserialization errors and walkdir errors.
-    /// See [`ReadError`](super::ReadError) for more information.
-    pub fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
+    /// See [`ReadError`] for more information.
+    pub async fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
         let root_dir = root_dir.as_ref();
 
         ensure!(
@@ -175,18 +179,19 @@ impl AssetPackGroupReader {
                 .write(true)
                 .read(true)
                 .truncate(false)
-                .open(root_dir.join("packs.toml")),
+                .open(root_dir.join("packs.toml"))
+                .await,
             ReadStep::ReadPacksToml(root_dir.to_path_buf())
         )?;
 
         // Check if file is empty
         io!(
-            packs_toml.seek(SeekFrom::End(0)),
+            packs_toml.seek(SeekFrom::End(0)).await,
             ReadStep::ReadPacksToml(root_dir.to_path_buf())
         )?;
 
         let position = io!(
-            packs_toml.stream_position(),
+            packs_toml.seek(SeekFrom::Current(0)).await,
             ReadStep::ReadPacksToml(root_dir.to_path_buf())
         )?;
 
@@ -197,13 +202,13 @@ impl AssetPackGroupReader {
         } else {
             // File isn't empty
             io!(
-                packs_toml.seek(SeekFrom::Start(0)),
+                packs_toml.seek(SeekFrom::Start(0)).await,
                 ReadStep::ReadPacksToml(root_dir.to_path_buf())
             )?;
 
             let mut opened_packs_str = String::new();
             io!(
-                packs_toml.read_to_string(&mut opened_packs_str),
+                packs_toml.read_to_string(&mut opened_packs_str).await,
                 ReadStep::ReadPacksToml(root_dir.to_path_buf())
             )?;
 
@@ -263,10 +268,13 @@ impl AssetPackGroupReader {
     }
 
     /// Returns an asset file reader for a specific file.
-    pub fn get_file_reader(
+    ///
+    /// Will return an error if there were any operations after the last call to
+    /// [`load`](Self::load).
+    pub async fn get_file_reader(
         &mut self,
         file_path: &str,
-    ) -> ReadResult<Option<AssetFileReader<'_, Box<dyn ConditionalSendSeekableBufRead>>>> {
+    ) -> ReadResult<Option<AssetFileReader<'_, Box<dyn ConditionalSendAsyncSeekableBufRead>>>> {
         if self.packs_changed {
             return LoadNotCalledCtx.fail()?;
         }
@@ -291,7 +299,7 @@ impl AssetPackGroupReader {
                 .unwrap(),
         };
 
-        pack_reader.get_file_reader(file_path)
+        pack_reader.get_file_reader(file_path).await
     }
 
     /// Sets the order of enabled packs, as well as enabling new packs and disabling them.
@@ -306,49 +314,59 @@ impl AssetPackGroupReader {
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
     /// new packs to the directories, call [`load`](Self::load) first.
-    pub fn set_enabled_packs<P, I>(&mut self, packs: I)
+    pub async fn set_enabled_packs<P, I>(&mut self, packs: I)
     where
-        P: AsRef<Path>,
-        I: Iterator<Item = P> + ExactSizeIterator,
+        P: AsRef<Path> + Send + Sync,
+        I: Iterator<Item = P> + ExactSizeIterator + Send + 'static,
     {
-        let mut hashmap: HashMap<_, _> = self
-            .enabled_packs
-            .drain(..)
-            .map(|p| (p.path.clone(), p))
-            .collect();
+        // Steal from self first since we need ownership
+        let mut enabled_packs = mem::take(&mut self.enabled_packs);
+        let mut available_packs = mem::take(&mut self.available_packs);
 
-        let mut new_packs = Vec::with_capacity(packs.len());
+        let (enabled_packs, available_packs) = unblock(move || {
+            let mut hashmap: HashMap<_, _> = enabled_packs
+                .drain(..)
+                .map(|p| (p.path.clone(), p))
+                .collect();
 
-        for pack in packs {
-            let pack = pack.as_ref();
+            let mut new_packs = Vec::with_capacity(packs.len());
 
-            if let Some(p) = hashmap.remove(pack) {
-                new_packs.push(p);
-            } else {
-                let pack_descriptor = self.available_packs.get_mut(pack);
+            for pack in packs {
+                let pack = pack.as_ref();
 
-                if let Some(pack_descriptor) = pack_descriptor {
-                    new_packs.push(EnabledPack {
-                        path: pack.into(),
-                        external: pack_descriptor.is_external,
-                        pack_reader: None,
-                    });
-                    pack_descriptor.enabled = true;
+                if let Some(p) = hashmap.remove(pack) {
+                    new_packs.push(p);
                 } else {
-                    error!("Pack at {} is not found! Ignoring.", pack.display());
+                    let pack_descriptor = available_packs.get_mut(pack);
+
+                    if let Some(pack_descriptor) = pack_descriptor {
+                        new_packs.push(EnabledPack {
+                            path: pack.into(),
+                            external: pack_descriptor.is_external,
+                            pack_reader: None,
+                        });
+                        pack_descriptor.enabled = true;
+                    } else {
+                        error!("Pack at {} is not found! Ignoring.", pack.display());
+                    }
                 }
             }
-        }
 
-        // Add any left over built-in packs
-        hashmap.retain(|path, _| path.starts_with("/__built_in"));
-        new_packs.extend(hashmap.into_values());
+            // Add any left over built-in packs
+            hashmap.retain(|path, _| path.starts_with("/__built_in"));
+            new_packs.extend(hashmap.into_values());
 
-        self.enabled_packs = new_packs.into();
+            enabled_packs = new_packs.into();
 
-        error!("{:?}", self.enabled_packs);
+            (enabled_packs, available_packs)
+        })
+        .await;
 
         self.packs_changed = true;
+
+        // Give back what belongs to self. We don't want to commit theft.
+        self.enabled_packs = enabled_packs;
+        self.available_packs = available_packs;
     }
 
     /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
@@ -360,12 +378,12 @@ impl AssetPackGroupReader {
     ///   make it more difficult for users to change.
     ///
     /// # Returns
-    /// This returns the existing asset pack at the identifier if it already exists.
-    pub fn register_built_in_pack(
+    /// This returns the previous asset pack at the idenfitier if any.
+    pub async fn register_built_in_pack(
         &mut self,
         identifier: impl AsRef<Path>,
-        reader: AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>,
-    ) -> Option<AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>> {
+        reader: AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>,
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
         let old_pack = if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
@@ -398,14 +416,14 @@ impl AssetPackGroupReader {
     /// This change will not be reflected until [`load`](Self::load) is called.
     ///
     /// # Parameters
-    /// - `identifier`: The path that was passed into [`register_built_in_pack`](Self::register_built_in_pack). (Does not begin with "/__built_in")
+    /// - `identifier`: The path that was passed into [`register_built_in_pack`](Self::register_built_in_pack) (does not begin with "/__built_in").
     ///
     /// # Returns
-    /// Returns the removed asset pack if any.
+    /// The removed asset pack if any.
     pub fn remove_built_in_pack(
         &mut self,
         identifier: impl AsRef<Path>,
-    ) -> Option<AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         let path = Path::new("/__built_in").join(identifier);
 
         let old_pack_index = self.enabled_packs.iter().position(|p| p.path == path)?;
@@ -434,9 +452,9 @@ impl AssetPackGroupReader {
     /// If there was already an asset pack reader with the same id, the old one will be returned.
     pub fn add_override_pack(
         &mut self,
-        reader: AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>,
+        reader: AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>,
         identifier: &str,
-    ) -> Option<AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         self.packs_changed = true;
         self.override_packs.insert(Box::from(identifier), reader)
     }
@@ -457,10 +475,12 @@ impl AssetPackGroupReader {
     pub fn rearrange_override_packs<I>(
         &mut self,
         ids: &[I],
-    ) -> Option<Vec<AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>>>
+    ) -> Option<Vec<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>>
     where
         I: AsRef<str>,
     {
+        // PERFORMANCE: This function might be slow if there are many override packs enabled, which
+        // will rarely be the case as at most there might be a few override packs.
         self.packs_changed = true;
 
         let mut temp_map = IndexMap::new();
@@ -497,7 +517,7 @@ impl AssetPackGroupReader {
     pub fn remove_override_pack(
         &mut self,
         id: impl AsRef<str>,
-    ) -> Option<AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>>> {
+    ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
         self.packs_changed = true;
         self.override_packs.shift_remove(id.as_ref())
     }
@@ -509,7 +529,7 @@ impl AssetPackGroupReader {
     ///
     /// # Errors
     /// This will return an error when encountering IO errors.
-    pub fn load(&mut self) -> ReadResult<()> {
+    pub async fn load(&mut self) -> ReadResult<()> {
         // Rediscover packs
         self.available_packs
             .retain(|path, _| path.starts_with("/__built_in"));
@@ -521,7 +541,8 @@ impl AssetPackGroupReader {
             &self.root_dir,
             false,
             self.pack_extension,
-        )?;
+        )
+        .await?;
 
         // Discover external packs
         for path in &self.external_packs {
@@ -540,7 +561,8 @@ impl AssetPackGroupReader {
                     path,
                     true,
                     self.pack_extension,
-                )?;
+                )
+                .await?;
             } else {
                 let rel_path = diff_paths(path, &self.root_dir).unwrap_or(path.clone());
 
@@ -555,7 +577,7 @@ impl AssetPackGroupReader {
             }
         }
 
-        // Used for checking if enabled packs changed
+        // Used for checking if enabled packs has changed
         let old_enabled_packs_len = self.enabled_packs.len();
 
         self.enabled_packs
@@ -588,14 +610,14 @@ impl AssetPackGroupReader {
                     };
 
                     let pack_file = io!(
-                        File::open(absolute_path),
+                        File::open(absolute_path).await,
                         ReadStep::LoadGroupOpenPack(pack.path.clone())
                     )?;
                     let buf_reader = BufReader::new(pack_file);
                     let boxed_buf_reader =
-                        Box::new(buf_reader) as Box<dyn ConditionalSendSeekableBufRead>;
+                        Box::new(buf_reader) as Box<dyn ConditionalSendAsyncSeekableBufRead>;
 
-                    pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader)?);
+                    pack.pack_reader = Some(AssetPackReader::new(boxed_buf_reader).await?);
                 }
 
                 let pack_reader = pack.pack_reader.as_mut().unwrap();
@@ -615,25 +637,35 @@ impl AssetPackGroupReader {
                     .create(true)
                     .write(true)
                     .truncate(true)
-                    .open(self.root_dir.join("packs.toml")),
+                    .open(self.root_dir.join("packs.toml"))
+                    .await,
                 ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
             )?;
 
             io!(
-                packs_toml.write_all(
-                    "# This file was generated automatically by SMve asset pack.
+                packs_toml
+                    .write_all(
+                        "# This file was generated automatically by SMve asset pack.
 # Unless you know what you are doing, do NOT modify this file manually as doing so may cause unwanted behavior.\n\n"
-                        .as_bytes(),
-                ),
+                            .as_bytes(),
+                    )
+                    .await,
                 ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
             )?;
 
             io!(
-                packs_toml.write_all(
-                    toml::to_string_pretty(&self.enabled_packs)
-                        .unwrap()
-                        .as_bytes(),
-                ),
+                packs_toml
+                    .write_all(
+                        toml::to_string_pretty(&self.enabled_packs)
+                            .unwrap()
+                            .as_bytes(),
+                    )
+                    .await,
+                ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
+            )?;
+
+            io!(
+                packs_toml.flush().await,
                 ReadStep::LoadGroupWritePacksToml(self.root_dir.clone())
             )?;
 
@@ -643,20 +675,20 @@ impl AssetPackGroupReader {
         Ok(())
     }
 
-    fn get_packs_from_dir(
+    async fn get_packs_from_dir(
         available_packs: &mut HashMap<PathBuf, PackDescriptor>,
         root_dir: &Path,
         pack_dir: &Path,
         is_external: bool,
         extension: &str,
     ) -> ReadResult<()> {
-        for entry in WalkDir::new(pack_dir) {
+        let mut entries = WalkDir::new(pack_dir);
+        while let Some(entry) = entries.next().await {
             let entry = entry.context(WalkDirCtx)?;
 
             if let Some(path_extension) = entry.path().extension() {
                 if path_extension == extension {
-                    let rel_path =
-                        diff_paths(entry.path(), root_dir).unwrap_or(entry.path().into());
+                    let rel_path = diff_paths(entry.path(), root_dir).unwrap_or(entry.path());
 
                     available_packs.insert(
                         rel_path,

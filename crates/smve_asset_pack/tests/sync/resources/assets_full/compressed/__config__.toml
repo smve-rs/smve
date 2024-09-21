@@ -1,6 +1,0 @@
-[compression]
-enabled = true
-level = 16
-
-["uncompressed?.txt".compression]
-enabled = false

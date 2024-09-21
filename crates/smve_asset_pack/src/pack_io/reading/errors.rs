@@ -45,6 +45,9 @@ pub enum ReadError {
     /// The TOC has been modified or damaged.
     #[snafu(display("Table of contents does not match the stored hash! This probably means it was damaged or modified."))]
     DamagedTOC,
+    /// The Directory List has been modified or damaged.
+    #[snafu(display("Directory list does not match the stored hash! This probably means it was damaged or modified."))]
+    DamagedDirectoryList,
     /// The file data has been modified or damaged.
     #[snafu(display("File at {path} does not match its stored hash! This probably means that it was damaged or modified."))]
     DamagedFile {
@@ -63,11 +66,21 @@ pub enum ReadError {
     #[snafu(display("Failed to recursively read asset pack directory! {source}"))]
     WalkDirError {
         /// The walkdir error
-        source: walkdir::Error,
+        source: async_walkdir::Error,
     },
     /// Thrown when the user hasn't called load after changing the packs.
     #[snafu(display("Cannot get file reader without calling `load` first!"))]
     LoadNotCalled,
+    /// Errors from [`async_tempfile`].
+    #[snafu(display(
+        "Failed to create temporary file to decompress asset file into! File meta: {meta:?}"
+    ))]
+    TempFileError {
+        /// The original error
+        source: async_tempfile::Error,
+        /// The metadata of the file being decompressed.
+        meta: FileMeta,
+    },
 }
 
 #[derive(Debug)]

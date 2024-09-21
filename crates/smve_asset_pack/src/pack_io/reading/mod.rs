@@ -1,9 +1,7 @@
-//! Blocking API for reading asset pack files
+//! Async API for reading asset pack files
 //!
-//! If you are using this in a async context, use the API under [`async_read`] instead.
+//! If you need a blocking API, use the API at [`super`] instead.
 
-#[cfg(feature = "async_read")]
-pub mod async_read;
 mod errors;
 mod file_reader;
 pub mod flags;
@@ -16,62 +14,63 @@ use cfg_if::cfg_if;
 pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
-use lru::LruCache;
-use read_steps::validate_header;
-use tracing::warn;
-use utils::{io, read_bytes};
 
-use crate::pack_io::reading::read_steps::{read_toc, validate_files, validate_version};
+use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
+use futures_lite::{future, AsyncRead, AsyncReadExt};
+use lru::LruCache;
+use read_steps::{read_toc, validate_files, validate_header, validate_version};
+
+use async_fs::File;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Seek};
 use std::num::NonZeroUsize;
 use std::path::Path;
+use tracing::warn;
+use utils::{io, read_bytes};
 
-/// Create an instance of this struct to read an asset pack.
+/// Create an instance of this struct to asynchronously read an asset pack.
 ///
 /// # Examples
 /// * Read the TOC from the asset pack:
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").await?;
 /// let toc = pack_reader.get_toc();
-/// # Ok(()) }
+/// # smve_asset_pack::pack_io::reading::ReadResult::Ok(()) });
 /// ```
 ///
 /// * Read a file from the asset pack:
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap")?;
-/// let file_reader = pack_reader.get_file_reader("path/to/file.txt")?.unwrap();
-/// # Ok(()) }
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new_from_path("./path/to/pack.smap").await?;
+/// let file_reader = pack_reader.get_file_reader("path/to/file.txt").await?.unwrap();
+/// # smve_asset_pack::pack_io::reading::ReadResult::Ok(()) });
 /// ```
 ///
 /// * Read asset pack from memory:
 /// ```no_run
 /// use smve_asset_pack::pack_io::reading::AssetPackReader;
-/// use std::io::Cursor;
+/// use futures_lite::io::Cursor;
 ///
-/// # fn foo() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
-/// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01..."))?;
-/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt")?.unwrap();
-/// # Ok(()) }
+/// # async_io::block_on(async {
+/// let mut pack_reader = AssetPackReader::new(Cursor::new(b"SMAP\x00\x01...")).await?;
+/// let file_reader = pack_reader.get_file_reader("pack/to/file.txt").await?.unwrap();
+/// # smve_asset_pack::pack_io::reading::ReadResult::Ok(()) });
 /// ```
 /// See also [`AssetFileReader`].
-pub struct AssetPackReader<R: ConditionalSendSeekableBufRead> {
+pub struct AssetPackReader<R: ConditionalSendAsyncSeekableBufRead> {
     reader: R,
     toc: TOC,
     directories_cache: LruCache<String, DirectoryInfo>,
     version: u16,
 }
 
-impl<R: ConditionalSendSeekableBufRead> Debug for AssetPackReader<R> {
+impl<R: ConditionalSendAsyncSeekableBufRead> Debug for AssetPackReader<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AssetPackReader")
             .field("version", &self.version)
@@ -80,7 +79,7 @@ impl<R: ConditionalSendSeekableBufRead> Debug for AssetPackReader<R> {
 }
 
 impl AssetPackReader<BufReader<File>> {
-    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads its TOC.
+    /// Create a new [`AssetPackReader`] from a path, verifies it, and reads the TOC.
     ///
     /// # Parameters
     /// - `pack_path`: Path to the asset pack file
@@ -89,22 +88,22 @@ impl AssetPackReader<BufReader<File>> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
+    pub async fn new_from_path(pack_path: impl AsRef<Path>) -> ReadResult<Self> {
         let pack_path = pack_path.as_ref();
 
         let file = io!(
-            File::open(pack_path),
+            File::open(pack_path).await,
             ReadStep::OpenPack(pack_path.to_path_buf())
         )?;
 
-        Self::new_from_read(file)
+        Self::new_from_read(file).await
     }
 }
 
-impl<R: ConditionalSendReadAndSeek> AssetPackReader<BufReader<R>> {
-    /// Creates a new [`AssetPackReader`] from a [`Read`], verifies it, and reads its TOC.
+impl<R: ConditionalSendAsyncReadAndSeek> AssetPackReader<BufReader<R>> {
+    /// Creates a new [`AssetPackReader`] from a [`AsyncRead`], verifies it, and reads its TOC.
     ///
-    /// **NOTE**: If your read type already implements [`BufRead`], use [`new`](Self::new) instead
+    /// **NOTE**: If your read type already implements [`AsyncBufRead`], use [`new`](Self::new) instead
     /// to avoid double buffering.
     ///
     /// # Parameters
@@ -114,17 +113,18 @@ impl<R: ConditionalSendReadAndSeek> AssetPackReader<BufReader<R>> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new_from_read(reader: R) -> ReadResult<Self> {
+    pub async fn new_from_read(reader: R) -> ReadResult<Self> {
         let buf_reader = BufReader::new(reader);
 
-        Self::new(buf_reader)
+        Self::new(buf_reader).await
     }
 }
 
-impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
-    /// Creates a new [`AssetPackReader`] from a [`BufRead`], verifies it, and reads its TOC.
+impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPackReader<R> {
+    /// Creates a new [`AssetPackReader`] from a [`AsyncBufRead`], verifies it, and reads its pack
+    /// front.
     ///
-    /// **NOTE**: If your type don't already implement [`BufRead`], use [`new_from_read`](Self::new_from_read) instead.
+    /// **NOTE**: If your type don't already implement [`AsyncBufRead`], use [`new_from_read`](Self::new_from_read) instead.
     ///
     /// # Parameters
     /// - `reader`: A buffered reader containing an asset pack.
@@ -133,16 +133,17 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// Will fail if the pack file is invalid or if the version of the format is incompatible.
     ///
     /// See [`ReadError`].
-    pub fn new(mut reader: R) -> ReadResult<Self> {
-        validate_header(&mut reader)?;
+    pub async fn new(mut reader: R) -> ReadResult<Self> {
+        validate_header(&mut reader).await?;
 
-        let version = validate_version(&mut reader)?;
+        let version = validate_version(&mut reader).await?;
 
         let expected_toc_hash = io!(read_bytes!(reader, 32), ReadStep::ReadTOC)?;
 
-        let (mut normal_files, mut unique_files) = read_toc(&mut reader, &expected_toc_hash)?;
+        let (mut normal_files, mut unique_files) =
+            read_toc(&mut reader, &expected_toc_hash).await?;
 
-        validate_files(&mut reader, &mut normal_files, &mut unique_files)?;
+        validate_files(&mut reader, &mut normal_files, &mut unique_files).await?;
 
         let toc = TOC {
             normal_files,
@@ -180,7 +181,10 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read a pack-unique file, see [`get_unique_file_reader`](Self::get_unique_file_reader)
-    pub fn get_file_reader(&mut self, path: &str) -> ReadResult<Option<AssetFileReader<'_, R>>> {
+    pub async fn get_file_reader(
+        &mut self,
+        path: &str,
+    ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
         let toc = &self.get_toc().normal_files;
         let meta = toc.get(path);
         if meta.is_none() {
@@ -188,9 +192,9 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
         }
         let meta = *meta.unwrap();
 
-        let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
+        let file_reader = DirectFileReader::new(&mut self.reader, meta).await?;
 
-        AssetFileReader::new(file_reader, meta).map(Some)
+        AssetFileReader::new(file_reader, meta).await.map(Some)
     }
 
     /// Returns a [`DirectFileReader`] for a specified pack-unique file.
@@ -204,7 +208,7 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     ///
     /// # See Also
     /// If you wish to read an asset not marked as unique, see [`get_file_reader`](Self::get_file_reader).
-    pub fn get_unique_file_reader(
+    pub async fn get_unique_file_reader(
         &mut self,
         path: &str,
     ) -> ReadResult<Option<AssetFileReader<'_, R>>> {
@@ -215,9 +219,9 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
         }
         let meta = *meta.unwrap();
 
-        let file_reader = DirectFileReader::new(&mut self.reader, meta)?;
+        let file_reader = DirectFileReader::new(&mut self.reader, meta).await?;
 
-        AssetFileReader::new(file_reader, meta).map(Some)
+        AssetFileReader::new(file_reader, meta).await.map(Some)
     }
 
     /// Checks if a file exists in the asset pack.
@@ -252,44 +256,55 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     /// Don't use this unless you absolutely have to.
     ///
     /// # Parameters
-    /// - `path`: The path of the directory relative to the assets directory. It should have no leading `./` but it SHOULD have a trailing slash.
+    /// - `path`: The path of the directory relative to the assets directory (without ./)
     ///
     /// # Returns
     /// `true` if the path is a directory, `false` if the path is not a directory`
-    pub fn has_directory(&mut self, path: &str) -> bool {
+    pub async fn has_directory(&mut self, path: &str) -> bool {
         if !path.ends_with('/') {
             warn!("`has_directory` returned `false` because your path does not end with a trailing slash!");
             return false;
         }
 
-        matches!(self.get_directory_info(path), DirectoryInfo::Directory(_))
+        matches!(
+            self.get_directory_info(path).await,
+            DirectoryInfo::Directory(_)
+        )
     }
 
-    fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
+    async fn get_directory_info(&mut self, path: &str) -> DirectoryInfo {
         let without_slash = &path[0..path.len() - 1];
 
-        *self.directories_cache.get_or_insert_ref(without_slash, || {
+        if self.directories_cache.peek(without_slash).is_none() {
             for (index, (file_name, _)) in self.toc.normal_files.iter().enumerate() {
                 if file_name.starts_with(path) {
+                    self.directories_cache
+                        .put(without_slash.to_owned(), DirectoryInfo::Directory(index));
                     return DirectoryInfo::Directory(index);
                 }
+                // Yield every 1024 operations (including the first one)
+                if index % 1024 == 0 {
+                    future::yield_now().await;
+                }
             }
-            DirectoryInfo::NotADirectory
-        })
+            self.directories_cache
+                .put(without_slash.to_owned(), DirectoryInfo::NotADirectory);
+        }
+
+        *self.directories_cache.get(without_slash).unwrap()
     }
 }
 
-impl<R: ConditionalSendSeekableBufRead + 'static> AssetPackReader<R> {
+impl<R: ConditionalSendAsyncSeekableBufRead + 'static> AssetPackReader<R> {
     /// Converts the inner reader of an asset pack to a boxed generic reader.
-    // TODO: Change this to "erase_inner"
-    pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendSeekableBufRead>> {
-        let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendSeekableBufRead>;
+    pub fn box_reader(self) -> AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>> {
+        let boxed_reader = Box::new(self.reader) as Box<dyn ConditionalSendAsyncSeekableBufRead>;
 
         AssetPackReader {
             reader: boxed_reader,
             toc: self.toc,
-            version: self.version,
             directories_cache: self.directories_cache,
+            version: self.version,
         }
     }
 }
@@ -338,28 +353,29 @@ pub struct FileMeta {
 
 cfg_if! {
     if #[cfg(feature = "non_send_readers")] {
-        /// A marker trait automatically implemented for anything that implements both [`BufRead`] and
-        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
-        pub trait ConditionalSendSeekableBufRead: Seek + BufRead {}
+        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncSeekableBufRead:
+            AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
 
-        impl<T: BufRead + Seek> ConditionalSendSeekableBufRead for T {}
+        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> ConditionalSendAsyncSeekableBufRead for T {}
 
-        /// A marker trait automatically implemented for anything that implements both [`Read`] and
-        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
-        pub trait ConditionalSendReadAndSeek: Seek + Read {}
+        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin {}
 
-        impl<T: Read + Seek> ConditionalSendReadAndSeek for T {}
+        impl<T: AsyncSeek + AsyncRead + Unpin> ConditionalSendAsyncReadAndSeek for T {}
     } else {
-        /// A marker trait automatically implemented for anything that implements both [`BufRead`] and
-        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
-        pub trait ConditionalSendSeekableBufRead: Seek + BufRead + Send + Sync {}
+        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncSeekableBufRead:
+            AsyncSeek + AsyncBufRead + AsyncRead + Unpin + Send + Sync {}
 
-        impl<T: BufRead + Seek + Send + Sync> ConditionalSendSeekableBufRead for T {}
+        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin + Send + Sync>
+            ConditionalSendAsyncSeekableBufRead for T {}
 
-        /// A marker trait automatically implemented for anything that implements both [`Read`] and
-        /// [`Seek`] which may be [`Send`] and [`Sync`] depending on the configuration.
-        pub trait ConditionalSendReadAndSeek: Seek + Read + Send + Sync {}
+        /// A marker trait automatically implemented for anything that implements both [`AsyncRead`] and [`AsyncSeek`]
+        /// which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin + Send + Sync {}
 
-        impl<T: Read + Seek + Send + Sync> ConditionalSendReadAndSeek for T {}
+        impl<T: AsyncSeek + AsyncRead + Unpin + Send + Sync> ConditionalSendAsyncReadAndSeek for T {}
     }
 }

@@ -1,10 +1,8 @@
-use std::iter::FusedIterator;
-
 use tracing::warn;
 
 use crate::pack_io::reading::{AssetPackReader, FileMeta, TOC};
 
-use super::{ConditionalSendSeekableBufRead, DirectoryInfo};
+use super::{ConditionalSendAsyncSeekableBufRead, DirectoryInfo};
 
 /// An iterator that yields all the files (recursive) of a directory in an asset pack.
 pub struct IterDir<'a> {
@@ -29,9 +27,7 @@ impl<'a> Iterator for IterDir<'a> {
     }
 }
 
-impl FusedIterator for IterDir<'_> {}
-
-impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
+impl<R: ConditionalSendAsyncSeekableBufRead> AssetPackReader<R> {
     /// Returns an iterator of all file paths in a directory.
     ///
     /// NOTE: If the directory name is not cached (16 directories will be cached in an LRU cache at any one time),
@@ -40,13 +36,13 @@ impl<R: ConditionalSendSeekableBufRead> AssetPackReader<R> {
     ///
     /// # Parameters
     /// - `path`: The path of the directory relative to the assets directory (without ./)
-    pub fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {
+    pub async fn iter_directory(&mut self, path: &str) -> Option<IterDir<'_>> {
         if !path.ends_with('/') {
             warn!("`iter_directory` returned `None` because your path does not end with a trailing slash!");
             return None;
         }
 
-        if let DirectoryInfo::Directory(index) = self.get_directory_info(path) {
+        if let DirectoryInfo::Directory(index) = self.get_directory_info(path).await {
             Some(IterDir {
                 toc: &self.toc,
                 index,

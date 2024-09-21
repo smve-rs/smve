@@ -9,7 +9,7 @@
 macro_rules! read_bytes {
     ($impl_read:expr, $count:literal) => {{
         let mut buf = [0u8; $count];
-        let result = $impl_read.read_exact(&mut buf);
+        let result = $impl_read.read_exact(&mut buf).await;
         if result.is_err() {
             Err(result.unwrap_err())
         } else {
@@ -30,7 +30,7 @@ macro_rules! read_bytes {
 macro_rules! read_bytes_and_hash {
     ($impl_read:expr, $count:literal, $hasher:expr) => {{
         let mut buf = [0u8; $count];
-        let result = $impl_read.read_exact(&mut buf);
+        let result = $impl_read.read_exact(&mut buf).await;
         if result.is_err() {
             Err(result.unwrap_err())
         } else {
