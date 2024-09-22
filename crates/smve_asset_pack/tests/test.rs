@@ -91,7 +91,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         // Test pack1 overriding pack2
         reader.load().await?;
         reader
-            .set_enabled_packs(["pack1.smap", "pack2.smap"].iter())
+            .set_enabled_packs(&["pack1.smap", "pack2.smap"])
             .await;
         reader.load().await?;
         let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
@@ -107,7 +107,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
 
         // Test pack2 overriding pack1
         reader
-            .set_enabled_packs(["pack2.smap", "pack1.smap"].iter())
+            .set_enabled_packs(&["pack2.smap", "pack1.smap"])
             .await;
         reader.load().await?;
         let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
@@ -123,7 +123,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
 
         // Test builtin overriding pack1
         reader
-            .set_enabled_packs(["/__built_in/builtin", "pack1.smap", "pack2.smap"].iter())
+            .set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"])
             .await;
         reader.load().await?;
         let mut builtin_reader = reader.get_file_reader("builtin.txt").await?.unwrap();

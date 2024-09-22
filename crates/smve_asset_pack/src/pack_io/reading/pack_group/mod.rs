@@ -1,16 +1,15 @@
 //! Utilities for reading an asset pack group.
 
 use async_fs::{File, OpenOptions};
-use blocking::unblock;
+use camino::{Utf8Path, Utf8PathBuf};
 use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use indexmap::IndexMap;
-use pathdiff::diff_paths;
+use pathdiff::diff_utf8_paths;
 use snafu::{ensure, ResultExt};
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::mem;
-use std::path::{Path, PathBuf};
 use tracing::{error, warn};
 
 use async_walkdir::WalkDir;
@@ -22,7 +21,8 @@ use crate::pack_io::reading::{
 
 use super::utils::io;
 use super::{
-    ConditionalSendAsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, WalkDirCtx,
+    ConditionalSendAsyncSeekableBufRead, LoadNotCalledCtx, TomlDeserializeCtx, Utf8PathCtx,
+    WalkDirCtx,
 };
 
 mod serde;
@@ -125,11 +125,11 @@ mod serde;
 /// # use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 /// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
-/// reader.set_enabled_packs([
+/// reader.set_enabled_packs(&[
 ///     "/__built_in/identifier",
 ///     "pack1.smap",
 ///     "external/pack2.smap"
-/// ].into_iter());
+/// ]);
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```
@@ -147,12 +147,12 @@ mod serde;
 pub struct AssetPackGroupReader {
     enabled_packs: EnabledPacks,
     /// This does not include built-in packs
-    available_packs: HashMap<PathBuf, PackDescriptor>,
-    external_packs: Vec<PathBuf>,
+    available_packs: HashMap<Utf8PathBuf, PackDescriptor>,
+    external_packs: Vec<Utf8PathBuf>,
     file_name_to_asset_pack: HashMap<Box<str>, PackIndex>,
     packs_changed: bool,
     pack_extension: &'static str,
-    root_dir: PathBuf,
+    root_dir: Utf8PathBuf,
     override_packs:
         IndexMap<Box<str>, AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>>,
 }
@@ -163,7 +163,7 @@ impl AssetPackGroupReader {
     /// # Errors
     /// This will error when encountering IO errors, toml deserialization errors and walkdir errors.
     /// See [`ReadError`] for more information.
-    pub async fn new(root_dir: impl AsRef<Path>) -> ReadResult<Self> {
+    pub async fn new(root_dir: impl AsRef<Utf8Path>) -> ReadResult<Self> {
         let root_dir = root_dir.as_ref();
 
         ensure!(
@@ -251,7 +251,7 @@ impl AssetPackGroupReader {
     ///   [`load`](AssetPackGroupReader::load) is called, any file in the directory with the
     ///   correct extension will be marked as an available pack. If it is a file, it will be read
     ///   as a pack file regardless of the extension.
-    pub fn add_external_pack(&mut self, path: impl AsRef<Path>) {
+    pub fn add_external_pack(&mut self, path: impl AsRef<Utf8Path>) {
         self.external_packs.push(path.as_ref().into());
     }
 
@@ -263,7 +263,7 @@ impl AssetPackGroupReader {
     /// Returns all packs that can be found in the root directory and any external packs.
     ///
     /// **NOTE**: This does NOT include built-in packs.
-    pub fn get_available_packs(&self) -> &HashMap<PathBuf, PackDescriptor> {
+    pub fn get_available_packs(&self) -> &HashMap<Utf8PathBuf, PackDescriptor> {
         &self.available_packs
     }
 
@@ -287,8 +287,9 @@ impl AssetPackGroupReader {
         let pack_reader = match index.unwrap() {
             PackIndex::Enabled(i) => self
                 .enabled_packs
-                .get_mut(*i)
+                .get_index_mut(*i)
                 .unwrap()
+                .1
                 .pack_reader
                 .as_mut()
                 .unwrap(),
@@ -307,70 +308,57 @@ impl AssetPackGroupReader {
     /// Note that this change will not be reflected until [`Self::load`] is called.
     ///
     /// # Parameters
-    /// - `packs`: An ordered slice of the Paths of the pack files. The first element of the slice
+    /// - `packs`: An iterator of the Paths of the pack files. The first element of the iterator
     ///   has the most precedence. For built-in asset packs, start the path with "/__built_in" followed
     ///   by the unique identifier you specified when registering it.
     ///
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
     /// new packs to the directories, call [`load`](Self::load) first.
-    pub async fn set_enabled_packs<P, I>(&mut self, packs: I)
+    pub async fn set_enabled_packs<'a, P>(&'a mut self, packs: &[P])
     where
-        P: AsRef<Path> + Send + Sync,
-        I: Iterator<Item = P> + ExactSizeIterator + Send + 'static,
+        P: AsRef<Utf8Path>,
     {
-        // Steal from self first since we need ownership
-        let mut enabled_packs = mem::take(&mut self.enabled_packs);
-        let mut available_packs = mem::take(&mut self.available_packs);
+        let mut new_enabled_packs = IndexMap::with_capacity(packs.len());
 
-        let (enabled_packs, available_packs) = unblock(move || {
-            let mut hashmap: HashMap<_, _> = enabled_packs
-                .drain(..)
-                .map(|p| (p.path.clone(), p))
-                .collect();
+        for p in packs {
+            let p = p.as_ref();
 
-            let mut new_packs = Vec::with_capacity(packs.len());
-
-            for pack in packs {
-                let pack = pack.as_ref();
-
-                if let Some(p) = hashmap.remove(pack) {
-                    new_packs.push(p);
+            if self.available_packs.contains_key(p) {
+                if let Some(pack) = self.enabled_packs.swap_remove(p) {
+                    new_enabled_packs.insert(p.to_owned(), pack);
                 } else {
-                    let pack_descriptor = available_packs.get_mut(pack);
+                    let pack_descriptor = self.available_packs.get_mut(p).unwrap();
 
-                    if let Some(pack_descriptor) = pack_descriptor {
-                        new_packs.push(EnabledPack {
-                            path: pack.into(),
+                    new_enabled_packs.insert(
+                        p.to_owned(),
+                        EnabledPack {
                             external: pack_descriptor.is_external,
                             pack_reader: None,
-                        });
-                        pack_descriptor.enabled = true;
-                    } else {
-                        error!("Pack at {} is not found! Ignoring.", pack.display());
-                    }
+                        },
+                    );
+                    pack_descriptor.enabled = true;
                 }
+            } else {
+                error!("Pack at {p} is not found! Ignoring.");
             }
+        }
 
-            // Add any left over built-in packs
-            hashmap.retain(|path, _| path.starts_with("/__built_in"));
-            new_packs.extend(hashmap.into_values());
-
-            enabled_packs = new_packs.into();
-
-            (enabled_packs, available_packs)
-        })
-        .await;
+        // Add any left over built-in packs
+        self.enabled_packs
+            .retain(|path, _| path.starts_with("/__built_in"));
+        mem::swap(&mut self.enabled_packs, &mut new_enabled_packs);
+        self.enabled_packs.extend(new_enabled_packs.into_iter());
 
         self.packs_changed = true;
-
-        // Give back what belongs to self. We don't want to commit theft.
-        self.enabled_packs = enabled_packs;
-        self.available_packs = available_packs;
     }
 
     /// Register an asset pack that can be moved up or down the precedence "ladder" but cannot be
     /// disabled. This change will NOT be reflected until [`load`](Self::load) is called.
+    ///
+    /// The newly added pack will be added to the bottom of the precedence "ladder", unless a pack
+    /// under the same name already exists, in which case this will simply update its reader
+    /// without moving it in the precedence stack.
     ///
     /// # Parameters
     /// - `identifier`: A path (doesn't need to exist) that uniquely identifies this built-in pack.
@@ -381,23 +369,21 @@ impl AssetPackGroupReader {
     /// This returns the previous asset pack at the idenfitier if any.
     pub async fn register_built_in_pack(
         &mut self,
-        identifier: impl AsRef<Path>,
+        identifier: impl AsRef<Utf8Path>,
         reader: AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>,
     ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
-        let path = Path::new("/__built_in").join(identifier);
+        let path = Utf8Path::new("/__built_in").join(identifier);
 
-        let old_pack = if let Some(pack) = self.enabled_packs.iter_mut().find(|p| p.path == path) {
-            let old_pack = pack.pack_reader.take();
-            pack.pack_reader = Some(reader);
-            old_pack
-        } else {
-            self.enabled_packs.push(EnabledPack {
-                path: path.clone(),
+        let pack = self
+            .enabled_packs
+            .entry(path.clone())
+            .or_insert(EnabledPack {
                 external: true,
-                pack_reader: Some(reader),
+                pack_reader: None,
             });
-            None
-        };
+
+        let old_reader = pack.pack_reader.replace(reader);
+
         self.available_packs.insert(
             path,
             PackDescriptor {
@@ -409,7 +395,7 @@ impl AssetPackGroupReader {
 
         self.packs_changed = true;
 
-        old_pack
+        old_reader
     }
 
     /// Remove a built-in asset pack registered through [`register_built_in_pack`](Self::register_built_in_pack).
@@ -422,17 +408,19 @@ impl AssetPackGroupReader {
     /// The removed asset pack if any.
     pub fn remove_built_in_pack(
         &mut self,
-        identifier: impl AsRef<Path>,
+        identifier: impl AsRef<Utf8Path>,
     ) -> Option<AssetPackReader<Box<dyn ConditionalSendAsyncSeekableBufRead>>> {
-        let path = Path::new("/__built_in").join(identifier);
-
-        let old_pack_index = self.enabled_packs.iter().position(|p| p.path == path)?;
+        let path = Utf8Path::new("/__built_in").join(identifier);
 
         self.available_packs.remove(&path);
 
         self.packs_changed = true;
 
-        self.enabled_packs.remove(old_pack_index).pack_reader.take()
+        self.enabled_packs
+            .shift_remove(&path)
+            .unwrap()
+            .pack_reader
+            .take()
     }
 
     /// Adds an asset pack that stays at the top of the precedence "ladder" and *cannot* be
@@ -547,10 +535,7 @@ impl AssetPackGroupReader {
         // Discover external packs
         for path in &self.external_packs {
             if !path.exists() {
-                warn!(
-                    "External pack specified at {} does not exist! Skipping it.",
-                    path.display()
-                );
+                warn!("External pack specified at {path} does not exist! Skipping it.",);
                 continue;
             }
 
@@ -564,7 +549,7 @@ impl AssetPackGroupReader {
                 )
                 .await?;
             } else {
-                let rel_path = diff_paths(path, &self.root_dir).unwrap_or(path.clone());
+                let rel_path = diff_utf8_paths(path, &self.root_dir).unwrap_or(path.clone());
 
                 self.available_packs.insert(
                     rel_path,
@@ -581,7 +566,7 @@ impl AssetPackGroupReader {
         let old_enabled_packs_len = self.enabled_packs.len();
 
         self.enabled_packs
-            .retain(|pack| self.available_packs.contains_key(&pack.path));
+            .retain(|path, _| self.available_packs.contains_key(path));
 
         if self.packs_changed || old_enabled_packs_len != self.enabled_packs.len() {
             self.file_name_to_asset_pack.clear();
@@ -597,21 +582,21 @@ impl AssetPackGroupReader {
                 }
             }
 
-            for (index, pack) in self.enabled_packs.packs.iter_mut().enumerate() {
-                if let Some(available_pack) = self.available_packs.get_mut(&pack.path) {
+            for (index, (path, pack)) in self.enabled_packs.iter_mut().enumerate() {
+                if let Some(available_pack) = self.available_packs.get_mut(path) {
                     available_pack.enabled = true;
                 }
 
                 if pack.pack_reader.is_none() {
-                    let absolute_path = if pack.path.is_absolute() {
-                        &pack.path
+                    let absolute_path = if path.is_absolute() {
+                        path
                     } else {
-                        &self.root_dir.join(&pack.path)
+                        &self.root_dir.join(path)
                     };
 
                     let pack_file = io!(
                         File::open(absolute_path).await,
-                        ReadStep::LoadGroupOpenPack(pack.path.clone())
+                        ReadStep::LoadGroupOpenPack(path.clone())
                     )?;
                     let buf_reader = BufReader::new(pack_file);
                     let boxed_buf_reader =
@@ -676,9 +661,9 @@ impl AssetPackGroupReader {
     }
 
     async fn get_packs_from_dir(
-        available_packs: &mut HashMap<PathBuf, PackDescriptor>,
-        root_dir: &Path,
-        pack_dir: &Path,
+        available_packs: &mut HashMap<Utf8PathBuf, PackDescriptor>,
+        root_dir: &Utf8Path,
+        pack_dir: &Utf8Path,
         is_external: bool,
         extension: &str,
     ) -> ReadResult<()> {
@@ -688,7 +673,8 @@ impl AssetPackGroupReader {
 
             if let Some(path_extension) = entry.path().extension() {
                 if path_extension == extension {
-                    let rel_path = diff_paths(entry.path(), root_dir).unwrap_or(entry.path());
+                    let entry_path = Utf8PathBuf::try_from(entry.path()).context(Utf8PathCtx)?;
+                    let rel_path = diff_utf8_paths(&entry_path, root_dir).unwrap_or(entry_path);
 
                     available_packs.insert(
                         rel_path,

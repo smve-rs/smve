@@ -1,5 +1,6 @@
 use std::{fmt::Display, path::PathBuf};
 
+use camino::Utf8PathBuf;
 use snafu::{Location, Snafu};
 
 use super::FileMeta;
@@ -41,6 +42,12 @@ pub enum ReadError {
         source: std::str::Utf8Error,
         /// The exact bytes stored in the file that failed to convert to UTF-8
         path: Box<[u8]>,
+    },
+    /// Errors converting pathbuf to utf8pathbuf
+    #[snafu(display("{source}"))]
+    Utf8PathError {
+        /// The original error
+        source: camino::FromPathBufError,
     },
     /// The TOC has been modified or damaged.
     #[snafu(display("Table of contents does not match the stored hash! This probably means it was damaged or modified."))]
@@ -105,13 +112,13 @@ pub enum ReadStep {
     /// Decompressing an asset file. Stores the metadata of the asset.
     DecompressFile(FileMeta),
     /// Reading packs.toml. Stores the root directory where the packs.toml file is located.
-    ReadPacksToml(PathBuf),
+    ReadPacksToml(Utf8PathBuf),
     /// Opening an asset pack while loading an asset pack group. Stores the path to the pack file
     /// being opened.
-    LoadGroupOpenPack(PathBuf),
+    LoadGroupOpenPack(Utf8PathBuf),
     /// Writing to packs.toml while loading an asset pack group. Stores the root directory where
     /// packs.toml is located.
-    LoadGroupWritePacksToml(PathBuf),
+    LoadGroupWritePacksToml(Utf8PathBuf),
 }
 
 impl Display for ReadStep {
@@ -139,18 +146,14 @@ impl Display for ReadStep {
             }
             ReadStep::ReadPacksToml(root_dir) => write!(
                 f,
-                "reading the packs.toml file at root directory {}",
-                root_dir.display()
+                "reading the packs.toml file at root directory {root_dir}",
             ),
-            ReadStep::LoadGroupOpenPack(path) => write!(
-                f,
-                "opening asset pack at {} when loading pack group",
-                path.display()
-            ),
+            ReadStep::LoadGroupOpenPack(path) => {
+                write!(f, "opening asset pack at {path} when loading pack group",)
+            }
             ReadStep::LoadGroupWritePacksToml(root_dir) => write!(
                 f,
-                "writing packs.toml at root directory {} when loading pack group",
-                root_dir.display()
+                "writing packs.toml at root directory {root_dir} when loading pack group",
             ),
         }
     }
