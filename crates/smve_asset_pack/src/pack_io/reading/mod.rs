@@ -2,7 +2,6 @@
 
 mod errors;
 mod file_reader;
-pub mod flags;
 mod iter_dir;
 pub mod pack_group;
 mod read_steps;
@@ -13,6 +12,7 @@ pub use errors::*;
 pub use file_reader::*;
 pub use iter_dir::*;
 
+use crate::pack_io::common::Flags;
 use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
 use futures_lite::{future, AsyncRead, AsyncReadExt};
 use lru::LruCache;
@@ -240,7 +240,7 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
     ///
     /// # See also
     /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub fn get_flags(&mut self, path: &str) -> Option<u8> {
+    pub fn get_flags(&mut self, path: &str) -> Option<Flags> {
         let toc = &self.get_toc().normal_files;
         let meta = toc.get(path)?;
 
@@ -337,7 +337,7 @@ pub struct FileMeta {
     /// A [`Blake3`](blake3::Hasher) hash of the file data.
     pub hash: [u8; 32],
     /// See [File Flags](https://github.com/smve-rs/asset_pack/blob/master/docs/specification/v1.md#file-flags)
-    pub flags: u8,
+    pub flags: Flags,
     /// Offset in bytes from the **start of the pack file**.
     ///
     /// # Important

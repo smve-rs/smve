@@ -1,4 +1,4 @@
-use crate::pack_io::reading::flags::is_compressed;
+use crate::pack_io::common::Flags;
 use crate::pack_io::reading::read_steps::decompress;
 use crate::pack_io::reading::{FileMeta, ReadResult, ReadStep};
 use async_compat::Compat;
@@ -159,7 +159,7 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
         file_reader: DirectFileReader<'r, R>,
         file_meta: FileMeta,
     ) -> ReadResult<Self> {
-        if is_compressed(file_meta.flags) {
+        if file_meta.flags.contains(Flags::COMPRESSED) {
             let mut temp = decompress(file_reader, file_meta).await?;
             io!(
                 temp.seek(SeekFrom::Start(0)).await,

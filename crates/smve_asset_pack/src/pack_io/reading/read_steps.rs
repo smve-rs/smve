@@ -1,4 +1,3 @@
-use crate::pack_io::reading::flags::is_unique;
 use crate::pack_io::reading::{
     DamagedFileCtx, DirectFileReader, FileMeta, IncompatibleVersionCtx, InvalidPackFileCtx,
     ReadError, ReadResult, ReadStep,
@@ -16,6 +15,7 @@ use std::io::SeekFrom;
 
 use super::utils::{io, read_bytes, read_bytes_and_hash};
 use super::{TempFileCtx, Utf8Ctx};
+use crate::pack_io::common::Flags;
 
 pub async fn validate_header<R>(reader: &mut R) -> ReadResult<()>
 where
@@ -62,7 +62,7 @@ pub async fn read_toc<R: AsyncBufReadExt + Unpin>(
         let file_meta =
             read_file_meta(pack_reader, &mut toc_hasher, file_name.as_ref().unwrap()).await?;
 
-        if is_unique(file_meta.flags) {
+        if file_meta.flags.contains(Flags::UNIQUE) {
             let file_name = file_name.unwrap();
             file_name
                 .strip_prefix("__unique__/")
@@ -140,7 +140,7 @@ pub async fn read_file_meta<R: AsyncReadExt + Unpin>(
 
     Ok(FileMeta {
         hash: file_hash,
-        flags: file_flags,
+        flags: Flags::from_bits_truncate(file_flags),
         offset: file_offset,
         size: file_size,
     })

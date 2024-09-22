@@ -31,6 +31,7 @@ lru = "0.12"
 tempfile = "3.12"
 #                                        serde1??? what???
 camino = { version = "1.1", features = ["serde1"] }
+bitflags = "2.6"
 
 [dev-dependencies]
 env_logger = "0.11.5"

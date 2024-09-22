@@ -168,7 +168,10 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), un
     }
 
     // Check if the file is under __unique__
-    flags.set(Flags::UNIQUE, path_str.starts_with("__unique__/"));
+    flags.set(Flags::UNIQUE, path_str.starts_with("__unique__/"))
+    if path_str.starts_with("__unique__/") {
+        flags.insert0x02;
+    }
 
     // Compress the file if needed
     if config.compression.as_ref().unwrap().enabled.unwrap() {
@@ -176,7 +179,7 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), un
             compress_asset(&file_data, config.compression.unwrap().level.unwrap()),
             CompileStep::CompressAsset(asset_path.clone())
         )?;
-        flags.insert(Flags::COMPRESSED);
+        flags |= 0x04;
     }
 
     let file_offset = io!(
@@ -210,7 +213,7 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), un
     )?;
     // ## Flags
     io!(
-        output_file.write_all_and_hash(&[flags.bits()], toc_hasher),
+        output_file.write_all_and_hash(&[flags], toc_hasher),
         CompileStep::PreliminaryWrite(asset_path.clone())
     )?;
     // ## File offset
