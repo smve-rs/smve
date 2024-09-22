@@ -307,6 +307,9 @@ impl AssetPackGroupReader {
     ///
     /// Note that this change will not be reflected until [`Self::load`] is called.
     ///
+    /// If you have owned paths and you can pass ownership to the function, use
+    /// [`set_enabled_packs_owned`](Self::set_enabled_packs_owned) instead.
+    ///
     /// # Parameters
     /// - `packs`: An iterator of the Paths of the pack files. The first element of the iterator
     ///   has the most precedence. For built-in asset packs, start the path with "/__built_in" followed
@@ -315,23 +318,30 @@ impl AssetPackGroupReader {
     /// # Information
     /// This will ignore any paths that were not registered in the reader. If you have just added
     /// new packs to the directories, call [`load`](Self::load) first.
-    pub async fn set_enabled_packs<'a, P>(&'a mut self, packs: &[P])
+    pub fn set_enabled_packs<P>(&mut self, packs: &[P])
     where
         P: AsRef<Utf8Path>,
+    {
+        self.set_enabled_packs_owned(packs.iter().map(|p| p.as_ref().to_owned()))
+    }
+
+    /// A version of [`set_enabled_packs`](Self::set_enabled_packs) that takes in owned paths
+    /// instead of references to avoid extra allocations.
+    pub fn set_enabled_packs_owned<I>(&mut self, packs: I)
+    where
+        I: ExactSizeIterator + Iterator<Item = Utf8PathBuf>,
     {
         let mut new_enabled_packs = IndexMap::with_capacity(packs.len());
 
         for p in packs {
-            let p = p.as_ref();
-
-            if self.available_packs.contains_key(p) {
-                if let Some(pack) = self.enabled_packs.swap_remove(p) {
-                    new_enabled_packs.insert(p.to_owned(), pack);
+            if self.available_packs.contains_key(&p) {
+                if let Some(pack) = self.enabled_packs.swap_remove(&p) {
+                    new_enabled_packs.insert(p, pack);
                 } else {
-                    let pack_descriptor = self.available_packs.get_mut(p).unwrap();
+                    let pack_descriptor = self.available_packs.get_mut(&p).unwrap();
 
                     new_enabled_packs.insert(
-                        p.to_owned(),
+                        p,
                         EnabledPack {
                             external: pack_descriptor.is_external,
                             pack_reader: None,
@@ -348,7 +358,7 @@ impl AssetPackGroupReader {
         self.enabled_packs
             .retain(|path, _| path.starts_with("/__built_in"));
         mem::swap(&mut self.enabled_packs, &mut new_enabled_packs);
-        self.enabled_packs.extend(new_enabled_packs.into_iter());
+        self.enabled_packs.extend(new_enabled_packs);
 
         self.packs_changed = true;
     }
@@ -467,8 +477,6 @@ impl AssetPackGroupReader {
     where
         I: AsRef<str>,
     {
-        // PERFORMANCE: This function might be slow if there are many override packs enabled, which
-        // will rarely be the case as at most there might be a few override packs.
         self.packs_changed = true;
 
         let mut temp_map = IndexMap::new();
