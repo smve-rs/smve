@@ -36,6 +36,7 @@ camino = { version = "1.1", features = ["serde1"] }
 env_logger = "0.11.5"
 tracing-test = "0.2.5"
 async-io = "2.3.4"
+assert2 = "0.3.15"
 
 [features]
 default = ["bevy_integration"]

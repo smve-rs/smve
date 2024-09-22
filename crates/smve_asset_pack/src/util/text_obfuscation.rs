@@ -14,3 +14,18 @@ pub fn toggle_obfuscation(input: &[u8]) -> Vec<u8> {
     }
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use assert2::assert;
+
+    use super::toggle_obfuscation;
+
+    #[test]
+    fn obfuscation_test() {
+        let result = toggle_obfuscation(b"Hello World!");
+        let result = toggle_obfuscation(result.as_slice());
+
+        assert!(result == b"Hello World!");
+    }
+}

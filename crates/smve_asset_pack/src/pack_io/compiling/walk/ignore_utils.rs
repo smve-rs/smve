@@ -41,3 +41,5 @@ pub fn get_ignore_with_extra(path: impl AsRef<Path>, extra_ignores: &[&str]) -> 
 pub fn get_ignore(path: impl AsRef<Path>) -> Option<Gitignore> {
     get_ignore_with_extra(path, &[])
 }
+
+// TEST: This is already teested in the `full` integration test

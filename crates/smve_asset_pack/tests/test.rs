@@ -1,3 +1,4 @@
+use assert2::check;
 use async_fs::File;
 use async_io::block_on;
 use futures_lite::io::{AsyncReadExt, BufReader, Cursor};
@@ -95,13 +96,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
         let mut override_str = String::new();
         override_reader.read_to_string(&mut override_str).await?;
-        assert_eq!(override_str, "Override1");
+        check!(override_str == "Override1");
 
         // Test pack1 overriding builtin
         let mut builtin_reader = reader.get_file_reader("builtin.txt").await?.unwrap();
         let mut builtin_str = String::new();
         builtin_reader.read_to_string(&mut builtin_str).await?;
-        assert_eq!(builtin_str, "Overwritten\n");
+        check!(builtin_str == "Overwritten\n");
 
         // Test pack2 overriding pack1
         reader.set_enabled_packs(&["pack2.smap", "pack1.smap"]);
@@ -109,13 +110,13 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut override_reader = reader.get_file_reader("override.txt").await?.unwrap();
         let mut override_str = String::new();
         override_reader.read_to_string(&mut override_str).await?;
-        assert_eq!(override_str, "Override2");
+        check!(override_str == "Override2");
 
         // Test singular file that does not get overwritten
         let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
-        assert_eq!(singular_str, "Singular");
+        check!(singular_str == "Singular");
 
         // Test builtin overriding pack1
         reader.set_enabled_packs(&["/__built_in/builtin", "pack1.smap", "pack2.smap"]);
@@ -123,7 +124,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut builtin_reader = reader.get_file_reader("builtin.txt").await?.unwrap();
         let mut builtin_str = String::new();
         builtin_reader.read_to_string(&mut builtin_str).await?;
-        assert_eq!(builtin_str, "BuiltIn\n");
+        check!(builtin_str == "BuiltIn\n");
 
         // Test override overriding everything
         reader.add_override_pack(
@@ -136,7 +137,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
-        assert_eq!(singular_str, "Overridden!\n");
+        check!(singular_str == "Overridden!\n");
 
         // Test override second
         reader.add_override_pack(
@@ -149,7 +150,7 @@ fn test_groups() -> Result<(), Box<dyn Error>> {
         let mut singular_reader = reader.get_file_reader("singular.txt").await?.unwrap();
         let mut singular_str = String::new();
         singular_reader.read_to_string(&mut singular_str).await?;
-        assert_eq!(singular_str, "Overridden AGAIN\n");
+        check!(singular_str == "Overridden AGAIN\n");
 
         Ok(())
     });
@@ -214,7 +215,7 @@ async fn check_files(
             || file_name.ends_with("__config__.toml");
 
         if not_stored {
-            assert!(
+            check!(
                 !reader.has_file(&rel_path_str),
                 "Ignored file {rel_path_str} was stored in asset pack!"
             );
@@ -225,7 +226,7 @@ async fn check_files(
             // Ignore __unique__
             if !rel_path_str.starts_with("__unique__/") && rel_path_str != "__unique__" {
                 rel_path_str.to_mut().push('/');
-                assert!(
+                check!(
                     reader.has_directory(&rel_path_str).await,
                     "Directory not found in pack: {rel_path_str}"
                 );
@@ -272,8 +273,8 @@ async fn check_files(
             data_on_disk
         };
 
-        assert_eq!(
-            data_in_pack, data_on_disk,
+        check!(
+            data_in_pack == data_on_disk,
             "Data stored in pack file does not match data stored on disk for file at {rel_path_str}!"
         );
     }
