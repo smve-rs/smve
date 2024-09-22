@@ -1,6 +1,4 @@
 //! Async API for reading asset pack files
-//!
-//! If you need a blocking API, use the API at [`super`] instead.
 
 mod errors;
 mod file_reader;

@@ -33,6 +33,9 @@ mod serde;
 /// ones (modding).
 ///
 /// # How it works
+///
+/// ## Initialization
+///
 /// To create an [`AssetPackGroupReader`], you need to specify a `root_dir`. This is the directory
 /// in which users place their custom pack files, and also where the game stores information about
 /// what packs are enabled and which have higher precedence than others.
@@ -47,6 +50,8 @@ mod serde;
 /// let mut reader = AssetPackGroupReader::new("custom_packs").await?;
 /// # Ok(()) }
 /// ```
+///
+/// ## Lazy Loading
 ///
 /// Most functions in this struct only registers the changes to happen. They don't actually update
 /// the reader immediately. So trying to read files right now through the reader would yield
@@ -72,6 +77,8 @@ mod serde;
 /// # Ok(()) }
 /// ```
 ///
+/// ## Built-in Packs
+///
 /// To avoid users accidentally (or purposefully) disabling built-in asset packs causing certain
 /// assets to be missing, you can register built-in packs. They can be moved up and down the
 /// precedence stack, but cannot be disabled.
@@ -96,6 +103,8 @@ mod serde;
 /// # Ok(()) }
 /// ```
 ///
+/// ## Override Packs
+///
 /// To stop users from modding certain assets, you can also specify an override pack which cannot be
 /// disabled and is always at the top of the precedence stack.
 ///
@@ -108,10 +117,16 @@ mod serde;
 /// # }
 /// # async fn blah() -> smve_asset_pack::pack_io::reading::ReadResult<()> {
 /// # let mut reader = AssetPackGroupReader::new("custom_packs").await?;
-/// reader.add_override_pack(AssetPackReader::new(Cursor::new(include_bytes!("pack.smap"))).await?.into_dyn_reader(), "override");
+/// reader.add_override_pack(
+///     AssetPackReader::new(Cursor::new(include_bytes!("pack.smap")))
+///         .await?
+///         .into_dyn_reader(),
+///     "override");
 /// reader.load().await?;
 /// # Ok(()) }
 /// ```
+///
+/// ## Reordering Packs
 ///
 /// More calls to [`add_override_pack`](Self::add_override_pack) will put the packs above other
 /// pre-existing override packs.
