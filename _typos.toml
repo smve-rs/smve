@@ -1,8 +1,7 @@
 [files]
 extend-exclude = [
   "CHANGELOG.md",
-  "crates/smve_asset_pack/tests/async/resources/**", # Asset tests contain lorem ipsum which does not pass test
-  "crates/smve_asset_pack/tests/sync/resources/**",
+  "crates/smve_asset_pack/tests/resources/**", # Asset tests contain lorem ipsum which does not pass test
 ]
 
 [default]
