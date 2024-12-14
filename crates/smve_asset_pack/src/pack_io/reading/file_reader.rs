@@ -1,7 +1,7 @@
 use crate::pack_io::common::Flags;
 use crate::pack_io::reading::read_steps::decompress;
 use crate::pack_io::reading::{FileMeta, ReadResult, ReadStep};
-use async_compat::Compat;
+use async_compat::{Compat, CompatExt};
 use async_tempfile::TempFile;
 use futures_lite::{AsyncRead, AsyncSeek, AsyncSeekExt};
 use std::cmp::min;
@@ -160,11 +160,17 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
         file_meta: FileMeta,
     ) -> ReadResult<Self> {
         if file_meta.flags.contains(Flags::COMPRESSED) {
-            let mut temp = decompress(file_reader, file_meta).await?;
-            io!(
-                temp.seek(SeekFrom::Start(0)).await,
-                ReadStep::DecompressFile(file_meta)
-            )?;
+            let temp = async {
+                let mut temp = decompress(file_reader, file_meta).await?;
+                io!(
+                    temp.seek(SeekFrom::Start(0)).await,
+                    ReadStep::DecompressFile(file_meta)
+                )?;
+
+                Ok(temp)
+            }
+            .compat()
+            .await?;
             Ok(AssetFileReader::Decompressed(temp))
         } else {
             Ok(AssetFileReader::Normal(file_reader))
@@ -172,7 +178,7 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AssetFileReader<'r, R> {
     }
 }
 
-impl<'r, R: AsyncRead + AsyncSeek + Unpin> AsyncRead for AssetFileReader<'r, R> {
+impl<R: AsyncRead + AsyncSeek + Unpin> AsyncRead for AssetFileReader<'_, R> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -182,12 +188,15 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AsyncRead for AssetFileReader<'r, R> 
 
         match this {
             AssetFileReader::Normal(r) => Pin::new(r).poll_read(cx, buf),
-            AssetFileReader::Decompressed(r) => Pin::new(r).poll_read(cx, buf),
+            AssetFileReader::Decompressed(r) => {
+                let _guard = async_compat::enter_tokio_runtime();
+                Pin::new(r).poll_read(cx, buf)
+            }
         }
     }
 }
 
-impl<'r, R: AsyncRead + AsyncSeek + Unpin> AsyncSeek for AssetFileReader<'r, R> {
+impl<R: AsyncRead + AsyncSeek + Unpin> AsyncSeek for AssetFileReader<'_, R> {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -197,7 +206,10 @@ impl<'r, R: AsyncRead + AsyncSeek + Unpin> AsyncSeek for AssetFileReader<'r, R> 
 
         match this {
             AssetFileReader::Normal(s) => Pin::new(s).poll_seek(cx, pos),
-            AssetFileReader::Decompressed(s) => Pin::new(s).poll_seek(cx, pos),
+            AssetFileReader::Decompressed(s) => {
+                let _guard = async_compat::enter_tokio_runtime();
+                Pin::new(s).poll_seek(cx, pos)
+            }
         }
     }
 }

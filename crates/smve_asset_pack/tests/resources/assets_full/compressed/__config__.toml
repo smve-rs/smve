@@ -4,3 +4,6 @@ level = 16
 
 ["uncompressed?.txt".compression]
 enabled = false
+
+["*".compression]
+enabled = true

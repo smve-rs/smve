@@ -25,7 +25,7 @@ futures-lite = "2.3"
 async-walkdir = "2.0"
 async-tempfile = "0.6"
 blocking = "1.6"
-async-compat = "0.2"
+async-compat = { git = "https://github.com/ItsSunnyMonster/async-compat.git", branch = "guard_api" }
 cfg-if = "1.0"
 lru = "0.12"
 tempfile = "3.12"

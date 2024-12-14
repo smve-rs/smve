@@ -1,9 +1,12 @@
+//! blah
+
 use assert2::check;
 use async_fs::File;
 use async_io::block_on;
 use futures_lite::io::{AsyncReadExt, BufReader, Cursor};
 use ignore::Walk;
 use serde::Deserialize;
+use smve_asset_pack::pack_io::common::Flags;
 use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
 use smve_asset_pack::pack_io::compiling::raw_assets::AssetUncooker;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
@@ -248,8 +251,41 @@ async fn check_files(
 
         let mut file_in_pack = if rel_path_str.starts_with("__unique__/") {
             rel_path_str.strip_prefix("__unique__/").unwrap();
+            check!(reader
+                .get_unique_flags(&rel_path_str)
+                .unwrap()
+                .contains(Flags::UNIQUE));
             reader.get_unique_file_reader(&rel_path_str).await?
         } else {
+            check!(!reader
+                .get_flags(&rel_path_str)
+                .unwrap()
+                .contains(Flags::UNIQUE));
+
+            if raw || e || z {
+                check!(reader
+                    .get_flags(&rel_path_str)
+                    .unwrap()
+                    .contains(Flags::RAW));
+            } else {
+                check!(!reader
+                    .get_flags(&rel_path_str)
+                    .unwrap()
+                    .contains(Flags::RAW));
+            }
+
+            if file_name.starts_with("C_") {
+                check!(reader
+                    .get_flags(&rel_path_str)
+                    .unwrap()
+                    .contains(Flags::COMPRESSED));
+            } else {
+                check!(!reader
+                    .get_flags(&rel_path_str)
+                    .unwrap()
+                    .contains(Flags::COMPRESSED));
+            }
+
             reader.get_file_reader(&rel_path_str).await?
         }
         .unwrap();

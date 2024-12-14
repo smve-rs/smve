@@ -247,6 +247,21 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
         Some(meta.flags)
     }
 
+    /// Returns the flags for a specified unique file.
+    ///
+    /// # Parameters
+    /// - `path`: The path of the file to be read relative to the original assets directory
+    ///   (without `./__unique__`)
+    ///
+    /// # See also
+    /// [Flags](https://github.com/smve-rs/smve_asset_pack/blob/master/docs/specification/v1.md#file-flags)
+    pub fn get_unique_flags(&mut self, path: &str) -> Option<Flags> {
+        let toc = &self.get_toc().unique_files;
+        let meta = toc.get(path)?;
+
+        Some(meta.flags)
+    }
+
     /// Checks whether a specified path is a directory in the pack file.
     ///
     /// NOTE: If the directory name is not cached (16 directories will be cached in an LRU cache at any one time),
