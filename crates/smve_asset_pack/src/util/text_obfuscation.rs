@@ -1,4 +1,4 @@
-//! Functions to toggle obfuscation used by the asset uncookers
+//! Functions to toggle obfuscation used by the asset processors
 
 /// Obfuscates/deobfuscates the input data.
 ///

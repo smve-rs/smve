@@ -34,10 +34,10 @@ pub enum CompileError {
         /// The `ignore` error itself (See [`ignore::Error`])
         source: ignore::Error,
     },
-    /// Error encountered when uncooking assets.
-    #[snafu(display("Failed to uncook assets! {source}"))]
-    UncookingError {
-        /// The original uncooker error.
+    /// Error encountered when processing assets.
+    #[snafu(display("Failed to process assets! {source}"))]
+    ProcessingError {
+        /// The original processor error.
         source: Box<dyn std::error::Error>,
     },
 }

@@ -17,7 +17,7 @@ use std::path::Path;
 use tempfile::tempfile;
 use tracing::error;
 
-use super::{UncookingCtx, WalkDirCtx};
+use super::{ProcessingCtx, WalkDirCtx};
 
 pub fn validate_asset_dir(asset_dir: &Path) -> CompileResult<()> {
     ensure!(
@@ -103,66 +103,67 @@ pub fn process_asset(
 
     let mut flags = Flags::empty();
 
-    // Uncook the file if uncooker is enabled
-    if config.uncooker.as_ref().unwrap().enabled.unwrap() {
-        let uncooker = if let Some(uncooker_path) = &config.uncooker.as_ref().unwrap().uncooker_path
+    // Process the file if processor is enabled
+    if config.processor.as_ref().unwrap().enabled.unwrap() {
+        let processor = if let Some(processor_path) =
+            &config.processor.as_ref().unwrap().processor_path
         {
-            let uncooker = compiler
-                .asset_uncookers
-                .get_uncooker_from_type_name(uncooker_path);
+            let processor = compiler
+                .asset_processors
+                .get_processor_from_type_name(processor_path);
 
-            if uncooker.is_none() {
+            if processor.is_none() {
                 error!(
-                    "Asset uncooker registered under {uncooker_path} does not exist!
-Available uncookers are: {:#?}",
-                    compiler.asset_uncookers.get_uncooker_typenames()
+                    "Asset processor registered under {processor_path} does not exist!
+Available processors are: {:#?}",
+                    compiler.asset_processors.get_processor_typenames()
                 );
             }
 
             if let Some(extension) = asset_path.extension() {
-                if !uncooker
+                if !processor
                     .unwrap()
                     .source_extensions()
                     .collect::<Vec<_>>()
                     .contains(&extension.to_str().unwrap())
                 {
-                    error!("Asset uncooker specified at {uncooker_path} does not support extension {}!", extension.to_str().unwrap());
+                    error!("Asset processor specified at {processor_path} does not support extension {}!", extension.to_str().unwrap());
                     None
                 } else {
-                    Some(uncooker.unwrap())
+                    Some(processor.unwrap())
                 }
             } else {
-                Some(uncooker.unwrap())
+                Some(processor.unwrap())
             }
         } else if let Some(extension) = asset_path.extension() {
             //                                             No UTF-8 error will be emitted
             //                                             because we skipped above if path
             //                                             is not UTF-8
             let extension = extension.to_str().unwrap();
-            compiler.asset_uncookers.get_uncooker_from_ext(extension)
+            compiler.asset_processors.get_processor_from_ext(extension)
         } else {
             None
         };
 
-        if let Some(uncooker) = uncooker {
-            let uncooker_options = config.uncooker.unwrap().options.unwrap();
+        if let Some(processor) = processor {
+            let processor_options = config.processor.unwrap().options.unwrap();
 
-            let deserialized_uncooker_options =
-                uncooker.try_deserialize_options(uncooker_options.clone());
-            if deserialized_uncooker_options.is_none() {
-                error!("Uncooker options for {path_str} does not match options expected by the uncooker for extension {}.
-Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), uncooker_options);
+            let deserialized_processor_options =
+                processor.try_deserialize_options(processor_options.clone());
+            if deserialized_processor_options.is_none() {
+                error!("Processor options for {path_str} does not match options expected by the processor for extension {}.
+Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), processor_options);
             } else {
-                file_data = uncooker
-                    .uncook_dyn(
+                file_data = processor
+                    .process_dyn(
                         file_data.as_slice(),
                         asset_path.extension().unwrap().to_str().unwrap(),
-                        deserialized_uncooker_options.unwrap().as_ref(),
+                        deserialized_processor_options.unwrap().as_ref(),
                     )
-                    .context(UncookingCtx)?;
-                flags.insert(Flags::RAW);
+                    .context(ProcessingCtx)?;
+                flags.insert(Flags::PROCESSED);
                 path_str.to_mut().push('.');
-                path_str.to_mut().push_str(uncooker.target_extension());
+                path_str.to_mut().push_str(processor.target_extension());
             }
         }
     }

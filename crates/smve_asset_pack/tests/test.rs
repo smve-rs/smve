@@ -1,4 +1,4 @@
-//! blah
+#![allow(missing_docs)]
 
 use assert2::check;
 use async_fs::File;
@@ -7,8 +7,8 @@ use futures_lite::io::{AsyncReadExt, BufReader, Cursor};
 use ignore::Walk;
 use serde::Deserialize;
 use smve_asset_pack::pack_io::common::Flags;
-use smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker;
-use smve_asset_pack::pack_io::compiling::raw_assets::AssetUncooker;
+use smve_asset_pack::pack_io::compiling::asset_processing::processors::text::TextAssetProcessor;
+use smve_asset_pack::pack_io::compiling::asset_processing::AssetProcessor;
 use smve_asset_pack::pack_io::compiling::AssetPackCompiler;
 use smve_asset_pack::pack_io::reading::pack_group::AssetPackGroupReader;
 use smve_asset_pack::pack_io::reading::AssetPackReader;
@@ -32,13 +32,13 @@ macro_rules! test_res {
 }
 
 #[derive(Default)]
-pub struct EUncooker;
+pub struct EProcessor;
 
-impl AssetUncooker for EUncooker {
-    type Options = EUncookerOptions;
+impl AssetProcessor for EProcessor {
+    type Options = EProcessorOptions;
     type Error = Infallible;
 
-    fn uncook(
+    fn process(
         &self,
         buf: &[u8],
         _extension: &str,
@@ -57,11 +57,11 @@ impl AssetUncooker for EUncooker {
 }
 
 #[derive(Deserialize)]
-pub struct EUncookerOptions {
+pub struct EProcessorOptions {
     character: u8,
 }
 
-impl Default for EUncookerOptions {
+impl Default for EProcessorOptions {
     fn default() -> Self {
         Self { character: b'e' }
     }
@@ -173,8 +173,8 @@ fn compile(assets_path: &Path) -> Result<(), Box<dyn Error>> {
     let out_path = test_out!("out.smap");
 
     AssetPackCompiler::new()
-        .init_asset_uncooker::<TextAssetUncooker>()
-        .init_asset_uncooker::<EUncooker>()
+        .init_asset_processor::<TextAssetProcessor>()
+        .init_asset_processor::<EProcessor>()
         .compile(assets_path, out_path)?;
 
     Ok(())
@@ -266,12 +266,12 @@ async fn check_files(
                 check!(reader
                     .get_flags(&rel_path_str)
                     .unwrap()
-                    .contains(Flags::RAW));
+                    .contains(Flags::PROCESSED));
             } else {
                 check!(!reader
                     .get_flags(&rel_path_str)
                     .unwrap()
-                    .contains(Flags::RAW));
+                    .contains(Flags::PROCESSED));
             }
 
             if file_name.starts_with("C_") {

@@ -1,19 +1,19 @@
 //! API for compiling asset files
 
+pub mod asset_processing;
 mod compile_steps;
 mod errors;
-pub mod raw_assets;
 mod utils;
 mod walk;
 
+use asset_processing::processors::text::TextAssetProcessor;
 pub use errors::*;
-use raw_assets::uncookers::text::TextAssetUncooker;
 use utils::io;
 
+use crate::pack_io::compiling::asset_processing::{AssetProcessor, AssetProcessors};
 use crate::pack_io::compiling::compile_steps::{
     validate_asset_dir, write_assets, write_hashes, write_header, write_toc,
 };
-use crate::pack_io::compiling::raw_assets::{AssetUncooker, AssetUncookers};
 use std::fs::OpenOptions;
 use std::path::Path;
 
@@ -30,7 +30,7 @@ use std::path::Path;
 #[non_exhaustive]
 #[derive(Default)]
 pub struct AssetPackCompiler {
-    asset_uncookers: AssetUncookers,
+    asset_processors: AssetProcessors,
 }
 
 impl AssetPackCompiler {
@@ -39,26 +39,26 @@ impl AssetPackCompiler {
         Self::default()
     }
 
-    /// Register an instance of an asset uncooker for the current compiler.
-    pub fn register_asset_uncooker<U>(&mut self, uncooker: U) -> &mut Self
+    /// Register an instance of an asset processor for the current compiler.
+    pub fn register_asset_processor<P>(&mut self, processor: P) -> &mut Self
     where
-        U: AssetUncooker + 'static,
+        P: AssetProcessor + 'static,
     {
-        self.asset_uncookers.register(uncooker);
+        self.asset_processors.register(processor);
 
         self
     }
 
-    /// Initialize an instance of an asset uncooker if it implements [`Default`]
-    pub fn init_asset_uncooker<U: AssetUncooker + Default + 'static>(&mut self) -> &mut Self {
-        self.register_asset_uncooker(U::default())
+    /// Initialize an instance of an asset processor if it implements [`Default`]
+    pub fn init_asset_processor<U: AssetProcessor + Default + 'static>(&mut self) -> &mut Self {
+        self.register_asset_processor(U::default())
     }
 
-    /// Registers all built-in uncookers.
+    /// Registers all built-in processors.
     ///
     /// TODO: Include a list once bevy integration is complete.
-    pub fn register_default_uncookers(&mut self) -> &mut Self {
-        self.init_asset_uncooker::<TextAssetUncooker>()
+    pub fn register_default_processors(&mut self) -> &mut Self {
+        self.init_asset_processor::<TextAssetProcessor>()
     }
 
     /// Compile an asset pack file based on the settings set on the creation of [`AssetPackCompiler`]

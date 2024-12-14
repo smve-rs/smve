@@ -1,5 +1,5 @@
-["custom/**/*.txt".uncooker]
-uncooker_path = "test::EUncooker"
+["custom/**/*.txt".processor]
+processor_path = "test::EProcessor"
 
-["normal/*.txt".uncooker]
-uncooker_path = "smve_asset_pack::pack_io::compiling::raw_assets::uncookers::text::TextAssetUncooker"
+["normal/*.txt".processor]
+processor_path = "smve_asset_pack::pack_io::compiling::asset_processing::processors::text::TextAssetProcessor"

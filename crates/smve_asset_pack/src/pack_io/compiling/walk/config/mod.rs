@@ -36,14 +36,14 @@ pub struct Configuration<'a> {
     pub compression: Option<CompressionOptions>,
     #[merge(strategy = merge::option::recurse)]
     #[serde(borrow)]
-    pub uncooker: Option<UncookerOptions<'a>>,
+    pub processor: Option<ProcessorOptions<'a>>,
 }
 
 impl Default for Configuration<'_> {
     fn default() -> Self {
         Self {
             compression: Some(CompressionOptions::default()),
-            uncooker: Some(UncookerOptions::default()),
+            processor: Some(ProcessorOptions::default()),
         }
     }
 }
@@ -52,7 +52,7 @@ impl Configuration<'_> {
     pub fn empty() -> Self {
         Self {
             compression: None,
-            uncooker: None,
+            processor: None,
         }
     }
 }
@@ -77,22 +77,22 @@ impl Default for CompressionOptions {
 
 #[derive(Deserialize, Clone, Merge)]
 #[serde(default)]
-pub struct UncookerOptions<'a> {
+pub struct ProcessorOptions<'a> {
     #[merge(strategy = merge::option::overwrite_none)]
     pub enabled: Option<bool>,
     #[merge(strategy = merge::option::overwrite_none)]
     #[serde(borrow)]
-    pub uncooker_path: Option<Cow<'a, str>>,
+    pub processor_path: Option<Cow<'a, str>>,
     #[serde(flatten)]
     #[merge(strategy = merge_utils::merge_option_table)]
     pub options: Option<Table>,
 }
 
-impl Default for UncookerOptions<'_> {
+impl Default for ProcessorOptions<'_> {
     fn default() -> Self {
         Self {
             enabled: Some(true),
-            uncooker_path: None,
+            processor_path: None,
             options: Some(Table::default()),
         }
     }

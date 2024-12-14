@@ -1,19 +1,19 @@
-//! Temporary uncooker for text files which obfuscates them
+//! Temporary processor for text files which obfuscates them
 
 use std::convert::Infallible;
 
-use crate::pack_io::compiling::raw_assets::AssetUncooker;
+use crate::pack_io::compiling::asset_processing::AssetProcessor;
 use crate::util::text_obfuscation::toggle_obfuscation;
 
-/// Asset Uncooker for .txt files
+/// Asset Processor for .txt files
 #[derive(Default)]
-pub struct TextAssetUncooker;
+pub struct TextAssetProcessor;
 
-impl AssetUncooker for TextAssetUncooker {
+impl AssetProcessor for TextAssetProcessor {
     type Options = ();
     type Error = Infallible;
 
-    fn uncook(
+    fn process(
         &self,
         buf: &[u8],
         _extension: &str,
