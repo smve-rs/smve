@@ -8,6 +8,8 @@ use crate::pack_io::compiling::{
 use crate::pack_io::utils::WriteExt;
 use blake3::{Hash, Hasher};
 use lz4::EncoderBuilder;
+use rand::{Rng, SeedableRng};
+use rand_xoshiro::Xoshiro256PlusPlus;
 use snafu::{ensure, ResultExt};
 use std::borrow::Cow;
 use std::fs::{read, DirEntry, File};
@@ -194,6 +196,25 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), pr
         CompileStep::PreliminaryWrite(asset_path.clone())
     )?;
     let file_hash = file_hasher.finalize();
+
+    // Write easter eggs
+    if let Some(messages) = config.super_secret_option {
+        if !messages.is_empty() {
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(u64::from_le_bytes(
+                file_hash.as_bytes()[0..8].try_into().unwrap(),
+            ));
+
+            let message_index = rng.gen_range(0..messages.len());
+
+            let message = messages[message_index];
+
+            io!(
+                binary_glob.write_all(message.as_bytes()),
+                CompileStep::PreliminaryWrite(asset_path.clone())
+            )?;
+        }
+    }
+
     // ## File path
     io!(
         output_file.write_all_and_hash(path_str.as_bytes(), toc_hasher),

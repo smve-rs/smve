@@ -32,6 +32,8 @@ tempfile = "3.12"
 #                                        serde1??? what???
 camino = { version = "1.1", features = ["serde1"] }
 bitflags = "2.6"
+rand = "0.8.5"
+rand_xoshiro = "0.6.0"
 
 [dev-dependencies]
 env_logger = "0.11.5"
