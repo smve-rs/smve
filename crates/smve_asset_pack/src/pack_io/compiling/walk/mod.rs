@@ -42,7 +42,9 @@ impl Walk<'_> {
         let root_ignore = get_ignore_with_extra(path, extra_ignores).unwrap_or(Gitignore::empty());
         ignores.push(root_ignore);
 
-        let root_config = get_dir_config(path).unwrap_or_default();
+        let mut root_config = get_dir_config(path).unwrap_or_else(DirectoryConfiguration::empty);
+        let default_config = DirectoryConfiguration::default();
+        root_config.merge(default_config);
         configs.push(root_config);
 
         Ok(Self {
@@ -185,7 +187,7 @@ impl<'a> Iterator for Walk<'a> {
                                     } else {
                                         None
                                     }
-                                    .unwrap_or(Configuration::empty());
+                                    .unwrap_or_else(Configuration::empty);
 
                                     let glob_configs = current_directory_config
                                         .glob_configs

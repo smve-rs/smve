@@ -29,8 +29,16 @@ impl Default for DirectoryConfiguration<'_> {
     }
 }
 
+impl DirectoryConfiguration<'_> {
+    pub fn empty() -> Self {
+        Self {
+            dir_config: Some(Configuration::empty()),
+            glob_configs: Vec::default(),
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Merge)]
-#[serde(default)]
 pub struct Configuration<'a> {
     #[merge(strategy = merge::option::recurse)]
     pub compression: Option<CompressionOptions>,
@@ -38,8 +46,7 @@ pub struct Configuration<'a> {
     #[serde(borrow)]
     pub processor: Option<ProcessorOptions<'a>>,
     #[merge(strategy = merge::option::overwrite_none)]
-    #[serde(borrow)]
-    pub super_secret_option: Option<Vec<&'a str>>,
+    pub super_secret_option: Option<Vec<String>>,
 }
 
 impl Default for Configuration<'_> {
@@ -48,14 +55,14 @@ impl Default for Configuration<'_> {
             compression: Some(CompressionOptions::default()),
             processor: Some(ProcessorOptions::default()),
             super_secret_option: Some(vec![
-                "Reading between the lines I see...",
-                "I'm not sure why I'm here but here I am.",
-                "May I ask why you are reading this?",
-                "SMVE ASSET PACK YEAHHHHH",
-                "To SunnyMonster in 10 years - Are you still working on SMve? Is the project dead or very successful?",
-                "I'm struggling to write more of these messages haha",
-                "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
-                "Cool"
+                "Reading between the lines I see...".into(),
+                "I'm not sure why I'm here but here I am.".into(),
+                "May I ask why you are reading this?".into(),
+                "SMVE ASSET PACK YEAHHHHH".into(),
+                "To SunnyMonster in 10 years - Are you still working on SMve? Is the project dead or very successful?".into(),
+                "I'm struggling to write more of these messages haha".into(),
+                "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO".into(),
+                "Cool".into()
             ]),
         }
     }

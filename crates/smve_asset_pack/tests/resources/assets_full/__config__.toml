@@ -1,2 +1,7 @@
+# super_secret_option = [
+#   # "This is my custom message number 1",
+#   # "This is my custom message number 2",
+# ]
+
 ["**/*.txt".processor]
 processor_path = "smve_asset_pack::pack_io::compiling::asset_processing::processors::text::TextAssetProcessor"

@@ -206,7 +206,7 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), pr
 
             let message_index = rng.gen_range(0..messages.len());
 
-            let message = messages[message_index];
+            let message = messages.get(message_index).unwrap();
 
             io!(
                 binary_glob.write_all(message.as_bytes()),
