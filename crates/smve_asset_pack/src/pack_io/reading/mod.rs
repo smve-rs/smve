@@ -365,18 +365,7 @@ pub struct FileMeta {
 }
 
 cfg_if! {
-    if #[cfg(feature = "non_send_readers")] {
-        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
-        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
-        pub trait ConditionalSendAsyncSeekableBufRead:
-            AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
-
-        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> ConditionalSendAsyncSeekableBufRead for T {}
-
-        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin {}
-
-        impl<T: AsyncSeek + AsyncRead + Unpin> ConditionalSendAsyncReadAndSeek for T {}
-    } else {
+    if #[cfg(feature = "send_readers")] {
         /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
         /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
         pub trait ConditionalSendAsyncSeekableBufRead:
@@ -390,5 +379,16 @@ cfg_if! {
         pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin + Send + Sync {}
 
         impl<T: AsyncSeek + AsyncRead + Unpin + Send + Sync> ConditionalSendAsyncReadAndSeek for T {}
+    } else {
+        /// A marker trait automatically implemented for anything that implements both [`AsyncBufRead`] and
+        /// [`AsyncSeek`] which may be [`Send`] and [`Sync`] depending on the configuration.
+        pub trait ConditionalSendAsyncSeekableBufRead:
+            AsyncSeek + AsyncBufRead + AsyncRead + Unpin {}
+
+        impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> ConditionalSendAsyncSeekableBufRead for T {}
+
+        pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin {}
+
+        impl<T: AsyncSeek + AsyncRead + Unpin> ConditionalSendAsyncReadAndSeek for T {}
     }
 }

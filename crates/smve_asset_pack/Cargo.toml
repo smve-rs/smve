@@ -41,5 +41,6 @@ assert2 = "0.3.15"
 
 [features]
 default = ["bevy_integration"]
-non_send_readers = []
-bevy_integration = []
+# enable this for readers to be Send + Sync
+send_readers = []
+bevy_integration = ["send_readers"]
