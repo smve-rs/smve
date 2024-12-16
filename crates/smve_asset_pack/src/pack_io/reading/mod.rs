@@ -387,8 +387,6 @@ cfg_if! {
 
         impl<T: AsyncBufRead + AsyncRead + AsyncSeek + Unpin> ConditionalSendAsyncSeekableBufRead for T {}
 
-        /// A marker trait automatically implemented for anything that implements both [`AsyncRead`] and [`AsyncSeek`]
-        /// which may be [`Send`] and [`Sync`] depending on the configuration.
         pub trait ConditionalSendAsyncReadAndSeek: AsyncSeek + AsyncRead + Unpin {}
 
         impl<T: AsyncSeek + AsyncRead + Unpin> ConditionalSendAsyncReadAndSeek for T {}
