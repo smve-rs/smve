@@ -13,9 +13,9 @@ tracing = "0.1"
 snafu = "0.8"
 indexmap = { version = "2.5", features = ["serde"] }
 lz4 = "1.26"
-toml = { version = "0.8", features = ["preserve_order"] }
+toml = { version = "0.9", features = ["preserve_order"] }
 serde = { version = "1.0", features = ["derive"] }
-downcast-rs = "1.2"
+downcast-rs = "2.0"
 merge = { git = "https://github.com/ItsSunnyMonster/merge.git", branch = "versions/0.1.1" }
 glob = "0.3"
 serde-tuple-vec-map = "1.0"
@@ -23,17 +23,17 @@ pathdiff = { version = "0.2", features = ["camino"] }
 async-fs = "2.1"
 futures-lite = "2.3"
 async-walkdir = "2.0"
-async-tempfile = "0.6"
+async-tempfile = "0.7"
 blocking = "1.6"
 async-compat = { git = "https://github.com/ItsSunnyMonster/async-compat.git", branch = "guard_api" }
 cfg-if = "1.0"
-lru = "0.12"
+lru = "0.16"
 tempfile = "3.12"
 #                                        serde1??? what???
 camino = { version = "1.1", features = ["serde1"] }
 bitflags = "2.6"
-rand = "0.8.5"
-rand_xoshiro = "0.6.0"
+rand = "0.9"
+rand_xoshiro = "0.7"
 
 [dev-dependencies]
 env_logger = "0.11.5"
