@@ -1,9 +1,9 @@
 //! Converting assets to their raw forms to store in the asset pack.
 
-use downcast_rs::{impl_downcast, Downcast};
+use downcast_rs::{Downcast, impl_downcast};
 use serde::Deserialize;
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::error::Error;
 use toml::Table;
 use tracing::warn;
@@ -163,7 +163,9 @@ impl AssetProcessors {
         let processors = self.extension_to_processors.get(ext)?;
 
         if processors.len() > 1 {
-            warn!("Multiple processors are defined for extension {ext}, please specify one in __config__.toml under processors.processor_path. Will use the first processor registered for this extension.");
+            warn!(
+                "Multiple processors are defined for extension {ext}, please specify one in __config__.toml under processors.processor_path. Will use the first processor registered for this extension."
+            );
         }
 
         Some(&**self.processors.get(processors[0]).unwrap())

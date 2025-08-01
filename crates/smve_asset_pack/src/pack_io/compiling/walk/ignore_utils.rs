@@ -17,7 +17,9 @@ pub fn get_ignore_with_extra(path: impl AsRef<Path>, extra_ignores: &[&str]) -> 
         for extra_ignore in extra_ignores {
             let result = builder.add_line(None, extra_ignore);
             if let Err(error) = result {
-                error!("Error parsing extra ignore line {extra_ignore}: {error}\nWill add other lines to ignore.");
+                error!(
+                    "Error parsing extra ignore line {extra_ignore}: {error}\nWill add other lines to ignore."
+                );
             }
         }
 

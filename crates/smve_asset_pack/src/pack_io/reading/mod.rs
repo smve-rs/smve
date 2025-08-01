@@ -14,7 +14,7 @@ pub use iter_dir::*;
 
 use crate::pack_io::common::Flags;
 use futures_lite::io::{AsyncBufRead, AsyncSeek, BufReader};
-use futures_lite::{future, AsyncRead, AsyncReadExt};
+use futures_lite::{AsyncRead, AsyncReadExt, future};
 use lru::LruCache;
 use read_steps::{read_toc, validate_files, validate_header, validate_version};
 
@@ -275,7 +275,9 @@ impl<R: AsyncReadExt + AsyncBufRead + ConditionalSendAsyncReadAndSeek> AssetPack
     /// `true` if the path is a directory, `false` if the path is not a directory`
     pub async fn has_directory(&mut self, path: &str) -> bool {
         if !path.ends_with('/') {
-            warn!("`has_directory` returned `false` because your path does not end with a trailing slash!");
+            warn!(
+                "`has_directory` returned `false` because your path does not end with a trailing slash!"
+            );
             return false;
         }
 

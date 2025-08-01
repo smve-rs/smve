@@ -6,8 +6,8 @@ mod render;
 
 use crate::components::Triangle;
 use crate::render::draw::{
-    prepare_triangle_phase_item_buffers, queue_triangle_phase_item, DrawTriangleCommands,
-    TrianglePipeline, WithTriangle,
+    DrawTriangleCommands, TrianglePipeline, WithTriangle, prepare_triangle_phase_item_buffers,
+    queue_triangle_phase_item,
 };
 use bevy_app::{App, Plugin, PostUpdate};
 use bevy_core_pipeline::core_3d::Opaque3d;
@@ -16,7 +16,7 @@ use bevy_render::extract_component::ExtractComponentPlugin;
 use bevy_render::render_phase::AddRenderCommand;
 use bevy_render::render_resource::SpecializedRenderPipelines;
 use bevy_render::view::VisibilitySystems;
-use bevy_render::{view, Render, RenderApp, RenderSet};
+use bevy_render::{Render, RenderApp, RenderSet, view};
 
 /// This plugin contains logic to do with rendering voxels.
 ///

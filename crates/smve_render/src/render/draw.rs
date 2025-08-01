@@ -1,13 +1,13 @@
 use crate::components::Triangle;
 use bevy_asset::{AssetId, AssetServer, Handle};
-use bevy_core_pipeline::core_3d::{Opaque3d, Opaque3dBinKey, CORE_3D_DEPTH_FORMAT};
+use bevy_core_pipeline::core_3d::{CORE_3D_DEPTH_FORMAT, Opaque3d, Opaque3dBinKey};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::World;
 use bevy_ecs::query::{ROQueryItem, With};
 use bevy_ecs::system::lifetimeless::SRes;
 use bevy_ecs::system::{Commands, Query, Res, ResMut, Resource, SystemParamItem};
 use bevy_ecs::world::FromWorld;
-use bevy_math::{vec3, Vec3};
+use bevy_math::{Vec3, vec3};
 use bevy_render::mesh::Mesh;
 use bevy_render::prelude::Shader;
 use bevy_render::render_phase::{

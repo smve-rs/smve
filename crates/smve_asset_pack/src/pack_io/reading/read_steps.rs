@@ -4,12 +4,12 @@ use crate::pack_io::reading::{
 };
 use async_compat::{Compat, CompatExt};
 use async_tempfile::TempFile;
-use blake3::{hash, Hasher};
+use blake3::{Hasher, hash};
 use blocking::Unblock;
-use futures_lite::{io, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeekExt};
+use futures_lite::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeekExt, io};
 use indexmap::IndexMap;
 use lz4::Decoder;
-use snafu::{ensure, ResultExt};
+use snafu::{ResultExt, ensure};
 use std::collections::HashMap;
 use std::io::SeekFrom;
 

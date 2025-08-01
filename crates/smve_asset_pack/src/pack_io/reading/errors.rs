@@ -30,7 +30,9 @@ pub enum ReadError {
     #[snafu(display("Invalid pack file!"))]
     InvalidPackFile,
     /// The pack file is encoded in a version that this version of the library does not support.
-    #[snafu(display("Version {version} is not supported! This version of the reader only supports version 1 and below."))]
+    #[snafu(display(
+        "Version {version} is not supported! This version of the reader only supports version 1 and below."
+    ))]
     IncompatibleVersion {
         /// The version specified in the pack file.
         version: u16,
@@ -50,13 +52,19 @@ pub enum ReadError {
         source: camino::FromPathBufError,
     },
     /// The TOC has been modified or damaged.
-    #[snafu(display("Table of contents does not match the stored hash! This probably means it was damaged or modified."))]
+    #[snafu(display(
+        "Table of contents does not match the stored hash! This probably means it was damaged or modified."
+    ))]
     DamagedTOC,
     /// The Directory List has been modified or damaged.
-    #[snafu(display("Directory list does not match the stored hash! This probably means it was damaged or modified."))]
+    #[snafu(display(
+        "Directory list does not match the stored hash! This probably means it was damaged or modified."
+    ))]
     DamagedDirectoryList,
     /// The file data has been modified or damaged.
-    #[snafu(display("File at {path} does not match its stored hash! This probably means that it was damaged or modified."))]
+    #[snafu(display(
+        "File at {path} does not match its stored hash! This probably means that it was damaged or modified."
+    ))]
     DamagedFile {
         /// The path of the file that has been damaged.
         path: String,
