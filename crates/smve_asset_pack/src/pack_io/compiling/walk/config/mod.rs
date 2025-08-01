@@ -141,7 +141,7 @@ pub fn get_dir_config<'de>(dir: impl AsRef<Path>) -> Option<DirectoryConfigurati
                 return Some(config);
             }
 
-            for (ref mut path, _) in &mut config.glob_configs {
+            for (path, _) in &mut config.glob_configs {
                 path.to_mut()
                     .insert_str(0, &format!("{}/", path_string.unwrap()));
             }
@@ -149,7 +149,10 @@ pub fn get_dir_config<'de>(dir: impl AsRef<Path>) -> Option<DirectoryConfigurati
             Some(config)
         }
         Err(error) => {
-            error!("Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}", config_path.display());
+            error!(
+                "Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}",
+                config_path.display()
+            );
             None
         }
     }
@@ -169,7 +172,10 @@ pub fn get_file_config<'de>(file_path: impl AsRef<Path>) -> Option<Configuration
     let config: Result<Configuration<'_>, _> = table.try_into();
 
     if let Err(error) = config {
-        error!("Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}", config_path.display());
+        error!(
+            "Failed to interpret config file at {} because the structure of the config file is incorrect. From TOML error: {error}",
+            config_path.display()
+        );
         None
     } else {
         config.ok()
@@ -180,7 +186,10 @@ fn get_config(config_path: &Path) -> Option<Table> {
     if config_path.exists() && config_path.is_file() {
         let config_file = File::open(config_path);
         if let Err(error) = config_file {
-            error!("Failed to open config file at {}, ignoring config for this directory. IO error: {error}", config_path.display());
+            error!(
+                "Failed to open config file at {}, ignoring config for this directory. IO error: {error}",
+                config_path.display()
+            );
             return None;
         }
 
@@ -189,13 +198,19 @@ fn get_config(config_path: &Path) -> Option<Table> {
         let mut file_string = String::new();
         let read_result = config_file.read_to_string(&mut file_string);
         if let Err(error) = read_result {
-            error!("Failed to read config file at {}, ignoring config for this directory. IO error: {error}", config_path.display());
+            error!(
+                "Failed to read config file at {}, ignoring config for this directory. IO error: {error}",
+                config_path.display()
+            );
             return None;
         }
 
         let config: Result<Table, _> = toml::from_str(&file_string);
         if let Err(error) = &config {
-            error!("Failed to parse config file at {}, ignoring config for this directory. DE error: {error}", config_path.display());
+            error!(
+                "Failed to parse config file at {}, ignoring config for this directory. DE error: {error}",
+                config_path.display()
+            );
         }
 
         Some(config.unwrap())

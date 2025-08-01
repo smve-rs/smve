@@ -3,7 +3,7 @@ mod ignore_utils;
 
 use crate::pack_io::compiling::walk::config::glob_utils::glob_matches;
 use crate::pack_io::compiling::walk::config::{
-    get_dir_config, get_file_config, Configuration, DirectoryConfiguration,
+    Configuration, DirectoryConfiguration, get_dir_config, get_file_config,
 };
 use crate::pack_io::compiling::walk::ignore_utils::{get_ignore, get_ignore_with_extra};
 use ignore::gitignore::Gitignore;
@@ -83,12 +83,28 @@ impl<'a> Iterator for Walk<'a> {
                                     // Skip configuration and ignore files
                                     let file_name_osstr = entry.file_name();
                                     let file_name = file_name_osstr.to_str();
-                                    if file_name.is_none() {
-                                        error!("Failed to convert file name to UTF-8! Unexpected behavior might happen.")
-                                    } else if file_name.unwrap().ends_with("__config__.toml")
-                                        || file_name.unwrap() == "__ignore__"
+
+                                    if let Some(file_name) = file_name
+                                        && (file_name.ends_with("__config__.toml")
+                                            || file_name == "ignore")
                                     {
                                         continue;
+                                    } else if file_name.is_none() {
+                                        error!(
+                                            "Failed to convert file name to UTF-8! Unexpected behavior might happen."
+                                        )
+                                    }
+
+                                    if let Some(file_name) = file_name {
+                                        if file_name.ends_with("__config__.toml")
+                                            && file_name == "__ignore__"
+                                        {
+                                            continue;
+                                        }
+                                    } else {
+                                        error!(
+                                            "Failed to convert file name to UTF-8! Unexpected behavior might happen."
+                                        )
                                     }
 
                                     // Check if this entry should be ignored

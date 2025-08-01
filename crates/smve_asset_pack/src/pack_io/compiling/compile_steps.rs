@@ -1,7 +1,7 @@
 use crate::pack_io::common::Flags;
 use crate::pack_io::compiling::utils::io;
-use crate::pack_io::compiling::walk::config::Configuration;
 use crate::pack_io::compiling::walk::Walk;
+use crate::pack_io::compiling::walk::config::Configuration;
 use crate::pack_io::compiling::{
     AssetPackCompiler, CompileResult, CompileStep, EmptyDirectoryCtx, IoCtx, NotADirectoryCtx,
 };
@@ -10,9 +10,9 @@ use blake3::{Hash, Hasher};
 use lz4::EncoderBuilder;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
-use snafu::{ensure, ResultExt};
+use snafu::{ResultExt, ensure};
 use std::borrow::Cow;
-use std::fs::{read, DirEntry, File};
+use std::fs::{DirEntry, File, read};
 use std::io;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
@@ -129,7 +129,10 @@ Available processors are: {:#?}",
                     .collect::<Vec<_>>()
                     .contains(&extension.to_str().unwrap())
                 {
-                    error!("Asset processor specified at {processor_path} does not support extension {}!", extension.to_str().unwrap());
+                    error!(
+                        "Asset processor specified at {processor_path} does not support extension {}!",
+                        extension.to_str().unwrap()
+                    );
                     None
                 } else {
                     Some(processor.unwrap())
@@ -198,21 +201,21 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), pr
     let file_hash = file_hasher.finalize();
 
     // Write easter eggs
-    if let Some(messages) = config.super_secret_option {
-        if !messages.is_empty() {
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(u64::from_le_bytes(
-                file_hash.as_bytes()[0..8].try_into().unwrap(),
-            ));
+    if let Some(messages) = config.super_secret_option
+        && !messages.is_empty()
+    {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(u64::from_le_bytes(
+            file_hash.as_bytes()[0..8].try_into().unwrap(),
+        ));
 
-            let message_index = rng.random_range(0..messages.len());
+        let message_index = rng.random_range(0..messages.len());
 
-            let message = messages.get(message_index).unwrap();
+        let message = messages.get(message_index).unwrap();
 
-            io!(
-                binary_glob.write_all(message.as_bytes()),
-                CompileStep::PreliminaryWrite(asset_path.clone())
-            )?;
-        }
+        io!(
+            binary_glob.write_all(message.as_bytes()),
+            CompileStep::PreliminaryWrite(asset_path.clone())
+        )?;
     }
 
     // ## File path

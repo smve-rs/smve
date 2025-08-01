@@ -6,7 +6,7 @@ use futures_lite::io::BufReader;
 use futures_lite::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, StreamExt};
 use indexmap::IndexMap;
 use pathdiff::diff_utf8_paths;
-use snafu::{ensure, ResultExt};
+use snafu::{ResultExt, ensure};
 use std::collections::HashMap;
 use std::io::SeekFrom;
 use std::mem;
@@ -694,20 +694,20 @@ impl AssetPackGroupReader {
         while let Some(entry) = entries.next().await {
             let entry = entry.context(WalkDirCtx)?;
 
-            if let Some(path_extension) = entry.path().extension() {
-                if path_extension == extension {
-                    let entry_path = Utf8PathBuf::try_from(entry.path()).context(Utf8PathCtx)?;
-                    let rel_path = diff_utf8_paths(&entry_path, root_dir).unwrap_or(entry_path);
+            if let Some(path_extension) = entry.path().extension()
+                && path_extension == extension
+            {
+                let entry_path = Utf8PathBuf::try_from(entry.path()).context(Utf8PathCtx)?;
+                let rel_path = diff_utf8_paths(&entry_path, root_dir).unwrap_or(entry_path);
 
-                    available_packs.insert(
-                        rel_path,
-                        PackDescriptor {
-                            enabled: false,
-                            is_external,
-                            is_built_in: false,
-                        },
-                    );
-                }
+                available_packs.insert(
+                    rel_path,
+                    PackDescriptor {
+                        enabled: false,
+                        is_external,
+                        is_built_in: false,
+                    },
+                );
             }
         }
 
