@@ -204,7 +204,7 @@ Passed in options: {:#?}", asset_path.extension().unwrap().to_str().unwrap(), pr
                 file_hash.as_bytes()[0..8].try_into().unwrap(),
             ));
 
-            let message_index = rng.gen_range(0..messages.len());
+            let message_index = rng.random_range(0..messages.len());
 
             let message = messages.get(message_index).unwrap();
 

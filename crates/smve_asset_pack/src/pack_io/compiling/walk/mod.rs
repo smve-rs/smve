@@ -120,7 +120,7 @@ impl<'a> Iterator for Walk<'a> {
                                                 let ignore = get_ignore(entry.path());
 
                                                 // Try get config
-                                                let mut config = get_dir_config(entry.path());
+                                                let config = get_dir_config(entry.path());
 
                                                 // Push this before pushing directory, so that after processing this directory we can change back
                                                 if ignore.is_some() {
@@ -146,25 +146,25 @@ impl<'a> Iterator for Walk<'a> {
                                                 self.process_stack.push(ProcessNode::ReadDir(rd));
 
                                                 // Push new config
-                                                if config.is_some() {
-                                                    config.as_mut().unwrap().merge(
+                                                if let Some(mut config) = config {
+                                                    config.merge(
                                                         self.configs[self.current_config_index]
                                                             .clone(),
                                                     );
 
                                                     let new_index = self.configs.len();
-                                                    self.configs.push(config.unwrap());
+                                                    self.configs.push(config);
                                                     self.process_stack.push(
                                                         ProcessNode::ConfigChange { new_index },
                                                     )
                                                 }
 
                                                 // Push new ignores
-                                                if ignore.is_some() {
+                                                if let Some(ignore) = ignore {
                                                     let mut new_indices =
                                                         self.current_ignores_indices.clone();
                                                     new_indices.push(self.ignores.len()); // The index where the ignore will be added to
-                                                    self.ignores.push(ignore.unwrap());
+                                                    self.ignores.push(ignore);
                                                     self.process_stack.push(
                                                         ProcessNode::IgnoreChange { new_indices },
                                                     );
