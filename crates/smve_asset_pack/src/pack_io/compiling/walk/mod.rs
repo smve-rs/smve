@@ -86,7 +86,7 @@ impl<'a> Iterator for Walk<'a> {
 
                                     if let Some(file_name) = file_name {
                                         if file_name.ends_with("__config__.toml")
-                                            && file_name == "__ignore__"
+                                            || file_name == "__ignore__"
                                         {
                                             continue;
                                         }
